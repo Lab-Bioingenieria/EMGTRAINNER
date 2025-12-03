@@ -24,7 +24,7 @@ export function PatientsLayout({ children }: PatientsLayoutProps) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="md:ml-[16rem] md:w-[calc(100%-16rem)] transition-[margin-left,width] duration-200 ease-linear group-data-[state=collapsed]/sidebar-wrapper:md:ml-[3rem] group-data-[state=collapsed]/sidebar-wrapper:md:w-[calc(100%-3rem)]">
+      <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
