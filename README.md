@@ -83,10 +83,10 @@ cp .env.example .env
 
 ### Frontend
 
-- `npm run dev` - Inicia servidor de desarrollo
-- `npm run build` - Construye para producción
-- `npm run preview` - Preview de la build de producción
-- `npm run lint` - Ejecuta ESLint
+- `pnpm run dev` - Inicia servidor de desarrollo
+- `pnpm run build` - Construye para producción
+- `pnpm run preview` - Preview de la build de producción
+- `pnpm run lint` - Ejecuta ESLint
 
 ### Backend
 
