@@ -23,7 +23,7 @@ function Home() {
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-4">
                 <Button asChild size="lg" className="gap-2">
-                    
+                    <Link to='/dashboard'>Dashboard</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="gap-2 bg-transparent">
                     
