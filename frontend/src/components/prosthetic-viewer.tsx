@@ -1,5 +1,3 @@
-'use client'
-
 import { Suspense, useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Environment, ContactShadows, PerspectiveCamera } from '@react-three/drei'
@@ -7,7 +5,11 @@ import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { ProstheticModel } from './prosthetic-3d-model'
 
-export function ProstheticViewer() {
+interface ProstheticViewerProps {
+  isActive?: boolean
+}
+
+export function ProstheticViewer({ isActive = false }: ProstheticViewerProps) {
   const [fingerRotation, setFingerRotation] = useState(0)
   const [wristRotation, setWristRotation] = useState(0)
   const [elbowRotation, setElbowRotation] = useState(0)
@@ -21,7 +23,7 @@ export function ProstheticViewer() {
 
   // Simulate real-time data updates
   useEffect(() => {
-    if (!isConnected) return
+    if (!isConnected || !isActive) return
 
     const interval = setInterval(() => {
       // Simulate EMG signal affecting finger movement
@@ -42,7 +44,7 @@ export function ProstheticViewer() {
     }, 50)
 
     return () => clearInterval(interval)
-  }, [isConnected])
+  }, [isConnected, isActive])
 
   return (
     <Card className="relative h-full min-h-[500px] overflow-hidden bg-gradient-to-br from-background via-muted/20 to-background">
@@ -106,7 +108,7 @@ export function ProstheticViewer() {
       <div className="absolute top-4 right-4 flex flex-col items-end gap-1">
         <span className="text-xs text-muted-foreground">FPS: 60</span>
         <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary">
-          {isConnected ? 'Active' : 'Standby'}
+          {isActive && isConnected ? 'Active' : 'Standby'}
         </Badge>
       </div>
 

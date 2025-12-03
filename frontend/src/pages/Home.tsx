@@ -26,7 +26,7 @@ function Home() {
                     <Link to='/dashboard'>Dashboard</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="gap-2 bg-transparent">
-                    
+                    <Link to='/lab'>Lab</Link>
                 </Button>
                 </div>
             </div>

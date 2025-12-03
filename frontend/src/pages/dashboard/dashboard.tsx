@@ -1,9 +1,7 @@
-"use client"
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
-import { Activity, Users, Zap, Clock, TrendingUp, BarChart3, Play } from "lucide-react"
+import { Activity, Users, Zap, Clock, TrendingUp, BarChart3 } from "lucide-react"
 //import Link from "next/link"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../../components/ui/chart"
 import { Area, AreaChart, Bar, BarChart, XAxis, YAxis } from "recharts"
