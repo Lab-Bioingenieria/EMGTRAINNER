@@ -37,14 +37,14 @@ practicas-comunitarias-PAOII/
 - Node.js v20.19.5 o superior
 - [pyenv](https://github.com/pyenv/pyenv) - Gestor de versiones Python
 - [uv](https://github.com/astral-sh/uv) - Gestor de paquetes Python
-- npm
+- pnpm
 
 ### Frontend
 
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 El frontend estará disponible en `http://localhost:5173`
