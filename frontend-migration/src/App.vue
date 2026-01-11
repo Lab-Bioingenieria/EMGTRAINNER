@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { TresCanvas } from '@tresjs/core'
-
-import TheExperience from './components/TheExperience.vue'
+import {RouterView} from 'vue-router'
 </script>
 
 <template>
-  <TresCanvas
-    clear-color="#82DBC5"
-    window-size
-  >
-    <TheExperience />
-  </TresCanvas>
+  <RouterView />
 </template>
+
+<style>
+  
+</style>
