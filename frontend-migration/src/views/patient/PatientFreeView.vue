@@ -6,13 +6,17 @@ import RadialTimer from '../../components/patient/RadialTimer.vue'
 import PatientHandVisualization from '../../components/patient/PatientHandVisualization.vue'
 import { ALL_GESTURES } from '../../lib/constants'
 import type { Gesture } from '../../lib/constants'
-import { ChevronRight, Play, ArrowLeft } from 'lucide-vue-next'
+import { ChevronRight, Play, ArrowLeft, Activity, RefreshCw } from 'lucide-vue-next'
 
 const emgSignals = ref([
     { id: 1, status: 'active' }, { id: 2, status: 'active' }, { id: 3, status: 'active' }
 ])
 
-const step = ref<'setup' | 'training' | 'completed'>('setup')
+type Step = 'mode-selection' | 'setup' | 'training' | 'completed'
+const step = ref<Step>('mode-selection')
+type TrainingMode = 'TLC' | 'LLC'
+const trainingMode = ref<TrainingMode>('TLC')
+
 const patientName = ref('')
 const patientAge = ref('')
 const selectedGestures = ref<Gesture[]>([])
@@ -25,6 +29,13 @@ const completedSteps = ref<number[]>([])
 
 const activeSignals = computed(() => emgSignals.value.filter(s => s.status === 'active').length)
 const currentGesture = computed(() => gestures.value[currentStep.value])
+
+const selectMode = (mode: TrainingMode) => {
+    trainingMode.value = mode
+    step.value = 'setup'
+    // In LLC mode, we might want to pre-select gestures or change the UI, 
+    // but for now we follow the user instruction to just add the selection screen.
+}
 
 const toggleGesture = (g: Gesture) => {
     if (selectedGestures.value.find(sel => sel.id === g.id)) {
@@ -69,10 +80,14 @@ const completeGesture = () => {
 }
 
 const resetSession = () => {
-    step.value = 'setup'
+    step.value = 'mode-selection'
     selectedGestures.value = []
     patientName.value = ''
     patientAge.value = ''
+}
+
+const backToModeSelection = () => {
+    step.value = 'mode-selection'
 }
 
 onUnmounted(() => clearInterval(intervalId))
@@ -83,18 +98,63 @@ onUnmounted(() => clearInterval(intervalId))
     <TopHeader title="Sesión Libre" subtitle="Entrenamiento independiente y exploración" />
     
     <div class="content">
-        <!-- SETUP PHASE -->
-        <div v-if="step === 'setup'" class="container-sm">
+        <!-- MODE SELECTION PHASE -->
+        <div v-if="step === 'mode-selection'" class="container-sm">
              <div class="mb-6">
                 <router-link to="/patient" class="btn-ghost mb-2">
                     <ArrowLeft class="icon-sm mr-2" /> Volver
                 </router-link>
              </div>
 
+             <div class="mb-6">
+                 <h2 class="text-xl font-bold text-slate-900 mb-2">Seleccionar Modo de Entrenamiento</h2>
+                 <p class="text-slate-500">Elija la metodología que mejor se adapte a su sesión actual.</p>
+             </div>
+
+             <div class="grid-2 gap-6">
+                 <!-- TLC Card -->
+                 <div class="mode-card" @click="selectMode('TLC')">
+                     <div class="icon-wrapper blue">
+                         <Activity class="w-8 h-8 text-blue-600" />
+                     </div>
+                     <div class="mode-content">
+                         <h3 class="font-bold text-lg text-slate-900 mb-2">Modo Guiado (TLC)</h3>
+                         <p class="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Teacher-Led Control</p>
+                         <p class="text-sm text-slate-600 leading-relaxed">
+                             Usted define los gestos, repeticiones y tiempos. Ideal para sesiones supervisadas donde el usuario decide qué practicar.
+                         </p>
+                     </div>
+                 </div>
+
+                 <!-- LLC Card -->
+                 <div class="mode-card" @click="selectMode('LLC')">
+                     <div class="icon-wrapper indigo">
+                         <RefreshCw class="w-8 h-8 text-indigo-600" />
+                     </div>
+                     <div class="mode-content">
+                         <h3 class="font-bold text-lg text-slate-900 mb-2">Modo Autónomo (LLC)</h3>
+                         <p class="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Learner-Led Control</p>
+                         <p class="text-sm text-slate-600 leading-relaxed">
+                             El sistema presenta gestos de forma adaptativa basándose en la dificultad. El paciente controla el flujo de aprendizaje.
+                         </p>
+                     </div>
+                     <div class="badge-tag">Nuevo</div>
+                 </div>
+             </div>
+        </div>
+
+        <!-- SETUP PHASE -->
+        <div v-else-if="step === 'setup'" class="container-sm">
+             <div class="mb-6">
+                <button class="btn-ghost mb-2" @click="backToModeSelection">
+                    <ArrowLeft class="icon-sm mr-2" /> Cambiar Modo
+                </button>
+             </div>
+
              <div class="card p-6 mb-6">
                  <div class="flex-row-between mb-4">
                      <h3 class="card-title text-slate-900 font-bold">Configuración de Sesión</h3>
-                     <span class="badge badge-neutral">Mode: Free Train</span>
+                     <span class="badge badge-neutral">Mode: {{ trainingMode === 'TLC' ? 'Teacher-Led' : 'Learner-Led' }}</span>
                  </div>
                  <div class="grid-2 gap-4">
                      <div class="field">
@@ -152,7 +212,7 @@ onUnmounted(() => clearInterval(intervalId))
             <header class="flex-row-between mb-8">
                 <div class="flex gap-2">
                     <span class="badge badge-primary">Sesión Libre</span>
-                    <span class="badge badge-neutral">Manual</span>
+                    <span class="badge badge-neutral">{{ trainingMode }}</span>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="text-sm text-slate-500">{{ currentStep + 1 }} / {{ gestures.length }}</span>
@@ -251,6 +311,28 @@ onUnmounted(() => clearInterval(intervalId))
 .gesture-card { text-align: center; padding: 1rem; cursor: pointer; border: 2px solid transparent; background-color: #f8fafc; border-radius: 8px; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; }
 .gesture-card:hover { background-color: #f1f5f9; }
 .gesture-card.selected { border-color: #3b82f6; background-color: #eff6ff; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1); }
+
+/* Mode Cards */
+.mode-card {
+    background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 2rem;
+    cursor: pointer; transition: all 0.3s ease; display: flex; flex-direction: column; gap: 1.5rem;
+    position: relative; overflow: hidden; height: 100%;
+}
+.mode-card:hover {
+    transform: translateY(-4px); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1); border-color: #cbd5e1;
+}
+.icon-wrapper {
+    width: 3.5rem; height: 3.5rem; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+}
+.icon-wrapper.blue { background-color: #eff6ff; }
+.icon-wrapper.indigo { background-color: #eef2ff; }
+
+.text-blue-600 { color: #2563eb; }
+.text-indigo-600 { color: #4f46e5; }
+.badge-tag {
+    position: absolute; top: 1.5rem; right: 1.5rem; background-color: #e0e7ff; color: #4338ca;
+    padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700;
+}
 
 /* Badges */
 .badge { display: inline-flex; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
