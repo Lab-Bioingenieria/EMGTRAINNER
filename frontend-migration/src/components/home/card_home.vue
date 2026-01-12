@@ -49,7 +49,7 @@ defineProps<CardHomeProps>()
   display: flex;
   flex-direction: column;
   gap: 16px;
-  font-family: 'Inter', sans-serif; /* O la fuente que uses */
+  font-family: 'Roboto', sans-serif; /* O la fuente que uses */
 }
 
 .card-home:hover {
