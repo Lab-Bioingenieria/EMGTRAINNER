@@ -7,12 +7,12 @@ import RadialTimer from '../../components/patient/RadialTimer.vue'
 import PatientHandVisualization from '../../components/patient/PatientHandVisualization.vue'
 import { ALL_GESTURES } from '../../lib/constants'
 import type { Gesture } from '../../lib/constants'
-import { Wifi, ChevronRight, Play } from 'lucide-vue-next'
+import { Wifi, ChevronRight, Play, Maximize, CheckCircle2 } from 'lucide-vue-next'
 
 const router = useRouter()
 
 // --- State ---
-const step = ref<'selection' | 'code' | 'training' | 'completed'>('selection')
+const step = ref<'selection' | 'code' | 'protocols' | 'training' | 'completed'>('selection')
 const sessionCode = ref('')
 const emgSignals = ref([
     { id: 1, status: 'active' }, { id: 2, status: 'active' }, { id: 3, status: 'active' }
@@ -29,7 +29,7 @@ const completedSteps = ref<number[]>([])
 const isExecuting = ref(false)
 const timer = ref(5)
 const isResting = ref(false)
-const restTimer = ref(3)
+const restTimer = ref(5)
 
 // Mode Selection
 const selectMode = (mode: 'supervised' | 'free') => {
@@ -52,13 +52,48 @@ const connectSession = () => {
         gestures.value = [...ALL_GESTURES].sort(() => Math.random() - 0.5)
     }
     
-    step.value = 'training'
+    
+    step.value = 'protocols'
     currentStep.value = 0
     completedSteps.value = []
 }
 
+const confirmProtocols = () => {
+    enterFullscreen()
+    step.value = 'training'
+    startCountdown()
+}
+
+const enterFullscreen = () => {
+    const elem = document.documentElement
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch((err) => {
+            console.warn('Error attempting to enable fullscreen:', err)
+        })
+    }
+}
+
 // Training Logic
 let intervalId: number
+const isCountingDown = ref(false)
+const countdownTimer = ref(3)
+
+const startCountdown = () => {
+    isCountingDown.value = true
+    isResting.value = false
+    isExecuting.value = false
+    countdownTimer.value = 3
+    
+    intervalId = window.setInterval(() => {
+        countdownTimer.value--
+        if (countdownTimer.value <= 0) {
+            clearInterval(intervalId)
+            isCountingDown.value = false
+            startStep()
+        }
+    }, 1000)
+}
+
 const startStep = () => {
     isExecuting.value = true
     timer.value = 5
@@ -78,12 +113,7 @@ const finishStep = () => {
     }
     
     if (currentStep.value < gestures.value.length - 1) {
-        if (trainingMode.value === 'LLC') {
-            startRest()
-        } else {
-            currentStep.value++
-            timer.value = 5
-        }
+        startRest()
     } else {
         step.value = 'completed'
     }
@@ -91,7 +121,7 @@ const finishStep = () => {
 
 const startRest = () => {
     isResting.value = true
-    restTimer.value = 3
+    restTimer.value = 5
     intervalId = window.setInterval(() => {
         restTimer.value--
         if (restTimer.value <= 0) {
@@ -104,10 +134,7 @@ const endRest = () => {
     clearInterval(intervalId)
     isResting.value = false
     currentStep.value++
-    // Auto start next in LLC (Simulating)
-    setTimeout(() => {
-        startStep()
-    }, 500)
+    startCountdown()
 }
 
 const reset = () => {
@@ -116,9 +143,11 @@ const reset = () => {
     completedSteps.value = []
     gestures.value = []
     isResting.value = false
+    isCountingDown.value = false
 }
 
 const currentGesture = computed(() => gestures.value[currentStep.value] || null)
+const nextGesture = computed(() => gestures.value[currentStep.value + 1] || null)
 
 onUnmounted(() => clearInterval(intervalId))
 </script>
@@ -204,46 +233,111 @@ onUnmounted(() => clearInterval(intervalId))
            </div>
        </div>
 
-       <!-- TRAINING PHASE -->
-       <div v-else-if="step === 'training'" class="container-xl w-full">
-           <div class="flex justify-between items-center mb-8">
-                <div class="flex gap-3">
-                    <span class="badge badge-primary">Supervisada</span>
-                    <span class="badge badge-neutral">{{ trainingMode === 'TLC' ? 'Modo Guiado' : 'Modo Autónomo' }}</span>
+        <!-- PROTOCOLS PHASE -->
+        <div v-else-if="step === 'protocols'" class="container-sm">
+             <div class="card p-8 text-center">
+                 <div class="mb-8">
+                     <h2 class="text-2xl font-bold text-slate-900 mb-2">Protocolos de Inicio</h2>
+                     <p class="text-slate-500">Por favor confirme los siguientes pasos antes de comenzar</p>
+                 </div>
+
+                 <div class="grid md:grid-cols-3 gap-6 mb-8">
+                     <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
+                         <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3">
+                             <span class="text-xl">🧴</span>
+                         </div>
+                         <h3 class="font-bold text-slate-900 mb-1">Limpieza</h3>
+                         <p class="text-sm text-slate-500">Limpiar la piel con alcohol para mejorar la señal.</p>
+                     </div>
+                     
+                     <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
+                         <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-3">
+                             <div class="text-xl">🧠</div>
+                         </div>
+                         <h3 class="font-bold text-slate-900 mb-1">Concentración</h3>
+                         <p class="text-sm text-slate-500">Mantenga máxima atención durante los ejercicios.</p>
+                     </div>
+
+                     <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
+                         <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-3">
+                             <Maximize class="w-6 h-6" />
+                         </div>
+                         <h3 class="font-bold text-slate-900 mb-1">Pantalla Completa</h3>
+                         <p class="text-sm text-slate-500">La sesión se mostrará en pantalla completa.</p>
+                     </div>
+                 </div>
+
+                 <button class="btn btn-primary w-full py-4 text-lg justify-center shadow-lg hover:translate-y-[-2px] transition-transform" 
+                         @click="confirmProtocols">
+                         Entendido, Iniciar Sesión <CheckCircle2 class="ml-2 w-5 h-5" />
+                 </button>
+             </div>
+        </div>
+
+       <!-- TRAINING PHASE (FOCUS MODE) -->
+       <div v-else-if="step === 'training'" class="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center overflow-hidden">
+            
+            <!-- COUNTDOWN PHASE -->
+            <div v-if="isCountingDown" class="flex flex-col items-center animate-in fade-in duration-300">
+                <p class="text-4xl text-slate-400 font-light mb-8 uppercase tracking-widest">Estamos listos para comenzar</p>
+                <div class="text-[15rem] leading-none font-black text-slate-900 animate-bounce">
+                    {{ countdownTimer }}
                 </div>
-                <span class="text-sm font-medium text-slate-500">Gesto {{ currentStep + 1 }} de {{ gestures.length }}</span>
-           </div>
+            </div>
 
-           <GestureProgress :steps="gestures.length" :current-step="currentStep" :completed-steps="completedSteps" class="mb-8" />
+            <!-- EXECUTION & REST PHASE -->
+            <div v-else class="w-full h-full flex flex-col relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+                
+                <!-- Top Info -->
+                <div class="absolute top-12 left-0 right-0 flex justify-center">
+                     <div v-if="isResting" class="flex flex-col items-center">
+                         <div class="text-[8rem] leading-none font-bold text-slate-200">{{ restTimer }}</div>
+                         <p class="text-4xl font-bold text-slate-400 mt-2">DESCANSO</p>
+                     </div>
+                     <div v-else class="flex flex-col items-center">
+                         <div class="text-[12rem] leading-none font-black text-blue-600 font-numeric">{{ timer }}</div>
+                     </div>
+                </div>
 
-           <div class="grid-layout gap-8">
-               <div class="card col-main relative p-8 flex flex-col items-center justify-center min-h-[400px]">
-                    <div class="text-center mb-8">
-                        <h2 class="text-4xl font-bold text-slate-900 mb-2">{{ currentGesture?.name }}</h2>
-                        <p class="text-xl text-slate-400">{{ currentGesture?.nameEn }}</p>
-                    </div>
-
-                    <div v-if="isExecuting || isResting" class="flex flex-col items-center">
-                         <RadialTimer :time-remaining="isResting ? restTimer : timer" 
-                                      :total-time="isResting ? 3 : 5" 
-                                      :is-resting="isResting" />
-                         <p class="mt-6 text-lg font-medium" :class="isResting ? 'text-slate-400' : 'text-blue-600'">
-                            {{ isResting ? "Relaje el músculo..." : "Mantenga la contracción..." }}
+                <!-- Main Content (Centered) -->
+                <div class="flex-1 flex flex-col items-center justify-center p-8 z-10">
+                    <!-- Gesture Name -->
+                    <div class="text-center mb-12">
+                         <h2 class="text-[6rem] leading-tight font-black text-slate-900 tracking-tight">
+                             {{ isResting ? nextGesture?.name : currentGesture?.name }}
+                         </h2>
+                         <p class="text-4xl text-slate-400 font-light">
+                             {{ isResting ? nextGesture?.nameEn : currentGesture?.nameEn }}
                          </p>
                     </div>
 
-                    <div v-else class="flex flex-col items-center">
-                         <button class="btn-play" @click="startStep">
-                             <Play class="icon-xl ml-1" />
-                         </button>
-                         <p class="mt-4 text-slate-500 font-medium">Presione para iniciar</p>
+                    <!-- Hand Visualization -->
+                    <div class="w-[300px] h-[300px] opacity-100 transition-opacity duration-500">
+                         <PatientHandVisualization 
+                            :gesture="(isResting ? nextGesture?.name : currentGesture?.name) || ''" 
+                            :is-active="!isResting" 
+                         />
                     </div>
-               </div>
-               
-               <div class="col-side card p-4 bg-slate-50 border-slate-200">
-                   <PatientHandVisualization :gesture="currentGesture?.name || ''" :is-active="isExecuting" />
-               </div>
-           </div>
+                </div>
+
+                <!-- Bottom Bar -->
+                <div class="absolute bottom-0 w-full p-8 bg-white/90 backdrop-blur-sm border-t border-slate-100 flex justify-between items-end">
+                    <div v-if="!isResting && nextGesture" class="text-left">
+                        <p class="text-xl text-slate-400 font-bold uppercase tracking-widest mb-1">Siguiente Movimiento</p>
+                        <div class="flex items-baseline gap-4">
+                            <h3 class="text-5xl font-bold text-slate-300">{{ nextGesture.name }}</h3>
+                        </div>
+                    </div>
+                    <div v-else-if="isResting">
+                        <p class="text-xl text-slate-400">Respire profundo...</p>
+                    </div>
+                    
+                    <!-- Progress -->
+                    <div class="text-right">
+                        <p class="text-6xl font-black text-slate-100">{{ currentStep + 1 }}<span class="text-4xl text-slate-100">/{{ gestures.length }}</span></p>
+                    </div>
+                </div>
+            </div>
        </div>
 
        <!-- COMPLETED PHASE -->

@@ -7,12 +7,19 @@ const props = defineProps<{
 }>()
 
 // Mock visual logic: we will just show an SVG hand that highlights specific fingers based on gesture name
-// Gestures: "Puño Cerrado", "Mano Abierta", "Flexión Muñeca", "Extensión Muñeca", "Pinza Fina"
+// Gestures: Palm Down, Palm Up, Close Hand, Open Hand, Close Pinch, Open Pinch, Rest Hand, Point Index
+// We map these to visual states: 'closed', 'pinch', 'open', 'index'
 
 const fingerState = computed(() => {
     const g = props.gesture.toLowerCase()
-    if (g.includes('puño') || g.includes('closed')) return 'closed'
-    if (g.includes('pinza') || g.includes('pinch')) return 'pinch'
+    
+    // Explicit states
+    if (g.includes('close hand') || g.includes('cerrar mano')) return 'closed'
+    if (g.includes('close pinch') || g.includes('pinza cerrada')) return 'pinch'
+    if (g.includes('open pinch') || g.includes('pinza abierta')) return 'pinch-open' 
+    if (g.includes('point index') || g.includes('apuntar')) return 'index'
+    
+    // Default to open/relaxed for: Palm Down/Up, Open Hand, Rest Hand
     return 'open'
 })
 </script>
@@ -57,6 +64,17 @@ const fingerState = computed(() => {
 
 .pinch .index { transform: rotate(-15deg) translateY(20px); fill: #3b82f6; }
 .pinch .thumb { transform: rotate(15deg) translateX(10px); fill: #3b82f6; }
+
+/* Open Pinch - slightly separated but active color */
+.pinch-open .index { transform: rotate(-5deg); fill: #60a5fa; }
+.pinch-open .thumb { transform: rotate(5deg); fill: #60a5fa; }
+
+/* Index Pointing */
+.index .middle { height: 30px; y: 110px; fill: #64748b; }
+.index .ring { height: 30px; y: 110px; fill: #64748b; }
+.index .pinky { height: 30px; y: 110px; fill: #64748b; }
+.index .thumb { width: 30px; x: 50px; fill: #64748b; }
+.index .index { fill: #3b82f6; height: 80px; y: 50px; } /* Highlighted index */
 
 .pulse .hand-svg { filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5)); }
 
