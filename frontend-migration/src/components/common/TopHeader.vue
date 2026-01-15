@@ -8,10 +8,15 @@ import {
   LogOut
 } from 'lucide-vue-next'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   subtitle?: string
-}>()
+  showSearch?: boolean
+  showNotifications?: boolean
+}>(), {
+  showSearch: true,
+  showNotifications: true
+})
 
 const isUserMenuOpen = ref(false)
 const notificationCount = ref(3)
@@ -30,13 +35,13 @@ const toggleUserMenu = () => {
 
     <div class="header-right">
       <!-- Search -->
-      <div class="search-container hidden-sm">
+      <div v-if="showSearch" class="search-container hidden-sm">
         <Search class="search-icon" />
         <input type="text" placeholder="Buscar..." class="search-input" />
       </div>
 
       <!-- Notifications -->
-      <button class="icon-btn relative">
+      <button v-if="showNotifications" class="icon-btn relative">
         <Bell class="icon" />
         <span v-if="notificationCount > 0" class="badge-count">{{ notificationCount }}</span>
       </button>

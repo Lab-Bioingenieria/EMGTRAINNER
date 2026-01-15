@@ -9,7 +9,7 @@ const showSidebar = true
 
 <template>
   <div class="app-layout">
-     <AppSidebar />
+     <AppSidebar v-if="route.name !== 'Home'" />
      <main class="main-wrapper">
         <RouterView />
      </main>
