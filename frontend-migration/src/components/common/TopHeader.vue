@@ -34,17 +34,6 @@ const toggleUserMenu = () => {
     </div>
 
     <div class="header-right">
-      <!-- Search -->
-      <div v-if="showSearch" class="search-container hidden-sm">
-        <Search class="search-icon" />
-        <input type="text" placeholder="Buscar..." class="search-input" />
-      </div>
-
-      <!-- Notifications -->
-      <button v-if="showNotifications" class="icon-btn relative">
-        <Bell class="icon" />
-        <span v-if="notificationCount > 0" class="badge-count">{{ notificationCount }}</span>
-      </button>
 
       <!-- User Menu -->
       <div class="user-menu-container">
@@ -57,10 +46,6 @@ const toggleUserMenu = () => {
               <div class="dropdown-separator"></div>
               <button class="dropdown-item">Perfil</button>
               <button class="dropdown-item">Preferencias</button>
-              <div class="dropdown-separator"></div>
-              <button class="dropdown-item text-danger">
-                  <LogOut class="icon-xs mr-2" /> Cerrar sesión
-              </button>
           </div>
       </div>
     </div>

@@ -119,14 +119,16 @@ const sidebarClass = computed(() => collapsed.value ? 'collapsed' : 'expanded')
 
 /* Header */
 .sidebar-header {
-    border: #0f172a solid 1px;
     width: 100%;
     height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     /* border-bottom: 1px solid #f1f5f9; Optional: removed for cleaner look */
 }
 
 .logo-icon {
-    border: #0f172a solid 1px;
+    
     color: #2563eb;
     background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
     padding: 0.25rem;
@@ -142,11 +144,15 @@ const sidebarClass = computed(() => collapsed.value ? 'collapsed' : 'expanded')
 .logo-link {
     text-decoration: none;
     color: #0f172a;
-    width: 100%;
+    gap: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 
 .logo-text {
+
     font-weight: 700;
     font-size: 1.125rem;
     letter-spacing: -0.025em;
