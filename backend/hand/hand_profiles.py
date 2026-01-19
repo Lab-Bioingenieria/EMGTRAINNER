@@ -1,30 +1,30 @@
-# hand/hand_profiles.py
+from dataclasses import dataclass
+from typing import Dict, List
 
-HAND_PROFILES = {
-    "PROTESIS_2GDL": {
-        "motors": [1, 3, 4],
-        "velocity": 40,
-        "current": 200,
-        "gestures": {
-            "OPEN_HAND": {1: 2048, 3: 2048, 4: 2048},
-            "CLOSE_HAND": {1: 3000, 3: 3000, 4: 3000},
-            "PINCH": {1: 2800, 3: 2900, 4: 2200}
-        }
-    },
+@dataclass
+class FingerProfile:
+    motor_ids: List[int]
+    open_deg: float
+    close_deg: float
+    max_current_a: float
+    velocity: int
 
-    "PROTESIS_6GDL": {
-        "motors": list(range(1, 11)),
-        "velocity": 80,
-        "current": 300,
-        "gestures": {
-            "OPEN_HAND": {i: 2048 for i in range(1, 11)},
-            "POWER_GRASP": {
-                1: 3200, 2: 2600,
-                3: 3100, 4: 3000,
-                5: 3100, 6: 3000,
-                7: 3100, 8: 3000,
-                9: 3100, 10: 3000
-            }
-        }
+@dataclass
+class HandProfile:
+    name: str
+    fingers: Dict[str, FingerProfile]
+    sequence: List[str]   # Orden Anti-colisión
+
+# PERFIL: MANO 6 GDL – MULTI-GESTO
+SIX_DOF_HAND = HandProfile(
+    name="six_dof_prosthesis",
+    sequence=["index", "middle", "ring", "pinky", "thumb"], #"wrist"
+    fingers={
+        "index": FingerProfile(motor_ids=[4, 5],    open_deg=-10, close_deg=90, max_current_a=0.45,  velocity=20,),
+        "middle": FingerProfile(motor_ids=[6, 7],   open_deg=-10, close_deg=90, max_current_a=0.45,  velocity=20,),
+        "ring": FingerProfile( motor_ids=[8, 9],    open_deg=-10, close_deg=90, max_current_a=0.45,  velocity=20,),
+        "pinky": FingerProfile(motor_ids=[10, 11],  open_deg=-10, close_deg=90, max_current_a=0.45,  velocity=20,),
+        "thumb": FingerProfile(motor_ids=[1, 2, 3], open_deg=0,   close_deg=45, max_current_a=0.50,  velocity=15,),
+        #"wrist": FingerProfile(motor_ids=[12, 13],  open_deg=0, close_deg=30, max_current_a=0.6,  velocity=12,),
     }
-}
+)
