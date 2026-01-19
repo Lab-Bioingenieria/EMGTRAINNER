@@ -29,76 +29,92 @@ defineProps<CardHomeProps>()
       {{ description }}
     </p>
 
-    <RouterLink :to="to" class="card-button">
-      Acceder 
-      <span class="arrow">→</span>
-    </RouterLink>
+    <div class="card-footer">
+      <RouterLink :to="to" class="card-button">
+        Acceder 
+        <span class="arrow">→</span>
+      </RouterLink>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .card-home {
   background-color: #ffffff;
-  border: 1px solid #e5e7eb; /* Gris muy suave */
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 24px;
-  width: 100%;
-  max-width: 400px; /* O el ancho que prefieras */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 40px;
+  
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  font-family: 'Roboto', sans-serif; /* O la fuente que uses */
+  /* gap: 24px; */
+  font-family: 'Roboto', sans-serif;
 }
 
 .card-home:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .card-header {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 20px;
 }
 
 .icon-wrapper {
-  background-color: #f3f4f6; /* Fondo gris/azulado suave */
-  color: #0f172a; /* Color del icono oscuro */
+  background-color: #e0f2fe; /* Light Cyan/Blue */
+  color: #0284c7; /* Primary Blue from design */
+  min-width: 48px;
   width: 48px;
   height: 48px;
-  border-radius: 10px;
+  border-radius: 50%; /* Rounded or slightly rounded square? Image looks like rounded square but let's try rounded rect */
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+}
+
+/* Deep selector for the SVG icon passed in slot */
+:deep(.card-icon) {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2px;
 }
 
 .header-text {
   display: flex;
   flex-direction: column;
+  gap: 4px;
 }
 
 .card-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.125rem;
   font-weight: 700;
-  color: #111827;
+  color: #0f172a;
+  line-height: 1.4;
 }
 
 .card-subtitle {
   font-size: 0.875rem;
-  color: #6b7280; /* Gris texto secundario */
+  color: #64748b;
   font-weight: 500;
 }
 
 .card-description {
   margin: 0;
-  font-size: 0.95rem;
-  color: #4b5563;
-  line-height: 1.5;
-  flex-grow: 1; /* Para que todos los botones queden alineados abajo si hay varias cards */
+  font-size: 0.925rem;
+  color: #475569;
+  line-height: 1.6;
+  flex-grow: 1;
+}
+
+.card-footer {
+  margin-top: auto;
 }
 
 .card-button {
@@ -106,19 +122,20 @@ defineProps<CardHomeProps>()
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
-  background-color: #f3f4f6;
-  color: #1f2937;
+  padding: 8px 16px;
+  background-color: #f1f5f9;
+  color: #334155;
   text-decoration: none;
   font-weight: 600;
-  font-size: 0.9rem;
-  border-radius: 8px;
-  transition: background-color 0.2s;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  transition: all 0.2s;
   width: fit-content;
 }
 
 .card-button:hover {
-  background-color: #e5e7eb;
+  background-color: #e2e8f0;
+  color: #0f172a;
 }
 
 .arrow {
@@ -126,6 +143,6 @@ defineProps<CardHomeProps>()
 }
 
 .card-button:hover .arrow {
-  transform: translateX(3px);
+  transform: translateX(4px);
 }
 </style>

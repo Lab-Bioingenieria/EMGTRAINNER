@@ -7,16 +7,17 @@ import TopHeader from '../components/common/TopHeader.vue'
 <template>
   <div class="page-layout">
     <TopHeader 
-      title="MyoTrainer Pro" 
-      subtitle="Portal de acceso clínico y entrenamiento" 
+      title="MyoTrainer" 
+      :show-search="false"
+      :show-notifications="false"
     />
 
     <main class="content">
       <div class="container-xl">
-        <div class="hero-section text-center mb-10 mt-4">
+        <div class="hero-section text-center mb-10 mt-12">
           <h1 class="text-3xl font-bold text-slate-900 mb-3">Sistema de Entrenamiento sEMG</h1>
           <p class="text-slate-500 text-lg max-w-2xl mx-auto">
-            Plataforma clínica avanzada para la evaluación, entrenamiento y rehabilitación de pacientes con prótesis mioeléctricas.
+            Plataforma clínica para entrenamiento y evaluación de prótesis mioeléctricas
           </p>
         </div>
 
@@ -63,7 +64,7 @@ import TopHeader from '../components/common/TopHeader.vue'
 /* Grid */
 .grid-container {
   display: grid;
-  gap: 1.5rem;
+  gap: 4rem;
   grid-template-columns: 1fr;
 }
 

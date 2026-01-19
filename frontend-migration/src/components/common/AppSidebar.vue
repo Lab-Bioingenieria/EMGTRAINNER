@@ -119,13 +119,22 @@ const sidebarClass = computed(() => collapsed.value ? 'collapsed' : 'expanded')
 
 /* Header */
 .sidebar-header {
+    width: 100%;
     height: 4rem;
     display: flex;
     align-items: center;
-    padding: 0 1rem;
-    margin-bottom: 0.5rem;
+    justify-content: center;
     /* border-bottom: 1px solid #f1f5f9; Optional: removed for cleaner look */
 }
+
+.logo-icon {
+    
+    color: #2563eb;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    padding: 0.25rem;
+    border-radius: 8px;
+}
+
 
 .collapsed .sidebar-header {
     justify-content: center;
@@ -133,27 +142,17 @@ const sidebarClass = computed(() => collapsed.value ? 'collapsed' : 'expanded')
 }
 
 .logo-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
     text-decoration: none;
     color: #0f172a;
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
+    gap: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.logo-icon {
-    width: 2rem;
-    height: 2rem;
-    color: #2563eb;
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    padding: 0.25rem;
-    border-radius: 8px;
-    flex-shrink: 0;
-}
 
 .logo-text {
+
     font-weight: 700;
     font-size: 1.125rem;
     letter-spacing: -0.025em;

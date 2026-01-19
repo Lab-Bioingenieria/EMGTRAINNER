@@ -6,7 +6,7 @@ import RadialTimer from '../../components/patient/RadialTimer.vue'
 import PatientHandVisualization from '../../components/patient/PatientHandVisualization.vue'
 import { ALL_GESTURES } from '../../lib/constants'
 import type { Gesture } from '../../lib/constants'
-import { ChevronRight, Play, ArrowLeft, Activity, RefreshCw, Maximize, CheckCircle2 } from 'lucide-vue-next'
+import { ChevronRight, Play, Pause, ArrowLeft, Activity, RefreshCw, Maximize, CheckCircle2 } from 'lucide-vue-next'
 
 const emgSignals = ref([
     { id: 1, status: 'active' }, { id: 2, status: 'active' }, { id: 3, status: 'active' }
@@ -70,26 +70,13 @@ const startCountdown = () => {
     isResting.value = false
     isExecuting.value = false
     countdownTimer.value = 3
-    
-    intervalId = window.setInterval(() => {
-        countdownTimer.value--
-        if (countdownTimer.value <= 0) {
-            clearInterval(intervalId)
-            isCountingDown.value = false
-            startExecution()
-        }
-    }, 1000)
+    runTimer('countdown')
 }
 
 const startExecution = () => {
     isExecuting.value = true
     timer.value = 5
-    intervalId = window.setInterval(() => {
-        timer.value--
-        if (timer.value <= 0) {
-            completeGesture()
-        }
-    }, 1000)
+    runTimer('execution')
 }
 
 const completeGesture = () => {
@@ -109,14 +96,7 @@ const completeGesture = () => {
 const startRest = () => {
     isResting.value = true
     restTimer.value = 5
-    intervalId = window.setInterval(() => {
-        restTimer.value--
-        if (restTimer.value <= 0) {
-            clearInterval(intervalId)
-            currentStep.value++
-            startCountdown()
-        }
-    }, 1000)
+    runTimer('rest')
 }
 
 const resetSession = () => {
@@ -138,6 +118,55 @@ const confirmProtocols = () => {
 
 const backToModeSelection = () => {
     step.value = 'mode-selection'
+}
+
+// Controls
+const isPaused = ref(false)
+
+const togglePause = () => {
+    if (isPaused.value) {
+        isPaused.value = false
+        resumeTimer()
+    } else {
+        isPaused.value = true
+        clearInterval(intervalId)
+    }
+}
+
+const resumeTimer = () => {
+    if (isCountingDown.value) {
+        runTimer('countdown')
+    } else if (isExecuting.value) {
+        runTimer('execution')
+    } else if (isResting.value) {
+        runTimer('rest')
+    }
+}
+
+const runTimer = (phase: 'countdown' | 'execution' | 'rest') => {
+    clearInterval(intervalId)
+    intervalId = window.setInterval(() => {
+        if (phase === 'countdown') {
+            countdownTimer.value--
+            if (countdownTimer.value <= 0) {
+                clearInterval(intervalId)
+                isCountingDown.value = false
+                startExecution()
+            }
+        } else if (phase === 'execution') {
+            timer.value--
+            if (timer.value <= 0) {
+                completeGesture()
+            }
+        } else if (phase === 'rest') {
+            restTimer.value--
+            if (restTimer.value <= 0) {
+                clearInterval(intervalId)
+                currentStep.value++
+                startCountdown()
+            }
+        }
+    }, 1000)
 }
 
 const enterFullscreen = () => {
@@ -266,7 +295,7 @@ onUnmounted(() => clearInterval(intervalId))
              </button>
         </div>
 
-        <!-- PROTOCOLS PHASE -->
+        <!-- PROTOCOLS PHASE OJO KEVIN CON ESTO SE DEBE MODIFICAR -->
         <div v-else-if="step === 'protocols'" class="container-sm">
              <div class="card p-8 text-center">
                  <div class="mb-8">
@@ -344,6 +373,10 @@ onUnmounted(() => clearInterval(intervalId))
                          <div v-else class="flex flex-col items-center">
                              <div class="text-[12rem] leading-none font-black text-blue-600 font-numeric">{{ timer }}</div>
                          </div>
+                         
+                         <div v-if="isPaused" class="absolute top-40 bg-black/80 text-white px-8 py-4 rounded-full backdrop-blur-md animate-pulse">
+                             <span class="text-2xl font-bold tracking-widest uppercase">Pausa</span>
+                         </div>
                     </div>
 
                     <!-- Main Content (Centered) -->
@@ -380,6 +413,14 @@ onUnmounted(() => clearInterval(intervalId))
                             <p class="text-xl text-slate-400">Respire profundo...</p>
                         </div>
                         
+                        <!-- Controls -->
+                         <div class="absolute left-1/2 -translate-x-1/2 bottom-8">
+                             <button class="btn-play" @click="togglePause">
+                                 <Pause v-if="!isPaused" class="icon-xl" />
+                                 <Play v-else class="icon-xl ml-1" />
+                             </button>
+                         </div>
+
                         <!-- Progress -->
                         <div class="text-right">
                             <p class="text-6xl font-black text-slate-100">{{ currentStep + 1 }}<span class="text-4xl text-slate-100">/{{ gestures.length }}</span></p>
