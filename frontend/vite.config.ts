@@ -1,7 +1,33 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import vue from '@vitejs/plugin-vue'
+import glsl from 'vite-plugin-glsl'
+import { templateCompilerOptions } from '@tresjs/core'
+import { fileURLToPath, URL } from 'node:url'
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  base: './',
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
+  },
+  plugins: [
+    vue({
+      ...templateCompilerOptions,
+    }),
+    glsl(),
+  ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three'],
+        },
+      },
+    },
+  },
+  optimizeDeps: {
+    exclude: ['vue', 'three'],
+  },
 })
