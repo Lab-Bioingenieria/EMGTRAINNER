@@ -5,9 +5,11 @@ import GestureProgress from '../../components/patient/GestureProgress.vue'
 import RadialTimer from '../../components/patient/RadialTimer.vue'
 import PatientHandVisualization from '../../components/patient/PatientHandVisualization.vue'
 import PauseButton from '../../components/common/PauseButton.vue'
-import { ALL_GESTURES } from '../../lib/constants'
+import { ALL_GESTURES, DEFAULT_DEVICE_ID } from '../../lib/constants'
 import type { Gesture } from '../../lib/constants'
 import { ChevronRight, Play, Pause, ArrowLeft, Activity, RefreshCw, Maximize, CheckCircle2 } from 'lucide-vue-next'
+import { EmgService } from '../../services/emg.service'
+import { PatientService } from '../../services/patient.service'
 
 const emgSignals = ref([
     { id: 1, status: 'active' }, { id: 2, status: 'active' }, { id: 3, status: 'active' }
@@ -27,6 +29,7 @@ const currentStep = ref(0)
 const isExecuting = ref(false)
 const timer = ref(5)
 const completedSteps = ref<number[]>([])
+const currentOrderId = ref<string | null>(null)
 
 // Auto Flow State
 const isCountingDown = ref(false)
@@ -53,11 +56,23 @@ const toggleGesture = (g: Gesture) => {
     }
 }
 
-const startTraining = () => {
-    gestures.value = [...selectedGestures.value]
-    step.value = 'protocols'
-    currentStep.value = 0
-    completedSteps.value = []
+const startTraining = async () => {
+    try {
+        const order = await PatientService.createOrder({
+            device_id: DEFAULT_DEVICE_ID,
+            signal_types: ['EMG'], // Default
+            notes: `Training Mode: ${trainingMode.value}, Patient: ${patientName.value}`
+        })
+        currentOrderId.value = order.id
+        
+        gestures.value = [...selectedGestures.value]
+        step.value = 'protocols'
+        currentStep.value = 0
+        completedSteps.value = []
+    } catch (error) {
+        console.error("Failed to create order:", error)
+        alert("Error al crear la sesión. Verifique la conexión con el servidor.")
+    }
 }
 
 const startTrainingByFlow = () => {
@@ -109,7 +124,14 @@ const resetSession = () => {
     isCountingDown.value = false
 }
 
-const confirmProtocols = () => {
+const confirmProtocols = async () => {
+    if (currentOrderId.value) {
+        try {
+            await PatientService.startOrder(currentOrderId.value)
+        } catch (error) {
+            console.error("Failed to start order:", error)
+        }
+    }
     enterFullscreen()
     step.value = 'training'
     currentStep.value = 0
@@ -179,7 +201,30 @@ const enterFullscreen = () => {
     }
 }
 
-onUnmounted(() => clearInterval(intervalId))
+let pollingInterval: number
+
+const updateDeviceStatus = async () => {
+    const status = await EmgService.getDeviceStatus(DEFAULT_DEVICE_ID)
+    if (status.is_online) {
+        // Mock mapping if sensors are empty, or use real data
+        // For now, if online, set all to active
+        emgSignals.value = emgSignals.value.map(s => ({ ...s, status: 'active' }))
+    } else {
+        emgSignals.value = emgSignals.value.map(s => ({ ...s, status: 'inactive' }))
+    }
+}
+
+import { onMounted } from 'vue'
+
+onMounted(() => {
+    updateDeviceStatus()
+    pollingInterval = window.setInterval(updateDeviceStatus, 2000)
+})
+
+onUnmounted(() => {
+    clearInterval(intervalId)
+    clearInterval(pollingInterval)
+})
 </script>
 
 <template>
