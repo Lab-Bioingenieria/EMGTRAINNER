@@ -22,3 +22,7 @@ export interface EmgSignal {
     name: string;
     status: "active" | "warning" | "inactive";
 }
+
+export const API_BASE_URL = "http://localhost:8000/v1";
+export const DEFAULT_DEVICE_ID = "esp32-myo-1";
+
