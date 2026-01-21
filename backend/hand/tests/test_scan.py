@@ -1,4 +1,4 @@
-from hand.core.dynamixel_interface import DynamixelInterface
+from core.dynamixel_interface import DynamixelInterface
 
 def main():
     dx = DynamixelInterface(port_name="COM4")  # usa el COM correcto
