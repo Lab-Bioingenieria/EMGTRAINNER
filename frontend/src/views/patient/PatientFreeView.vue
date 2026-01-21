@@ -64,15 +64,17 @@ const startTraining = async () => {
             notes: `Training Mode: ${trainingMode.value}, Patient: ${patientName.value}`
         })
         currentOrderId.value = order.id
-        
-        gestures.value = [...selectedGestures.value]
-        step.value = 'protocols'
-        currentStep.value = 0
-        completedSteps.value = []
     } catch (error) {
-        console.error("Failed to create order:", error)
-        alert("Error al crear la sesión. Verifique la conexión con el servidor.")
+        console.error("Failed to create order (running offline):", error)
+        // Fallback for offline mode or server error
+        currentOrderId.value = `local-${Date.now()}`
     }
+
+    // Always proceed to protocols
+    gestures.value = [...selectedGestures.value]
+    step.value = 'protocols'
+    currentStep.value = 0
+    completedSteps.value = []
 }
 
 const startTrainingByFlow = () => {
@@ -233,7 +235,7 @@ onUnmounted(() => {
     
     <div class="content">
         <!-- MODE SELECTION PHASE -->
-        <div v-if="step === 'mode-selection'" class="container-sm">
+        <div v-if="step === 'mode-selection'" class="container-sm ">
              <div class="mb-6">
                 <router-link to="/patient" class="btn-ghost mb-2">
                     <ArrowLeft class="icon-sm mr-2" /> Volver
@@ -335,7 +337,7 @@ onUnmounted(() => {
              </div>
 
              <button class="btn btn-primary w-full py-3 justify-center" 
-                     :disabled="selectedGestures.length === 0 || activeSignals < 3"
+                     :disabled="selectedGestures.length === 0"
                      @click="startTraining">
                      Iniciar Entrenamiento <ChevronRight class="icon-sm ml-2" />
              </button>
@@ -349,29 +351,29 @@ onUnmounted(() => {
                      <p class="text-slate-500">Por favor confirme los siguientes pasos antes de comenzar</p>
                  </div>
 
-                 <div class="grid md:grid-cols-3 gap-6 mb-8">
-                     <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
-                         <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3">
-                             <span class="text-xl">🧴</span>
+                 <div class="Protocol-container">
+                     <div class="card">
+                         <div class="">
+                             <span class="icon-wrapper">🧴</span>
                          </div>
-                         <h3 class="font-bold text-slate-900 mb-1">Limpieza</h3>
-                         <p class="text-sm text-slate-500">Limpiar la piel con alcohol para mejorar la señal.</p>
+                         <h3 class="">Limpieza</h3>
+                         <p class="">Limpiar la piel con alcohol para mejorar la señal.</p>
                      </div>
                      
-                     <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
-                         <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-3">
-                             <div class="text-xl">🧠</div>
+                     <div class="card">
+                         <div class="">
+                             <span class="icon-wrapper">🧠</span>
                          </div>
-                         <h3 class="font-bold text-slate-900 mb-1">Concentración</h3>
-                         <p class="text-sm text-slate-500">Mantenga máxima atención durante los ejercicios.</p>
+                         <h3 class="">Concentración</h3>
+                         <p class="">Mantenga máxima atención durante los ejercicios.</p>
                      </div>
 
-                     <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
-                         <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-3">
-                             <Maximize class="w-6 h-6" />
+                     <div class="card">
+                         <div class="">
+                             <span class="icon-wrapper">🖥️</span>
                          </div>
-                         <h3 class="font-bold text-slate-900 mb-1">Pantalla Completa</h3>
-                         <p class="text-sm text-slate-500">La sesión se mostrará en pantalla completa.</p>
+                         <h3 class="">Pantalla Completa</h3>
+                         <p class="">La sesión se mostrará en pantalla completa.</p>
                      </div>
                  </div>
 
@@ -583,4 +585,35 @@ onUnmounted(() => {
 .icon-sm { width: 1.25rem; height: 1.25rem; }
 .ml-2 { margin-left: 0.5rem; }
 .mr-2 { margin-right: 0.5rem; }
+/* Protocol view */
+.Protocol-container {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.Protocol-container .card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+
+.Protocol-container .card .icon-wrapper {
+    gap: 1rem;
+    font-size: 5rem;
+}
+.Protocol-container .card h3 {
+    font-size: 3rem;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    padding: 1rem;
+}
+
+.Protocol-container .card p {
+    margin-top: 1rem;
+    font-size: 2rem;
+    text-align: center;
+}
 </style>
