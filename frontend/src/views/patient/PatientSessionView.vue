@@ -134,7 +134,7 @@ const endRest = () => {
     clearInterval(intervalId)
     isResting.value = false
     currentStep.value++
-    startCountdown()
+    startStep()
 }
 
 const reset = () => {
@@ -159,70 +159,72 @@ onUnmounted(() => clearInterval(intervalId))
     <div class="content flex-center-col">
        <!-- SELECTION PHASE -->
        <div v-if="step === 'selection'" class="container-sm">
-           <div class="text-center mb-8">
-               <h1 class="text-2xl font-bold text-slate-900">Iniciar Nueva Sesión</h1>
-               <p class="text-slate-500">Seleccione el modo de operación para comenzar</p>
+           <div class="header-center">
+               <h1 class="title-main">Iniciar Nueva Sesión</h1>
+               <p class="subtitle-main">Seleccione el modo de operación para comenzar</p>
            </div>
            
-           <div class="grid-2 gap-4">
+           <div class="grid-2 gap-cards">
                <!-- Supervised -->
-               <div class="card hoverable-card p-6" @click="selectMode('supervised')">
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="icon-circle bg-blue-50 text-blue-600"><Wifi class="icon" /></div>
+               <div class="card hoverable-card p-card" @click="selectMode('supervised')">
+                    <div class="card-header-row">
+                        <div class="icon-circle bg-blue-light text-blue">
+                            <Wifi class="icon-md" />
+                        </div>
                         <div>
-                            <h3 class="font-bold text-lg text-slate-900">Sesión Supervisada</h3>
+                            <h3 class="card-title-lg">Sesión Supervisada</h3>
                             <p class="text-xs text-muted">Requiere código de médico</p>
                         </div>
                     </div>
-                    <p class="text-sm text-slate-600 mb-4">Conéctese con su terapeuta para una sesión guiada en tiempo real.</p>
-                    <div class="text-right"><ChevronRight class="icon text-slate-300" /></div>
+                    <p class="text-desc">Conéctese con su terapeuta para una sesión guiada en tiempo real.</p>
+                    <div class="text-right"><ChevronRight class="icon-md text-slate-300" /></div>
                </div>
 
                <!-- Free -->
-               <div class="card hoverable-card p-6" @click="selectMode('free')">
-                     <div class="flex items-center gap-4 mb-4">
-                        <div class="icon-circle bg-indigo-50 text-indigo-600">
-                             <div class="text-xl">👤</div>
+               <div class="card hoverable-card p-card" @click="selectMode('free')">
+                     <div class="card-header-row">
+                        <div class="icon-circle bg-indigo-light text-indigo">
+                             <span class="emoji-md">👤</span>
                         </div>
                         <div>
-                            <h3 class="font-bold text-lg text-slate-900">Entrenamiento Libre</h3>
+                            <h3 class="card-title-lg">Entrenamiento Libre</h3>
                             <p class="text-xs text-muted">Sin supervisión</p>
                         </div>
                     </div>
-                    <p class="text-sm text-slate-600 mb-4">Practique gestos libremente y visualice las señales sEMG.</p>
-                    <div class="text-right"><ChevronRight class="icon text-slate-300" /></div>
+                    <p class="text-desc">Practique gestos libremente y visualice las señales sEMG.</p>
+                    <div class="text-right"><ChevronRight class="icon-md text-slate-300" /></div>
                </div>
            </div>
        </div>
 
        <!-- CODE PHASE -->
        <div v-else-if="step === 'code'" class="container-xs">
-           <div class="card p-8">
-               <div class="text-center mb-6">
-                   <h2 class="text-xl font-bold text-slate-900">Código de Sesión</h2>
-                   <p class="text-sm text-slate-500">Ingrese el código de 7 dígitos proporcionado</p>
+           <div class="card p-large">
+               <div class="header-center mb-6">
+                   <h2 class="title-section">Código de Sesión</h2>
+                   <p class="subtitle-text">Ingrese el código de 7 dígitos proporcionado</p>
                </div>
                
                <div class="mb-8">
                    <input v-model="sessionCode" maxlength="7" placeholder="XXX-XXX" class="input-code" />
                </div>
 
-               <div class="bg-slate-50 rounded-lg p-4 mb-6 border border-slate-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-sm font-medium text-slate-700">Estado de Sensores</span>
+               <div class="sensor-status-box mb-6">
+                    <div class="status-header mb-4">
+                        <span class="status-label">Estado de Sensores</span>
                         <span class="badge" :class="activeSignals >= 3 ? 'badge-success' : 'badge-error'">
                             {{ activeSignals >= 3 ? 'Listo' : 'Verificar' }}
                         </span>
                     </div>
-                    <div class="flex justify-center gap-4">
-                        <div v-for="s in emgSignals" :key="s.id" class="flex flex-col items-center gap-1">
-                            <div class="w-3 h-3 rounded-full" :class="s.status==='active'?'bg-green-500':'bg-red-500'"></div>
-                            <span class="text-xs text-slate-400 font-mono">CH{{s.id}}</span>
+                    <div class="sensor-indicators">
+                        <div v-for="s in emgSignals" :key="s.id" class="sensor-item">
+                            <div class="sensor-dot" :class="s.status==='active'?'bg-green':'bg-red'"></div>
+                            <span class="sensor-name">CH{{s.id}}</span>
                         </div>
                     </div>
                </div>
 
-               <div class="flex gap-3">
+               <div class="actions-row">
                    <button class="btn btn-outline flex-1" @click="step='selection'">Cancelar</button>
                    <button class="btn btn-primary flex-1" 
                            :disabled="sessionCode.length < 4 || activeSignals < 3"
@@ -235,84 +237,89 @@ onUnmounted(() => clearInterval(intervalId))
 
         <!-- PROTOCOLS PHASE -->
         <div v-else-if="step === 'protocols'" class="container-sm">
-             <div class="card p-8 text-center">
+             <div class="card p-large text-center">
                  <div class="mb-8">
-                     <h2 class="text-2xl font-bold text-slate-900 mb-2">Protocolos de Inicio</h2>
-                     <p class="text-slate-500">Por favor confirme los siguientes pasos antes de comenzar</p>
+                     <h2 class="title-2xl mb-2">Protocolos de Inicio</h2>
+                     <p class="subtitle-text">Por favor confirme los siguientes pasos antes de comenzar</p>
                  </div>
 
-                 <div class="grid md:grid-cols-3 gap-6 mb-8">
-                     <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
-                         <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3">
-                             <span class="text-xl">🧴</span>
+                 <div class="protocols-grid mb-8">
+                     <div class="protocol-card">
+                         <div class="protocol-icon bg-blue-light text-blue">
+                             <span class="emoji-lg">🧴</span>
                          </div>
-                         <h3 class="font-bold text-slate-900 mb-1">Limpieza</h3>
-                         <p class="text-sm text-slate-500">Limpiar la piel con alcohol para mejorar la señal.</p>
+                         <h3 class="protocol-title">Limpieza</h3>
+                         <p class="protocol-desc">Limpiar la piel con alcohol para mejorar la señal.</p>
                      </div>
                      
-                     <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
-                         <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-3">
-                             <div class="text-xl">🧠</div>
+                     <div class="protocol-card">
+                         <div class="protocol-icon bg-indigo-light text-indigo">
+                             <span class="emoji-lg">🧠</span>
                          </div>
-                         <h3 class="font-bold text-slate-900 mb-1">Concentración</h3>
-                         <p class="text-sm text-slate-500">Mantenga máxima atención durante los ejercicios.</p>
+                         <h3 class="protocol-title">Concentración</h3>
+                         <p class="protocol-desc">Mantenga máxima atención durante los ejercicios.</p>
                      </div>
 
-                     <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center">
-                         <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-3">
-                             <Maximize class="w-6 h-6" />
+                     <div class="protocol-card">
+                         <div class="protocol-icon bg-purple-light text-purple">
+                             <Maximize class="icon-md" />
                          </div>
-                         <h3 class="font-bold text-slate-900 mb-1">Pantalla Completa</h3>
-                         <p class="text-sm text-slate-500">La sesión se mostrará en pantalla completa.</p>
+                         <h3 class="protocol-title">Pantalla Completa</h3>
+                         <p class="protocol-desc">La sesión se mostrará en pantalla completa.</p>
                      </div>
                  </div>
 
-                 <button class="btn btn-primary w-full py-4 text-lg justify-center shadow-lg hover:translate-y-[-2px] transition-transform" 
+                 <button class="btn btn-primary w-full py-large flex-center shadow-hover" 
                          @click="confirmProtocols">
-                         Entendido, Iniciar Sesión <CheckCircle2 class="ml-2 w-5 h-5" />
+                         Entendido, Iniciar Sesión <CheckCircle2 class="icon-sm ml-2" />
                  </button>
              </div>
         </div>
 
        <!-- TRAINING PHASE (FOCUS MODE) -->
-       <div v-else-if="step === 'training'" class="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center overflow-hidden">
+       <div v-else-if="step === 'training'" class="fullscreen-overlay">
             
             <!-- COUNTDOWN PHASE -->
-            <div v-if="isCountingDown" class="flex flex-col items-center animate-in fade-in duration-300">
-                <p class="text-4xl text-slate-400 font-light mb-8 uppercase tracking-widest">Estamos listos para comenzar</p>
-                <div class="text-[15rem] leading-none font-black text-slate-900 animate-bounce">
+            <div v-if="isCountingDown" class="countdown-container animate-fade-in">
+                <p v-if="currentStep === 0" class="countdown-label">Estamos listos para comenzar</p>
+                <div class="countdown-number animate-bounce">
                     {{ countdownTimer }}
                 </div>
             </div>
 
             <!-- EXECUTION & REST PHASE -->
-            <div v-else class="w-full h-full flex flex-col relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div v-else class="execution-container animate-slide-up">
                 
                 <!-- Top Info -->
-                <div class="absolute top-12 left-0 right-0 flex justify-center">
-                     <div v-if="isResting" class="flex flex-col items-center">
-                         <div class="text-[8rem] leading-none font-bold text-slate-200">{{ restTimer }}</div>
-                         <p class="text-4xl font-bold text-slate-400 mt-2">DESCANSO</p>
+                <!-- Rest Overlay -->
+                <div v-if="isResting" class="rest-overlay-centered">
+                     <div class="timer-wrapper">
+                         <div class="timer-huge-rest">{{ restTimer }}</div>
+                         <p class="timer-label">DESCANSO</p>
                      </div>
-                     <div v-else class="flex flex-col items-center">
-                         <div class="text-[12rem] leading-none font-black text-blue-600 font-numeric">{{ timer }}</div>
+                </div>
+
+                <!-- Top Info (Execution) -->
+                <div v-else class="top-timer-container">
+                     <div class="timer-wrapper">
+                         <div class="timer-huge-exec">{{ timer }}</div>
                      </div>
                 </div>
 
                 <!-- Main Content (Centered) -->
-                <div class="flex-1 flex flex-col items-center justify-center p-8 z-10">
+                <div class="main-content">
                     <!-- Gesture Name -->
-                    <div class="text-center mb-12">
-                         <h2 class="text-[6rem] leading-tight font-black text-slate-900 tracking-tight">
+                    <div class="gesture-display">
+                         <h2 class="gesture-title-main">
                              {{ isResting ? nextGesture?.name : currentGesture?.name }}
                          </h2>
-                         <p class="text-4xl text-slate-400 font-light">
+                         <p class="gesture-subtitle-main">
                              {{ isResting ? nextGesture?.nameEn : currentGesture?.nameEn }}
                          </p>
                     </div>
 
                     <!-- Hand Visualization -->
-                    <div class="w-[300px] h-[300px] opacity-100 transition-opacity duration-500">
+                    <div class="visualization-box">
                          <PatientHandVisualization 
                             :gesture="(isResting ? nextGesture?.name : currentGesture?.name) || ''" 
                             :is-active="!isResting" 
@@ -321,20 +328,20 @@ onUnmounted(() => clearInterval(intervalId))
                 </div>
 
                 <!-- Bottom Bar -->
-                <div class="absolute bottom-0 w-full p-8 bg-white/90 backdrop-blur-sm border-t border-slate-100 flex justify-between items-end">
-                    <div v-if="!isResting && nextGesture" class="text-left">
-                        <p class="text-xl text-slate-400 font-bold uppercase tracking-widest mb-1">Siguiente Movimiento</p>
-                        <div class="flex items-baseline gap-4">
-                            <h3 class="text-5xl font-bold text-slate-300">{{ nextGesture.name }}</h3>
+                <div class="bottom-bar">
+                    <div v-if="!isResting && nextGesture" class="next-gesture-info">
+                        <p class="next-label">Siguiente Movimiento</p>
+                        <div class="next-content">
+                            <h3 class="next-name">{{ nextGesture.name }}</h3>
                         </div>
                     </div>
                     <div v-else-if="isResting">
-                        <p class="text-xl text-slate-400">Respire profundo...</p>
+                        <p class="breathing-text">Respire profundo...</p>
                     </div>
                     
                     <!-- Progress -->
-                    <div class="text-right">
-                        <p class="text-6xl font-black text-slate-100">{{ currentStep + 1 }}<span class="text-4xl text-slate-100">/{{ gestures.length }}</span></p>
+                    <div class="progress-info">
+                        <p class="progress-number">{{ currentStep + 1 }}<span class="progress-total">/{{ gestures.length }}</span></p>
                     </div>
                 </div>
             </div>
@@ -342,12 +349,12 @@ onUnmounted(() => clearInterval(intervalId))
 
        <!-- COMPLETED PHASE -->
        <div v-else class="container-xs">
-           <div class="card p-10 text-center">
-                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <span class="text-2xl">✓</span>
+           <div class="card p-extra text-center">
+                <div class="success-circle">
+                    <span class="check-mark">✓</span>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-900 mb-3">Sesión Completada</h2>
-                <p class="text-slate-500 mb-8">Sus datos han sido guardados correctamente.</p>
+                <h2 class="title-2xl mb-3">Sesión Completada</h2>
+                <p class="subtitle-text mb-8">Sus datos han sido guardados correctamente.</p>
                 <button class="btn btn-outline w-full" @click="reset">Volver al Inicio</button>
            </div>
        </div>
@@ -359,63 +366,153 @@ onUnmounted(() => clearInterval(intervalId))
 /* Standard Layout */
 .page-layout { display: flex; flex-direction: column; height: 100vh; background-color: #f8fafc; font-family: 'Roboto', sans-serif; }
 .content { flex: 1; overflow: auto; padding: 2rem; display: flex; flex-direction: column; }
-.flex-center-col { align-items: center; } /* For centering content vertically if needed, mostly for selection/code */
+.flex-center-col { align-items: center; }
 
+/* Containers */
 .container-xl { max-width: 1200px; margin: 0 auto; width: 100%; }
 .container-sm { max-width: 800px; margin: 0 auto; width: 100%; margin-top: 4rem; }
 .container-xs { max-width: 440px; margin: 0 auto; width: 100%; margin-top: 4rem; }
 
+/* Typography */
+.text-center { text-align: center; }
+.title-main { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
+.title-2xl { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+.title-section { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem; }
+.subtitle-main { color: #64748b; font-size: 1rem; }
+.subtitle-text { color: #64748b; font-size: 0.875rem; }
+.text-desc { color: #475569; font-size: 0.875rem; margin-bottom: 1rem; line-height: 1.5; }
+.text-muted { color: #94a3b8; }
+.card-title-lg { font-size: 1.125rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem; }
+.text-right { text-align: right; }
+
+/* Cards */
 .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
 .hoverable-card { transition: all 0.2s; cursor: pointer; }
-.hoverable-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-.p-6 { padding: 1.5rem; }
-.p-8 { padding: 2rem; }
-.p-10 { padding: 2.5rem; }
+.hoverable-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+.p-card { padding: 1.5rem; }
+.p-large { padding: 2rem; }
+.p-extra { padding: 2.5rem; }
+.header-center { text-align: center; margin-bottom: 2rem; }
+.card-header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 
 /* Grid */
 .grid-2 { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
 @media(min-width: 768px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
-.grid-layout { display: grid; grid-template-columns: 1fr; }
-@media(min-width: 1024px) { .grid-layout { grid-template-columns: 3fr 2fr; } }
+.gap-cards { gap: 1rem; }
 
-/* UI Elements */
+/* Icons & Badges */
 .icon-circle { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-.icon { width: 24px; height: 24px; }
-.bg-blue-50 { background-color: #eff6ff; } .text-blue-600 { color: #2563eb; }
-.bg-indigo-50 { background-color: #eef2ff; } .text-indigo-600 { color: #4f46e5; }
-.bg-green-100 { background-color: #dcfce7; } .text-green-600 { color: #16a34a; }
+.icon-md { width: 24px; height: 24px; }
+.icon-sm { width: 20px; height: 20px; }
+.emoji-md { font-size: 1.25rem; }
+.emoji-lg { font-size: 1.5rem; }
 
+.bg-blue-light { background-color: #eff6ff; } .text-blue { color: #2563eb; }
+.bg-indigo-light { background-color: #eef2ff; } .text-indigo { color: #4f46e5; }
+.bg-purple-light { background-color: #f3e8ff; } .text-purple { color: #9333ea; }
+.bg-green { background-color: #22c55e; }
+.bg-red { background-color: #ef4444; }
+.text-slate-300 { color: #cbd5e1; }
+
+.success-circle { width: 4rem; height: 4rem; background-color: #dcfce7; color: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; margin-bottom: 1.5rem; }
+.check-mark { font-size: 1.5rem; }
+
+/* Code Input Box */
 .input-code { 
     text-align: center; font-family: 'Roboto', monospace; font-size: 2rem; padding: 1rem; width: 100%; 
     border: 2px solid #e2e8f0; border-radius: 12px; letter-spacing: 0.25em; text-transform: uppercase; font-weight: 700; color: #0f172a;
-    transition: all 0.2s;
+    transition: all 0.2s; box-sizing: border-box;
 }
 .input-code:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 
-.btn { padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
-.btn-primary { background-color: #0f172a; color: white; }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-outline { background: white; border: 1px solid #e2e8f0; color: #0f172a; }
-.btn-play { 
-    width: 80px; height: 80px; border-radius: 50%; background-color: #2563eb; color: white; border: none; 
-    display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    transition: all 0.2s;
-}
-.btn-play:hover { transform: scale(1.05); background-color: #1d4ed8; }
-.icon-xl { width: 32px; height: 32px; }
-
+/* Sensor Status Box */
+.sensor-status-box { background-color: #f8fafc; border-radius: 0.5rem; padding: 1rem; border: 1px solid #f1f5f9; }
+.status-header { display: flex; justify-content: space-between; align-items: center; }
+.status-label { font-size: 0.875rem; font-weight: 500; color: #334155; }
+.sensor-indicators { display: flex; justify-content: center; gap: 1rem; }
+.sensor-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+.sensor-dot { width: 0.75rem; height: 0.75rem;border-radius: 50%; }
+.sensor-name { font-size: 0.75rem; color: #94a3b8; font-family: monospace; }
 .badge { display: inline-flex; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
-.badge-primary { background-color: #eff6ff; color: #2563eb; }
-.badge-neutral { background-color: #f1f5f9; color: #64748b; }
 .badge-success { background-color: #dcfce7; color: #16a34a; }
 .badge-error { background-color: #fee2e2; color: #dc2626; }
 
-.text-slate-900 { color: #0f172a; }
-.text-slate-500 { color: #64748b; }
-.text-slate-400 { color: #94a3b8; }
-.text-muted { color: #94a3b8; }
+/* Buttons */
+.btn { padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+.btn-primary { background-color: #0f172a; color: white; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-outline { background: white; border: 1px solid #e2e8f0; color: #0f172a; }
+.btn-outline:hover { background-color: #f8fafc; }
+.py-large { padding-top: 1rem; padding-bottom: 1rem; font-size: 1.125rem; }
+.flex-1 { flex: 1; }
+.actions-row { display: flex; gap: 0.75rem; }
+.shadow-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+.ml-2 { margin-left: 0.5rem; }
 
+/* Protocols Grid */
+.protocols-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+@media(min-width: 768px) { .protocols-grid { grid-template-columns: repeat(3, 1fr); } }
+.protocol-card { padding: 1rem; background-color: #f8fafc; border-radius: 0.75rem; border: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; }
+.protocol-icon { width: 3rem; height: 3rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; }
+.protocol-title { font-weight: 700; color: #0f172a; margin-bottom: 0.25rem; font-size: 1rem; }
+.protocol-desc { font-size: 0.875rem; color: #64748b; }
+
+/* Spacers */
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 0.75rem; }
 .mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
 .mb-8 { margin-bottom: 2rem; }
-.mt-6 { margin-top: 1.5rem; }
+
+/* Focus Mode / Fullscreen */
+.fullscreen-overlay { position: fixed; inset: 0; z-index: 50; background-color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; width: 100vw; height: 100vh; top: 0; left: 0; }
+
+.countdown-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; }
+.countdown-label { font-size: 2.25rem; color: #94a3b8; font-weight: 300; margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: center; }
+.countdown-number { font-size: 15rem; line-height: 1; font-weight: 900; color: #0f172a; }
+
+.execution-container { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
+
+.rest-overlay-centered { 
+    position: absolute; 
+    inset: 0; 
+    z-index: 50; 
+    background-color: white; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+}
+
+.top-timer-container { position: absolute; top: 3rem; left: 0; right: 0; display: flex; justify-content: center; z-index: 0; }
+.timer-wrapper { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.timer-huge-rest { font-size: 8rem; line-height: 1; font-weight: 700; color: #ef4444; }
+.timer-label { font-size: 2.25rem; font-weight: 700; color: #ef4444; margin-top: 0.5rem; letter-spacing: 0.1em; }
+.timer-huge-exec { font-size: 12rem; line-height: 1; font-weight: 900; color: #2563eb; font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+
+.main-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; z-index: 10; }
+.gesture-display { text-align: center; margin-bottom: 3rem; }
+.gesture-title-main { font-size: 6rem; line-height: 1.1; font-weight: 900; color: #0f172a; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+.gesture-subtitle-main { font-size: 2.25rem; color: #94a3b8; font-weight: 300; }
+
+.visualization-box { width: 300px; height: 300px; transition: opacity 0.5s; }
+
+.bottom-bar { position: absolute; bottom: 0; width: 100%; padding: 2rem; background-color: rgba(255,255,255,0.9); backdrop-filter: blur(4px); border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: flex-end; box-sizing: border-box; }
+.next-label { font-size: 1.25rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem; }
+.next-name { font-size: 3rem; font-weight: 700; color: #cbd5e1; margin: 0; }
+.breathing-text { font-size: 1.25rem; color: #94a3b8; }
+.progress-number { font-size: 3.75rem; font-weight: 900; color: #f1f5f9; margin: 0; }
+.progress-total { font-size: 2.25rem; color: #f1f5f9; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+
+/* Animations */
+@keyframes bounce { 
+    0%, 100% { transform: translateY(-10%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+    50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); }
+}
+.animate-bounce { animation: bounce 1s infinite; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+@keyframes slide-up { from { opacity: 0; transform: translateY(2rem); } to { opacity: 1; transform: translateY(0); } }
+.animate-slide-up { animation: slide-up 0.5s ease-out forwards; }
 </style>
