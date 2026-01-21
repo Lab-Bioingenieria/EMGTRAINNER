@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import TopHeader from '../../components/common/TopHeader.vue'
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted, shallowRef, markRaw } from 'vue'
 import { 
     Cpu, Activity, Zap, CheckCircle2, AlertTriangle, 
-    RefreshCcw, Settings, Terminal
+    RefreshCcw, Settings, Terminal, Wifi, WifiOff
 } from 'lucide-vue-next'
+import { TresCanvas } from '@tresjs/core'
+import { OrbitControls, ContactShadows } from '@tresjs/cientos'
+import { HealthService } from '../../services/health.service'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { Box3, Vector3 } from 'three'
+import type { Group } from 'three'
+
+// 3D Model state
+const modelScene = ref<Group | null>(null)
+const modelLoading = ref(true)
 
 const systemStatus = ref([
     { name: "MyoArm Band Device", status: "online", ping: "24ms", version: "v2.1.0" },
@@ -21,11 +31,85 @@ const calibrationSteps = ref([
 ])
 
 const isRunningTest = ref(false)
+const isConnected = ref(false)
+const connectionDetails = ref("Buscando dispositivo...")
+let healthCheckInterval: number | null = null
+
+const checkConnection = async () => {
+    const data = await HealthService.checkPorts()
+    if (data.count > 0) {
+        isConnected.value = true
+        // Assuming the first port is our device for this demo
+        const port = data.ports[0]
+        connectionDetails.value = `${port.port} - ${port.description}`
+    } else {
+        isConnected.value = false
+        connectionDetails.value = "No se detecta dispositivo conectado"
+    }
+}
 
 const startTest = () => {
     isRunningTest.value = true
     setTimeout(() => isRunningTest.value = false, 2000)
 }
+
+// Load 3D model
+const loadModel = () => {
+    try {
+        console.log('🚀 Starting model load...')
+        const loader = new GLTFLoader()
+        loader.load(
+            '/models/ESP32Wroom.glb',
+            (gltf) => {
+                console.log('✅ Model loaded successfully', gltf)
+                
+                // Get the scene from GLTF
+                const scene = gltf.scene
+                
+                // Calculate bounding box to center the model
+                const box = new Box3().setFromObject(scene)
+                const center = new Vector3()
+                box.getCenter(center)
+                
+                // Offset the model so its center is at the origin
+                scene.position.x = -center.x
+                scene.position.y = -center.y
+                scene.position.z = -center.z
+                
+                // Apply a large scale to make the model visible
+                scene.scale.set(50, 50, 50)
+                
+                console.log('🔧 Model centered and scaled')
+                console.log('📦 Center offset:', center)
+                
+                // Use markRaw to prevent Vue from making the scene reactive
+                modelScene.value = markRaw(scene)
+                modelLoading.value = false
+            },
+            (progress) => {
+                const percent = (progress.loaded / progress.total) * 100
+                console.log('⏳ Loading progress:', percent.toFixed(1), '%')
+            },
+            (error) => {
+                console.error('❌ Error loading model:', error)
+                modelLoading.value = false
+            }
+        )
+    } catch (error) {
+        console.error('❌ Exception in loadModel:', error)
+        modelLoading.value = false
+    }
+}
+
+onMounted(() => {
+    loadModel()
+    checkConnection()
+    healthCheckInterval = setInterval(checkConnection, 2000) as unknown as number
+})
+
+onUnmounted(() => {
+    if (healthCheckInterval) clearInterval(healthCheckInterval)
+})
 </script>
 
 <template>
@@ -68,15 +152,45 @@ const startTest = () => {
                            </div>
                       </div>
 
-                      <div class="card p-6">
-                           <h3 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                               <Activity class="icon-sm text-blue-600" /> Live Signal Preview (Test)
-                           </h3>
-                           <div class="h-48 bg-slate-50 rounded-lg border border-slate-200 flex-center flex-col text-slate-400">
-                                <Activity class="h-8 w-8 mb-2 opacity-50" />
-                                <span class="text-sm">Signal canvas would render here</span>
+                       <div class="card p-6 relative overflow-hidden">
+                           <div class="flex items-center justify-between mb-4 z-10 relative">
+                               <h3 class="font-bold text-slate-900 flex items-center gap-2">
+                                   <Activity class="icon-sm text-blue-600" /> Vista del Dispositivo
+                               </h3>
+                               <div class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold"
+                                    :class="isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                                   <Wifi v-if="isConnected" class="w-3 h-3" />
+                                   <WifiOff v-else class="w-3 h-3" />
+                                   {{ isConnected ? 'CONECTADO' : 'DESCONECTADO' }}
+                               </div>
                            </div>
-                      </div>
+                           <!-- Model Viewer 
+                            <div class="model-viewer-container">
+                                <TresCanvas class="tres-canvas-fixed">
+                                    <TresPerspectiveCamera :position="[2, 2, 2]" :fov="60" />
+                                    <OrbitControls :enable-damping="true" :auto-rotate="true" :auto-rotate-speed="1" />
+                                    
+                                    <TresAmbientLight :intensity="3" />
+                                    <TresDirectionalLight :position="[5, 5, 5]" :intensity="2" />
+                                    <TresDirectionalLight :position="[-5, 5, -5]" :intensity="1.5" />
+                                    <TresDirectionalLight :position="[0, 10, 0]" :intensity="1" />
+                                    
+                                    <primitive v-if="modelScene" :object="modelScene" />
+                                    <TresMesh v-else :position="[0, 0, 0]">
+                                        <TresBoxGeometry :args="[1, 1, 1]" />
+                                        <TresMeshStandardMaterial color="#3b82f6" />
+                                    </TresMesh>
+                                    
+                                    <TresGridHelper :args="[10, 10]" />
+                                    <ContactShadows :opacity="0.3" :blur="2" />
+                                </TresCanvas>
+                                
+                                <div class="status-overlay">
+                                    <div class="text-xs font-mono text-slate-500 mb-1">STATUS DEL PUERTO</div>
+                                    <div class="font-semibold text-slate-800 text-sm truncate">{{ connectionDetails }}</div>
+                                </div>
+                           </div>-->
+                       </div>
                  </div>
 
                  <!-- Side Panel -->
@@ -173,6 +287,41 @@ const startTest = () => {
 .mr-2 { margin-right: 0.5rem; }
 .mb-6 { margin-bottom: 1.5rem; }
 .mt-1 { margin-top: 0.25rem; }
+
+/* 3D Model Viewer Styles */
+.model-viewer-container {
+    position: relative;
+    width: 100%;
+    height: 16rem; /* 256px - h-64 equivalent */
+    background-color: #0f172a;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.tres-canvas-fixed {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+.status-overlay {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.model-viewer-container:hover .status-overlay {
+    bottom: 1rem;
+}
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
 </style>
