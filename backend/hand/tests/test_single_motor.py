@@ -1,8 +1,8 @@
 from core.dynamixel_interface import DynamixelInterface
 import time
 
-TEST_MOTOR_ID = 4          # Solo un motor
-DELTA_DEG = 30              # movimiento pequeño
+TEST_MOTOR_ID = 15          # Solo un motor
+DELTA_DEG = 45              # movimiento pequeño
 
 def main():
     dx = DynamixelInterface()

@@ -1,7 +1,7 @@
 from core.dynamixel_interface import DynamixelInterface
 
 def main():
-    dx = DynamixelInterface(port_name="COM4")  # usa el COM correcto
+    dx = DynamixelInterface(port_name="COM4")
     dx.initialize()
     ids = dx.scan_motors()
     print("Motores detectados:", ids)

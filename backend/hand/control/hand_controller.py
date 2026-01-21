@@ -1,7 +1,8 @@
 from models.gestures import GESTURES
 from models.hand_profiles import HandProfile, apply_hand_orientation
+from core.dynamixel_interface import DynamixelInterface
 
-def initialize_hand_profile(dx, profile: HandProfile):
+def initialize_hand_profile(dx: DynamixelInterface, profile: HandProfile):
     for finger in profile.fingers.values():
         for motor in finger.motors.values():
             if motor.locked:
@@ -9,7 +10,7 @@ def initialize_hand_profile(dx, profile: HandProfile):
             else:
                 dx.configure_free_motor(motor.motor_id, motor.max_current_a)
 
-def move_hand_profile(dx, profile: HandProfile, gesture_name: str):
+def execute_gesture(dx: DynamixelInterface, profile: HandProfile, gesture_name: str) -> None:
     if gesture_name not in GESTURES:
         raise ValueError(f"[ERROR] - Gesto no definido: {gesture_name}")
     if profile.name not in GESTURES[gesture_name]:

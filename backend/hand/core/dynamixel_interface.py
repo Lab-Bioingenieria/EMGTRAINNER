@@ -2,9 +2,9 @@ import time
 from typing import List
 import dynamixel_sdk as dxl
 
-# CONFIGURACIÓN GENERAL
+# CONFIGURACION GENERAL
 PROTOCOL_VERSION = 2.0
-PORT_NAME = "/dev/ttyUSB0"
+PORT_NAME = "COM4"
 DEFAULT_BAUDRATE = 1000000
 
 TORQUE_ENABLE = 1
@@ -22,9 +22,9 @@ ADDR_PRESENT_POSITION = 132
 
 POSITION_MODE = 3
 
-# PARÁMETROS DE SEGURIDAD
+# PARAMETROS DE SEGURIDAD
 TORQUE_CONSTANT_NM_PER_AMP = 0.0011
-MAX_CURRENT_A = 0.6               # límite seguro
+MAX_CURRENT_A = 0.6               # limite seguro
 DEFAULT_PROFILE_VELOCITY = 20
 DEFAULT_PROFILE_ACCELERATION = 10
 
@@ -42,7 +42,7 @@ MOTOR_GROUPS = {
 # CLASE PRINCIPAL
 class DynamixelInterface:
     CURRENT_UNIT_TO_AMP = 0.00269     # XL330 datasheet
-    DEFAULT_CURRENT_LIMIT_UNITS = int(0.8 / CURRENT_UNIT_TO_AMP)  # ≈297
+    DEFAULT_CURRENT_LIMIT_UNITS = int(0.8 / CURRENT_UNIT_TO_AMP)  # =297
 
     def __init__(self, port_name: str = PORT_NAME, baudrate: int = DEFAULT_BAUDRATE):
         self.port_handler = dxl.PortHandler(port_name)
@@ -50,7 +50,7 @@ class DynamixelInterface:
         self.baudrate = baudrate
         self.detected_ids: List[int] = []
 
-    # INICIALIZACIÓN
+    # INICIALIZACION
     def initialize(self):
         if not self.port_handler.openPort():
             raise RuntimeError("[ERROR] - No se pudo abrir el puerto serie")
@@ -60,7 +60,7 @@ class DynamixelInterface:
 
         print(f"[OK] - Puerto {PORT_NAME} abierto a {self.baudrate} bps")
 
-    def scan_motors(self, id_range=range(1, 15)) -> List[int]:
+    def scan_motors(self, id_range=range(1, 16)) -> List[int]:
         self.detected_ids.clear()
         for motor_id in id_range:
             _, result, _ = self.packet_handler.ping(self.port_handler, motor_id)
@@ -69,7 +69,7 @@ class DynamixelInterface:
                 print(f"[OK] - Motor detectado ID {motor_id}")
         return self.detected_ids
 
-    # CONFIGURACIÓN SEGURA
+    # CONFIGURACION SEGURA
     def set_operating_mode(self, motor_id: int, mode: int):
         self.disable_torque(motor_id)
         self.packet_handler.write1ByteTxRx(self.port_handler, motor_id, ADDR_OPERATING_MODE, mode)
@@ -110,14 +110,14 @@ class DynamixelInterface:
 
     # MOVIMIENTO SEGURO
     def move_motor_safe(self, motor_id: int, goal_position: int, timeout_s: float = 1.0):
-        # Configuración previa obligatoria
+        # Configuracion previa obligatoria
         self.set_operating_mode(motor_id, POSITION_MODE)
         self.set_current_limit(motor_id, self.DEFAULT_CURRENT_LIMIT_UNITS)
         self.set_profile_velocity(motor_id, DEFAULT_PROFILE_VELOCITY)
         self.set_profile_acceleration(motor_id, DEFAULT_PROFILE_ACCELERATION)
         self.enable_torque(motor_id)
 
-        # Enviar posición objetivo
+        # Enviar posicion objetivo
         self.packet_handler.write4ByteTxRx(self.port_handler, motor_id, ADDR_GOAL_POSITION, goal_position)
 
         start_time = time.time()
