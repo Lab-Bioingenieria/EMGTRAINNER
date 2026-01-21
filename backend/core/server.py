@@ -58,14 +58,15 @@ def make_middleware() -> List[Middleware]:
             backend=AuthBackend(),
             on_error=on_auth_error,
         ),
-        Middleware(SQLAlchemyMiddleware),
+        # Middleware(SQLAlchemyMiddleware),
         Middleware(ResponseLoggerMiddleware),
     ]
     return middleware
 
 
 def init_cache() -> None:
-    Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
+    pass
+    # Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
 
 
 def create_app() -> FastAPI:
@@ -80,7 +81,7 @@ def create_app() -> FastAPI:
     )
     init_routers(app_=app_)
     init_listeners(app_=app_)
-    init_cache()
+    # init_cache()
     return app_
 
 
