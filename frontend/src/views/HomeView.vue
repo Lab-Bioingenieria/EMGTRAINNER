@@ -14,9 +14,9 @@ import TopHeader from '../components/common/TopHeader.vue'
 
     <main class="content">
       <div class="container-xl">
-        <div class="hero-section text-center mb-10 mt-12">
-          <h1 class="text-3xl font-bold text-slate-900 mb-3">Sistema de Entrenamiento sEMG</h1>
-          <p class="text-slate-500 text-lg max-w-2xl mx-auto">
+        <div class="hero-section">
+          <h1 class="hero-title">Sistema de Entrenamiento sEMG</h1>
+          <p class="hero-subtitle">
             Plataforma clínica para entrenamiento y evaluación de prótesis mioeléctricas
           </p>
         </div>
@@ -48,29 +48,22 @@ import TopHeader from '../components/common/TopHeader.vue'
 .container-xl { max-width: 1024px; margin: 0 auto; width: 100%; }
 
 /* Hero */
-.hero-section { margin-bottom: 3rem; }
-.text-center { text-align: center; }
-.mx-auto { margin-left: auto; margin-right: auto; }
-.max-w-2xl { max-width: 42rem; }
-.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
-.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
-.font-bold { font-weight: 700; }
-.text-slate-900 { color: #0f172a; }
-.text-slate-500 { color: #64748b; }
-.mb-3 { margin-bottom: 0.75rem; }
-.mb-10 { margin-bottom: 2.5rem; }
-.mt-4 { margin-top: 1rem; }
+.hero-section { margin-bottom: 3rem; margin-top: 3rem; text-align: center; }
+.hero-title { font-size: 2rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; line-height: 1.2; }
+.hero-subtitle { font-size: 1.125rem; color: #64748b; max-width: 42rem; margin: 0 auto; line-height: 1.6; }
 
 /* Grid */
 .grid-container {
   display: grid;
-  gap: 4rem;
+  gap: 2rem;
   grid-template-columns: 1fr;
+  padding-bottom: 2rem;
 }
 
 @media (min-width: 768px) {
   .grid-container {
     grid-template-columns: repeat(2, 1fr);
+    gap: 3rem;
   }
 }
 

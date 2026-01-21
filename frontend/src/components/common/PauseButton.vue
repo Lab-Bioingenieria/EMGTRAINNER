@@ -14,7 +14,7 @@ defineEmits<{
   <button class="btn-play" @click="$emit('toggle')">
     <component :is="isPaused ? Play : Pause" class="icon-xl" />
     <span v-if="isPaused" class="sr-only">Resume</span>
-    <span v-else class="sr-only">Pause</span>
+    <span v-else class="sr-only"></span>
   </button>
 </template>
 
