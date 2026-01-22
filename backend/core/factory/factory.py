@@ -1,7 +1,6 @@
 from functools import partial
 
 from fastapi import Depends
-from core.use_cases.training_session_runner import TrainingSessionUseCase
 
 from app.controllers import AuthController, TaskController, UserController
 from app.models import Task, User
@@ -33,6 +32,3 @@ class Factory:
         return AuthController(
             user_repository=self.user_repository(db_session=db_session),
         )
-
-    def get_training_session_use_case(self):
-        return TrainingSessionUseCase()
