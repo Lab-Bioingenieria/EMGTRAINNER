@@ -1,6 +1,6 @@
-from models.gestures import GESTURES
-from models.hand_profiles import HandProfile, apply_hand_orientation
-from core.dynamixel_interface import DynamixelInterface
+from ..models.gestures import GESTURES
+from ..models.hand_profiles import HandProfile, apply_hand_orientation
+from ..core.dynamixel_interface import DynamixelInterface
 
 def initialize_hand_profile(dx: DynamixelInterface, profile: HandProfile):
     for finger in profile.fingers.values():

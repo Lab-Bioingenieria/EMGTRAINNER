@@ -18,4 +18,7 @@ services:
     devices:
       - /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0
       - /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
+    environment:
+      DYNAMIXEL_PORT: /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0
+      EMG_PORT: /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
     restart: unless-stopped

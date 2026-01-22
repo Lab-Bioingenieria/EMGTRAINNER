@@ -1,7 +1,13 @@
-from core.dynamixel_interface import DynamixelInterface
+import  os
+from hand.core.dynamixel_interface import DynamixelInterface
 
 def main():
-    dx = DynamixelInterface(port_name="COM4")
+    port = os.getenv(
+            "DYNAMIXEL_PORT",
+            "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0"
+        )
+
+    dx = DynamixelInterface(port)
     dx.initialize()
     ids = dx.scan_motors()
     print("Motores detectados:", ids)

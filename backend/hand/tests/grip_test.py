@@ -1,8 +1,8 @@
-from core.dynamixel_interface import DynamixelInterface
-from control.hand_controller import move_hand_profile
-from models.hand_profiles import SIX_DOF_HAND, TWO_MOTORS
-from core.physics import (current_to_torque_nm, torque_to_fingertip_force, total_grip_force,)
-from models.anthropometry import get_finger_length_m
+from hand.core.dynamixel_interface import DynamixelInterface
+from hand.control.hand_controller import execute_gesture
+from hand.models.hand_profiles import SIX_DOF_HAND, TWO_MOTORS
+from hand.core.physics import (current_to_torque_nm, torque_to_fingertip_force, total_grip_force,)
+from hand.models.anthropometry import get_finger_length_m
 
 def main():
     dx = DynamixelInterface(port_name="COM4")
@@ -10,7 +10,7 @@ def main():
     dx.scan_motors()
 
     print("[TEST] - Ejecutando gesto REST")
-    move_hand_profile(dx, TWO_MOTORS, gesture_name="REST")
+    execute_gesture(dx, TWO_MOTORS, gesture_name="REST")
 
     finger_forces = {}
 

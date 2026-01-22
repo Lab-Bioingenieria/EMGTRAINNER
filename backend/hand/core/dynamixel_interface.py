@@ -4,7 +4,7 @@ import dynamixel_sdk as dxl
 
 # CONFIGURACION GENERAL
 PROTOCOL_VERSION = 2.0
-PORT_NAME = "COM4"
+
 DEFAULT_BAUDRATE = 1000000
 
 TORQUE_ENABLE = 1
@@ -43,11 +43,13 @@ MOTOR_GROUPS = {
 class DynamixelInterface:
     CURRENT_UNIT_TO_AMP = 0.00269     # XL330 datasheet
     DEFAULT_CURRENT_LIMIT_UNITS = int(0.8 / CURRENT_UNIT_TO_AMP)  # =297
-
-    def __init__(self, port_name: str = PORT_NAME, baudrate: int = DEFAULT_BAUDRATE):
+    
+    def __init__(self, port_name: str, baudrate: int = DEFAULT_BAUDRATE):
+        self.port_name = port_name
+        self.baudrate = baudrate
+        
         self.port_handler = dxl.PortHandler(port_name)
         self.packet_handler = dxl.PacketHandler(PROTOCOL_VERSION)
-        self.baudrate = baudrate
         self.detected_ids: List[int] = []
 
     # INICIALIZACION
@@ -58,7 +60,7 @@ class DynamixelInterface:
         if not self.port_handler.setBaudRate(self.baudrate):
             raise RuntimeError("[ERROR] - No se pudo configurar el baudrate")
 
-        print(f"[OK] - Puerto {PORT_NAME} abierto a {self.baudrate} bps")
+        print(f"[OK] - Puerto {self.port_name} abierto a {self.baudrate} bps")
 
     def scan_motors(self, id_range=range(1, 16)) -> List[int]:
         self.detected_ids.clear()

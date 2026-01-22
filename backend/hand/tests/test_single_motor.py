@@ -1,11 +1,16 @@
-from core.dynamixel_interface import DynamixelInterface
+from hand.core.dynamixel_interface import DynamixelInterface
 import time
+import os
 
 TEST_MOTOR_ID = 15          # Solo un motor
 DELTA_DEG = 45              # movimiento pequeño
 
 def main():
-    dx = DynamixelInterface()
+    port = os.getenv(
+            "DYNAMIXEL_PORT",
+            "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0"
+        )
+    dx = DynamixelInterface(port_name=port)
     dx.initialize()
     dx.scan_motors()
 
