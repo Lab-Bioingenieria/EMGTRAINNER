@@ -24,6 +24,8 @@ class HandProfile:
     fingers: Dict[str, FingerProfile]
     locked_motors: List[int]
 
+# Utilidades
+
 def apply_hand_orientation(angle: float, motor: MotorConfig, side: HandSide):
     if motor.inverted:
         return -angle
@@ -31,9 +33,10 @@ def apply_hand_orientation(angle: float, motor: MotorConfig, side: HandSide):
         return -angle
     return angle
 
+# Perfiles de Protesis
 
-SIX_DOF_HAND = HandProfile(
-    name="Six_DOF_Right",
+ELEVEN_DOF_HAND = HandProfile(
+    name="Eleven_DOF_Right",
     side="RIGHT",
     locked_motors=[12, 13],
     fingers={
@@ -41,8 +44,53 @@ SIX_DOF_HAND = HandProfile(
             "thumb",
             motors={
                 "MCP_FE": MotorConfig(1, 0, 60, 30, 0.8),
-                "CMC_AA": MotorConfig(2, 0, 40, 20, 0.8),
-                "CMC_FE": MotorConfig(3, 0, 70, 45, 0.8),
+                "CMC_AA": MotorConfig(2, 0, 60, 20, 0.8),
+                "CMC_FE": MotorConfig(3, 0, 45, 0, 0.8),
+            },
+        ),
+        "index": FingerProfile(
+            "index",
+            motors={
+                "PIP": MotorConfig(4, 0, 90, 45, 0.8),
+                "MCP": MotorConfig(5, 0, 90, 30, 0.8),
+            },
+        ),
+        "middle": FingerProfile(
+            "middle",
+            motors={
+                "PIP": MotorConfig(6, 0, 90, 55, 0.8),
+                "MCP": MotorConfig(7, 0, 90, 35, 0.8),
+            },
+        ),
+        "ring": FingerProfile(
+            "ring",
+            motors={
+                "PIP": MotorConfig(8, 0, 90, 45, 0.8),
+                "MCP": MotorConfig(9, 0, 90, 40, 0.8),
+            },
+        ),
+        "pinky": FingerProfile(
+            "pinky",
+            motors={
+                "PIP": MotorConfig(10, 0, 90, 35, 0.8),
+                "MCP": MotorConfig(11, 0, 90, 45, 0.8),
+            },
+        ),
+    },
+)
+
+
+SIX_DOF_HAND = HandProfile(
+    name="Six_DOF_Right",
+    side="RIGHT",
+    locked_motors=[3,12, 13],
+    fingers={
+        "thumb": FingerProfile(
+            "thumb",
+            motors={
+                "MCP_FE": MotorConfig(1, 0, 60, 30, 0.8),
+                "CMC_AA": MotorConfig(2, 0, 60, 20, 0.8),
+                "CMC_FE": MotorConfig(3, 0, 45, 0, 0.8, False, True),
             },
         ),
         "index": FingerProfile(
@@ -85,111 +133,72 @@ TWO_DOF_HAND = HandProfile(
         "thumb": FingerProfile(
             "thumb",
             motors={
-                "MCP_FE": MotorConfig(
-                    motor_id=1,
-                    min_deg=-50,
-                    max_deg=0,
-                    default_deg=-10,
-                    max_current_a=0.6,
-                    inverted=False,
-                    locked=False,
-                ),
-                "CMC_AA": MotorConfig(
-                    motor_id=2,
-                    min_deg=-20,
-                    max_deg=20,
-                    default_deg=-40,
-                    max_current_a=0.5,
-                    inverted=True,
-                    locked=True,
-                ),
-                "CMC_FE": MotorConfig(
-                    motor_id=3,
-                    min_deg=0,
-                    max_deg=0,
-                    default_deg=45,
-                    max_current_a=0.5,
-                    locked=True,
-                ),
+                "MCP_FE": MotorConfig(1, -50, 0, -10, 0.6),
+                "CMC_AA": MotorConfig(2, -20, 20, -40, 0.5, inverted=True, locked=True),
+                "CMC_FE": MotorConfig(3, 0, 0, 45, 0.5, locked=True),
             },
         ),
         "phalanx": FingerProfile(
             "phalanx",
             motors={
-                "II_PIP_FE": MotorConfig(
-                    motor_id=4,
+                f"{finger}_{joint}": MotorConfig(
+                    motor_id=i,
                     min_deg=-45,
                     max_deg=0,
                     default_deg=0,
                     max_current_a=0.5,
                     inverted=True,
-                    locked=False,
-                ),
-                "II_MCP_FE": MotorConfig(
-                    motor_id=5,
-                    min_deg=-45,
-                    max_deg=0,
-                    default_deg=0,
-                    max_current_a=0.5,
-                    inverted=True,
-                    locked=False,
-                ),
-                "III_PIP_FE": MotorConfig(
-                    motor_id=6,
-                    min_deg=-45,
-                    max_deg=0,
-                    default_deg=0,
-                    max_current_a=0.5,
-                    inverted=True,
-                    locked=False,
-                ),
-                "III_MCP_FE": MotorConfig(
-                    motor_id=7,
-                    min_deg=-45,
-                    max_deg=0,
-                    default_deg=0,
-                    max_current_a=0.5,
-                    inverted=True,
-                    locked=False,
-                ),
-                "IV_PIP_FE": MotorConfig(
-                    motor_id=8,
-                    min_deg=-45,
-                    max_deg=0,
-                    default_deg=0,
-                    max_current_a=0.5,
-                    inverted=True,
-                    locked=False,
-                ),
-                "IV_MCP_FE": MotorConfig(
-                    motor_id=9,
-                    min_deg=-45,
-                    max_deg=0,
-                    default_deg=0,
-                    max_current_a=0.5,
-                    inverted=True,
-                    locked=False,
-                ),
-                "V_PIP_FE": MotorConfig(
-                    motor_id=10,
-                    min_deg=-45,
-                    max_deg=0,
-                    default_deg=0,
-                    max_current_a=0.5,
-                    inverted=True,
-                    locked=False,
-                ),
-                "V_MCP_FE": MotorConfig(
-                    motor_id=11,
-                    min_deg=-45,
-                    max_deg=0,
-                    default_deg=0,
-                    max_current_a=0.5,
-                    inverted=True,
-                    locked=False,
-                ),
+                )
+                for i, (finger, joint) in enumerate(
+                    [
+                        ("II", "PIP"), ("II", "MCP"),
+                        ("III", "PIP"), ("III", "MCP"),
+                        ("IV", "PIP"), ("IV", "MCP"),
+                        ("V", "PIP"), ("V", "MCP"),
+                    ],
+                    start=4,
+                )
             },
         ),
     },
 )
 
+
+TWO_MOTORS = HandProfile(
+    name="Two_Motors",
+    side="RIGHT",
+    locked_motors=[1,2,3,4,5,6,7,8,9,10,11,12,13],
+    fingers={
+        "phalanx": FingerProfile(
+            "phalanx",
+            motors={
+                "14": MotorConfig(
+                    motor_id=14,
+                    min_deg=0,
+                    max_deg=90,
+                    default_deg=0,
+                    max_current_a=0.5,
+                    inverted=True,
+                    locked=False,
+                ),
+                "15": MotorConfig(
+                    motor_id=15,
+                    min_deg=0,
+                    max_deg=90,
+                    default_deg=0,
+                    max_current_a=0.5,
+                    inverted=True,
+                    locked=False,
+                )
+            },
+        ),
+    },
+)
+
+# Registro de Perfiles
+
+HAND_PROFILES: Dict[str, HandProfile] = {
+    SIX_DOF_HAND.name: SIX_DOF_HAND,
+    TWO_DOF_HAND.name: TWO_DOF_HAND,
+    TWO_MOTORS.name:   TWO_MOTORS,
+}
