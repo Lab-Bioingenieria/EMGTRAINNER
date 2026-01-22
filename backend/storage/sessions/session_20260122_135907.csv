@@ -1,0 +1,623 @@
+name,timestamp,emg1,emg2,emg3,label
+Kevin,1272,0.0,0.0,0.0,Cerrar Mano
+Kevin,1322,0.0,0.0,0.0,Cerrar Mano
+Kevin,1372,0.0,0.0,0.0,Cerrar Mano
+Kevin,1422,0.0,0.0,0.0,Cerrar Mano
+Kevin,1472,0.0,0.0,0.0,Cerrar Mano
+Kevin,1522,0.0,0.0,0.0,Cerrar Mano
+Kevin,1572,0.0,0.0,0.0,Cerrar Mano
+Kevin,1622,0.0,0.0,0.0,Cerrar Mano
+Kevin,1672,0.0,0.0,0.0,Cerrar Mano
+Kevin,1722,0.0,0.0,0.0,Cerrar Mano
+Kevin,1772,0.0,0.0,0.0,Cerrar Mano
+Kevin,1822,0.0,0.0,0.0,Cerrar Mano
+Kevin,1872,0.0,0.0,0.0,Cerrar Mano
+Kevin,1922,0.0,0.0,0.0,Cerrar Mano
+Kevin,1972,0.0,0.0,0.0,Cerrar Mano
+Kevin,2022,0.0,0.0,0.0,Cerrar Mano
+Kevin,2072,0.0,0.0,0.0,Cerrar Mano
+Kevin,2122,0.0,0.0,0.0,Cerrar Mano
+Kevin,2172,0.0,0.0,0.0,Cerrar Mano
+Kevin,2222,0.0,0.0,0.0,Cerrar Mano
+Kevin,2272,0.0,0.0,0.0,Cerrar Mano
+Kevin,2322,0.0,0.0,0.0,Cerrar Mano
+Kevin,2372,0.0,0.0,0.0,Cerrar Mano
+Kevin,2422,0.0,0.0,0.0,Cerrar Mano
+Kevin,2472,0.0,0.0,0.0,Cerrar Mano
+Kevin,2522,0.0,0.0,0.0,Cerrar Mano
+Kevin,2572,0.0,0.0,0.0,Cerrar Mano
+Kevin,2622,0.0,0.0,0.0,Cerrar Mano
+Kevin,2672,0.0,0.0,0.0,Cerrar Mano
+Kevin,2722,0.0,0.0,0.0,Cerrar Mano
+Kevin,2772,0.0,0.0,0.0,Cerrar Mano
+Kevin,2822,0.0,0.0,0.0,Cerrar Mano
+Kevin,2872,0.0,0.0,0.0,Cerrar Mano
+Kevin,2922,0.0,0.0,0.0,Cerrar Mano
+Kevin,2972,0.0,0.0,0.0,Cerrar Mano
+Kevin,3022,0.0,0.0,0.0,Cerrar Mano
+Kevin,3072,0.0,0.0,0.0,Cerrar Mano
+Kevin,3122,0.0,0.0,0.0,Cerrar Mano
+Kevin,3172,0.0,0.0,0.0,Cerrar Mano
+Kevin,3222,0.0,0.0,0.0,Cerrar Mano
+Kevin,3272,0.0,0.0,0.0,Cerrar Mano
+Kevin,3322,0.0,0.0,0.0,Cerrar Mano
+Kevin,3372,0.0,0.0,0.0,Cerrar Mano
+Kevin,3422,0.0,0.0,0.0,Cerrar Mano
+Kevin,3472,0.0,0.0,0.0,Cerrar Mano
+Kevin,3522,0.0,0.0,0.0,Cerrar Mano
+Kevin,3572,0.0,0.0,0.0,Cerrar Mano
+Kevin,3622,0.0,0.0,0.0,Cerrar Mano
+Kevin,3672,0.0,0.0,0.0,Cerrar Mano
+Kevin,3722,0.0,0.0,0.0,Cerrar Mano
+Kevin,3772,0.0,0.0,0.0,Cerrar Mano
+Kevin,3822,0.0,0.0,0.0,Cerrar Mano
+Kevin,3872,0.0,0.0,0.0,Cerrar Mano
+Kevin,3922,0.0,0.0,0.0,Cerrar Mano
+Kevin,3972,0.0,0.0,0.0,Cerrar Mano
+Kevin,4022,0.0,0.0,0.0,Cerrar Mano
+Kevin,4072,0.0,0.0,0.0,Cerrar Mano
+Kevin,4122,0.0,0.0,0.0,Cerrar Mano
+Kevin,4172,0.0,0.0,0.0,Cerrar Mano
+Kevin,4222,0.0,0.0,0.0,Cerrar Mano
+Kevin,4272,0.0,0.0,0.0,Cerrar Mano
+Kevin,4322,0.0,0.0,0.0,Cerrar Mano
+Kevin,4372,0.0,0.0,0.0,Cerrar Mano
+Kevin,4422,0.0,0.0,0.0,Cerrar Mano
+Kevin,4472,0.0,0.0,0.0,Cerrar Mano
+Kevin,4522,0.0,0.0,0.0,Cerrar Mano
+Kevin,4572,0.0,0.0,0.0,Cerrar Mano
+Kevin,4622,0.0,0.0,0.0,Cerrar Mano
+Kevin,4672,0.0,0.0,0.0,Cerrar Mano
+Kevin,4722,0.0,0.0,0.0,Cerrar Mano
+Kevin,4772,0.0,0.0,0.0,Cerrar Mano
+Kevin,4822,0.0,0.0,0.0,Cerrar Mano
+Kevin,4872,0.0,0.0,0.0,Cerrar Mano
+Kevin,4922,0.0,0.0,0.0,Cerrar Mano
+Kevin,4972,0.0,0.0,0.0,Cerrar Mano
+Kevin,5022,0.0,0.0,0.0,Cerrar Mano
+Kevin,5072,0.0,0.0,0.0,Cerrar Mano
+Kevin,5122,0.0,0.0,0.0,Cerrar Mano
+Kevin,5172,0.0,0.0,0.0,Cerrar Mano
+Kevin,5222,0.0,0.0,0.0,Cerrar Mano
+Kevin,5272,0.0,0.0,0.0,Cerrar Mano
+Kevin,5322,0.0,0.0,0.0,Cerrar Mano
+Kevin,5372,0.0,0.0,0.0,Cerrar Mano
+Kevin,5422,0.0,0.0,0.0,Cerrar Mano
+Kevin,5472,0.0,0.0,0.0,Cerrar Mano
+Kevin,5522,0.0,0.0,0.0,Cerrar Mano
+Kevin,5572,0.0,0.0,0.0,Cerrar Mano
+Kevin,5622,0.0,0.0,0.0,Cerrar Mano
+Kevin,5672,0.0,0.0,0.0,Cerrar Mano
+Kevin,5722,0.0,0.0,0.0,Cerrar Mano
+Kevin,5772,0.0,0.0,0.0,Cerrar Mano
+Kevin,5822,0.0,0.0,0.0,Cerrar Mano
+Kevin,5872,0.0,0.0,0.0,Cerrar Mano
+Kevin,5922,0.0,0.0,0.0,Cerrar Mano
+Kevin,5972,0.0,0.0,0.0,Cerrar Mano
+Kevin,6022,0.0,0.0,0.0,Cerrar Mano
+Kevin,6072,0.0,0.0,0.0,Cerrar Mano
+Kevin,6122,0.0,0.0,0.0,Cerrar Mano
+Kevin,6172,0.0,0.0,0.0,Cerrar Mano
+Kevin,6222,0.0,0.0,0.0,Cerrar Mano
+Kevin,6272,0.0,0.0,0.0,Cerrar Mano
+Kevin,6322,0.0,0.0,0.0,Cerrar Mano
+Kevin,6372,0.0,0.0,0.0,Cerrar Mano
+Kevin,6422,0.0,0.0,0.0,Cerrar Mano
+Kevin,6472,0.0,0.0,0.0,Cerrar Mano
+Kevin,6522,0.0,0.0,0.0,Cerrar Mano
+Kevin,6572,0.0,0.0,0.0,Cerrar Mano
+Kevin,6622,0.0,0.0,0.0,Cerrar Mano
+Kevin,6672,0.0,0.0,0.0,Cerrar Mano
+Kevin,6722,0.0,0.0,0.0,Cerrar Mano
+Kevin,6772,0.0,0.0,0.0,Cerrar Mano
+Kevin,6822,0.0,0.0,0.0,Cerrar Mano
+Kevin,6872,0.0,0.0,0.0,Cerrar Mano
+Kevin,6922,0.0,0.0,0.0,Cerrar Mano
+Kevin,6972,0.0,0.0,0.0,Cerrar Mano
+Kevin,7022,0.0,0.0,0.0,Cerrar Mano
+Kevin,7072,0.0,0.0,0.0,Cerrar Mano
+Kevin,7122,0.0,0.0,0.0,Cerrar Mano
+Kevin,7172,0.0,0.0,0.0,Cerrar Mano
+Kevin,7222,0.0,0.0,0.0,Cerrar Mano
+Kevin,7272,0.0,0.0,0.0,Cerrar Mano
+Kevin,7322,0.0,0.0,0.0,Cerrar Mano
+Kevin,7372,0.0,0.0,0.0,Palma Abajo
+Kevin,7422,0.0,0.0,0.0,Palma Abajo
+Kevin,7472,0.0,0.0,0.0,Palma Abajo
+Kevin,7522,0.0,0.0,0.0,Palma Abajo
+Kevin,7572,0.0,0.0,0.0,Palma Abajo
+Kevin,7622,0.0,0.0,0.0,Palma Abajo
+Kevin,7672,0.0,0.0,0.0,Palma Abajo
+Kevin,7722,0.0,0.0,0.0,Palma Abajo
+Kevin,7772,0.0,0.0,0.0,Palma Abajo
+Kevin,7822,0.0,0.0,0.0,Palma Abajo
+Kevin,7872,0.0,0.0,0.0,Palma Abajo
+Kevin,7922,0.0,0.0,0.0,Palma Abajo
+Kevin,7972,0.0,0.0,0.0,Palma Abajo
+Kevin,8022,0.0,0.0,0.0,Palma Abajo
+Kevin,8072,0.0,0.0,0.0,Palma Abajo
+Kevin,8122,0.0,0.0,0.0,Palma Abajo
+Kevin,8172,0.0,0.0,0.0,Palma Abajo
+Kevin,8222,0.0,0.0,0.0,Palma Abajo
+Kevin,8272,0.0,0.0,0.0,Palma Abajo
+Kevin,8322,0.0,0.0,0.0,Palma Abajo
+Kevin,8372,0.0,0.0,0.0,Palma Abajo
+Kevin,8422,0.0,0.0,0.0,Palma Abajo
+Kevin,8472,0.0,0.0,0.0,Palma Abajo
+Kevin,8522,0.0,0.0,0.0,Palma Abajo
+Kevin,8572,0.0,0.0,0.0,Palma Abajo
+Kevin,8622,0.0,0.0,0.0,Palma Abajo
+Kevin,8672,0.0,0.0,0.0,Palma Abajo
+Kevin,8722,0.0,0.0,0.0,Palma Abajo
+Kevin,8772,0.0,0.0,0.0,Palma Abajo
+Kevin,8822,0.0,0.0,0.0,Palma Abajo
+Kevin,8872,0.0,0.0,0.0,Palma Abajo
+Kevin,8922,0.0,0.0,0.0,Palma Abajo
+Kevin,8972,0.0,0.0,0.0,Palma Abajo
+Kevin,9022,0.0,0.0,0.0,Palma Abajo
+Kevin,9072,0.0,0.0,0.0,Palma Abajo
+Kevin,9122,0.0,0.0,0.0,Palma Abajo
+Kevin,9172,0.0,0.0,0.0,Palma Abajo
+Kevin,9222,0.0,0.0,0.0,Palma Abajo
+Kevin,9272,0.0,0.0,0.0,Palma Abajo
+Kevin,9322,0.0,0.0,0.0,Palma Abajo
+Kevin,9372,0.0,0.0,0.0,Palma Abajo
+Kevin,9422,0.0,0.0,0.0,Palma Abajo
+Kevin,9472,0.0,0.0,0.0,Palma Abajo
+Kevin,9522,0.0,0.0,0.0,Palma Abajo
+Kevin,9572,0.0,0.0,0.0,Palma Abajo
+Kevin,9622,0.0,0.0,0.0,Palma Abajo
+Kevin,9672,0.0,0.0,0.0,Palma Abajo
+Kevin,9722,0.0,0.0,0.0,Palma Abajo
+Kevin,9772,0.0,0.0,0.0,Palma Abajo
+Kevin,9822,0.0,0.0,0.0,Palma Abajo
+Kevin,9872,0.0,0.0,0.0,Palma Abajo
+Kevin,9922,0.0,0.0,0.0,Palma Abajo
+Kevin,9972,0.0,0.0,0.0,Palma Abajo
+Kevin,10022,0.0,0.0,0.0,Palma Abajo
+Kevin,10072,0.0,0.0,0.0,Palma Abajo
+Kevin,10122,0.0,0.0,0.0,Palma Abajo
+Kevin,10172,0.0,0.0,0.0,Palma Abajo
+Kevin,10222,0.0,0.0,0.0,Palma Abajo
+Kevin,10272,0.0,0.0,0.0,Palma Abajo
+Kevin,10322,0.0,0.0,0.0,Palma Abajo
+Kevin,10372,0.0,0.0,0.0,Palma Abajo
+Kevin,10422,0.0,0.0,0.0,Palma Abajo
+Kevin,10472,0.0,0.0,0.0,Palma Abajo
+Kevin,10522,0.0,0.0,0.0,Palma Abajo
+Kevin,10572,0.0,0.0,0.0,Palma Abajo
+Kevin,10622,0.0,0.0,0.0,Palma Abajo
+Kevin,10672,0.0,0.0,0.0,Palma Abajo
+Kevin,10722,0.0,0.0,0.0,Palma Abajo
+Kevin,10772,0.0,0.0,0.0,Palma Abajo
+Kevin,10822,0.0,0.0,0.0,Palma Abajo
+Kevin,10872,0.0,0.0,0.0,Palma Abajo
+Kevin,10922,0.0,0.0,0.0,Palma Abajo
+Kevin,10972,0.0,0.0,0.0,Palma Abajo
+Kevin,11022,0.0,0.0,0.0,Palma Abajo
+Kevin,11072,0.0,0.0,0.0,Palma Abajo
+Kevin,11122,0.0,0.0,0.0,Palma Abajo
+Kevin,11172,0.0,0.0,0.0,Palma Abajo
+Kevin,11222,0.0,0.0,0.0,Palma Abajo
+Kevin,11272,0.0,0.0,0.0,Palma Abajo
+Kevin,11322,0.0,0.0,0.0,Palma Abajo
+Kevin,11372,0.0,0.0,0.0,Palma Abajo
+Kevin,11422,0.0,0.0,0.0,Palma Abajo
+Kevin,11472,0.0,0.0,0.0,Palma Abajo
+Kevin,11522,0.0,0.0,0.0,Palma Abajo
+Kevin,11572,0.0,0.0,0.0,Palma Abajo
+Kevin,11622,0.0,0.0,0.0,Palma Abajo
+Kevin,11672,0.0,0.0,0.0,Palma Abajo
+Kevin,11722,0.0,0.0,0.0,Palma Abajo
+Kevin,11772,0.0,0.0,0.0,Palma Abajo
+Kevin,11822,0.0,0.0,0.0,Palma Abajo
+Kevin,11872,0.0,0.0,0.0,Palma Abajo
+Kevin,11922,0.0,0.0,0.0,Palma Abajo
+Kevin,11972,0.0,0.0,0.0,Palma Abajo
+Kevin,12022,0.0,0.0,0.0,Palma Abajo
+Kevin,12072,0.0,0.0,0.0,Palma Abajo
+Kevin,12122,0.0,0.0,0.0,Palma Abajo
+Kevin,12172,0.0,0.0,0.0,Palma Abajo
+Kevin,12222,0.0,0.0,0.0,Palma Abajo
+Kevin,12272,0.0,0.0,0.0,Palma Abajo
+Kevin,12322,0.0,0.0,0.0,Palma Abajo
+Kevin,12372,0.0,0.0,0.0,Rest
+Kevin,12422,0.0,0.0,0.0,Rest
+Kevin,12472,0.0,0.0,0.0,Rest
+Kevin,12522,0.0,0.0,0.0,Rest
+Kevin,12572,0.0,0.0,0.0,Rest
+Kevin,12622,0.0,0.0,0.0,Rest
+Kevin,12672,0.0,0.0,0.0,Rest
+Kevin,12722,0.0,0.0,0.0,Rest
+Kevin,12772,0.0,0.0,0.0,Rest
+Kevin,12822,0.0,0.0,0.0,Rest
+Kevin,12872,0.0,0.0,0.0,Rest
+Kevin,12922,0.0,0.0,0.0,Rest
+Kevin,12972,0.0,0.0,0.0,Rest
+Kevin,13022,0.0,0.0,0.0,Rest
+Kevin,13072,0.0,0.0,0.0,Rest
+Kevin,13122,0.0,0.0,0.0,Rest
+Kevin,13172,0.0,0.0,0.0,Rest
+Kevin,13222,0.0,0.0,0.0,Rest
+Kevin,13272,0.0,0.0,0.0,Rest
+Kevin,13322,0.0,0.0,0.0,Rest
+Kevin,13372,0.0,0.0,0.0,Rest
+Kevin,13422,0.0,0.0,0.0,Rest
+Kevin,13472,0.0,0.0,0.0,Rest
+Kevin,13522,0.0,0.0,0.0,Rest
+Kevin,13572,0.0,0.0,0.0,Rest
+Kevin,13622,0.0,0.0,0.0,Rest
+Kevin,13672,0.0,0.0,0.0,Rest
+Kevin,13722,0.0,0.0,0.0,Rest
+Kevin,13772,0.0,0.0,0.0,Rest
+Kevin,13822,0.0,0.0,0.0,Rest
+Kevin,13872,0.0,0.0,0.0,Rest
+Kevin,13922,0.0,0.0,0.0,Rest
+Kevin,13972,0.0,0.0,0.0,Rest
+Kevin,14022,0.0,0.0,0.0,Rest
+Kevin,14072,0.0,0.0,0.0,Rest
+Kevin,14122,0.0,0.0,0.0,Rest
+Kevin,14172,0.0,0.0,0.0,Rest
+Kevin,14222,0.0,0.0,0.0,Rest
+Kevin,14272,0.0,0.0,0.0,Rest
+Kevin,14322,0.0,0.0,0.0,Rest
+Kevin,14372,0.0,0.0,0.0,Rest
+Kevin,14422,0.0,0.0,0.0,Rest
+Kevin,14472,0.0,0.0,0.0,Rest
+Kevin,14522,0.0,0.0,0.0,Rest
+Kevin,14572,0.0,0.0,0.0,Rest
+Kevin,14622,0.0,0.0,0.0,Rest
+Kevin,14672,0.0,0.0,0.0,Rest
+Kevin,14722,0.0,0.0,0.0,Rest
+Kevin,14772,0.0,0.0,0.0,Rest
+Kevin,14822,0.0,0.0,0.0,Rest
+Kevin,14872,0.0,0.0,0.0,Rest
+Kevin,14922,0.0,0.0,0.0,Rest
+Kevin,14972,0.0,0.0,0.0,Rest
+Kevin,15022,0.0,0.0,0.0,Rest
+Kevin,15072,0.0,0.0,0.0,Rest
+Kevin,15122,0.0,0.0,0.0,Rest
+Kevin,15172,0.0,0.0,0.0,Rest
+Kevin,15222,0.0,0.0,0.0,Rest
+Kevin,15272,0.0,0.0,0.0,Rest
+Kevin,15322,0.0,0.0,0.0,Rest
+Kevin,15372,0.0,0.0,0.0,Rest
+Kevin,15422,0.0,0.0,0.0,Rest
+Kevin,15472,0.0,0.0,0.0,Rest
+Kevin,15522,0.0,0.0,0.0,Rest
+Kevin,15572,0.0,0.0,0.0,Rest
+Kevin,15622,0.0,0.0,0.0,Rest
+Kevin,15672,0.0,0.0,0.0,Rest
+Kevin,15722,0.0,0.0,0.0,Rest
+Kevin,15772,0.0,0.0,0.0,Rest
+Kevin,15822,0.0,0.0,0.0,Rest
+Kevin,15872,0.0,0.0,0.0,Rest
+Kevin,15922,0.0,0.0,0.0,Rest
+Kevin,15972,0.0,0.0,0.0,Rest
+Kevin,16022,0.0,0.0,0.0,Rest
+Kevin,16072,0.0,0.0,0.0,Rest
+Kevin,16122,0.0,0.0,0.0,Rest
+Kevin,16172,0.0,0.0,0.0,Rest
+Kevin,16222,0.0,0.0,0.0,Rest
+Kevin,16272,0.0,0.0,0.0,Rest
+Kevin,16322,0.0,0.0,0.0,Rest
+Kevin,16372,0.0,0.0,0.0,Rest
+Kevin,16422,0.0,0.0,0.0,Rest
+Kevin,16472,0.0,0.0,0.0,Rest
+Kevin,16522,0.0,0.0,0.0,Rest
+Kevin,16572,0.0,0.0,0.0,Rest
+Kevin,16622,0.0,0.0,0.0,Rest
+Kevin,16672,0.0,0.0,0.0,Rest
+Kevin,16722,0.0,0.0,0.0,Rest
+Kevin,16772,0.0,0.0,0.0,Rest
+Kevin,16822,0.0,0.0,0.0,Rest
+Kevin,16872,0.0,0.0,0.0,Rest
+Kevin,16922,0.0,0.0,0.0,Rest
+Kevin,16972,0.0,0.0,0.0,Rest
+Kevin,17022,0.0,0.0,0.0,Rest
+Kevin,17072,0.0,0.0,0.0,Rest
+Kevin,17122,0.0,0.0,0.0,Rest
+Kevin,17172,0.0,0.0,0.0,Rest
+Kevin,17222,0.0,0.0,0.0,Rest
+Kevin,17272,0.0,0.0,0.0,Rest
+Kevin,17322,0.0,0.0,0.0,Rest
+Kevin,17372,0.0,0.0,0.0,Palma Arriba
+Kevin,17422,0.0,0.0,0.0,Palma Arriba
+Kevin,17472,0.0,0.0,0.0,Palma Arriba
+Kevin,17522,0.0,0.0,0.0,Palma Arriba
+Kevin,17572,0.0,0.0,0.0,Palma Arriba
+Kevin,17622,0.0,0.0,0.0,Palma Arriba
+Kevin,17672,0.0,0.0,0.0,Palma Arriba
+Kevin,17722,0.0,0.0,0.0,Palma Arriba
+Kevin,17772,0.0,0.0,0.0,Palma Arriba
+Kevin,17822,0.0,0.0,0.0,Palma Arriba
+Kevin,17872,0.0,0.0,0.0,Palma Arriba
+Kevin,17922,0.0,0.0,0.0,Palma Arriba
+Kevin,17972,0.0,0.0,0.0,Palma Arriba
+Kevin,18022,0.0,0.0,0.0,Palma Arriba
+Kevin,18072,0.0,0.0,0.0,Palma Arriba
+Kevin,18122,0.0,0.0,0.0,Palma Arriba
+Kevin,18172,0.0,0.0,0.0,Palma Arriba
+Kevin,18222,0.0,0.0,0.0,Palma Arriba
+Kevin,18272,0.0,0.0,0.0,Palma Arriba
+Kevin,18322,0.0,0.0,0.0,Palma Arriba
+Kevin,18372,0.0,0.0,0.0,Palma Arriba
+Kevin,18422,0.0,0.0,0.0,Palma Arriba
+Kevin,18472,0.0,0.0,0.0,Palma Arriba
+Kevin,18522,0.0,0.0,0.0,Palma Arriba
+Kevin,18572,0.0,0.0,0.0,Palma Arriba
+Kevin,18622,0.0,0.0,0.0,Palma Arriba
+Kevin,18672,0.0,0.0,0.0,Palma Arriba
+Kevin,18722,0.0,0.0,0.0,Palma Arriba
+Kevin,18772,0.0,0.0,0.0,Palma Arriba
+Kevin,18822,0.0,0.0,0.0,Palma Arriba
+Kevin,18872,0.0,0.0,0.0,Palma Arriba
+Kevin,18922,0.0,0.0,0.0,Palma Arriba
+Kevin,18972,0.0,0.0,0.0,Palma Arriba
+Kevin,19022,0.0,0.0,0.0,Palma Arriba
+Kevin,19072,0.0,0.0,0.0,Palma Arriba
+Kevin,19122,0.0,0.0,0.0,Palma Arriba
+Kevin,19172,0.0,0.0,0.0,Palma Arriba
+Kevin,19222,0.0,0.0,0.0,Palma Arriba
+Kevin,19272,0.0,0.0,0.0,Palma Arriba
+Kevin,19322,0.0,0.0,0.0,Palma Arriba
+Kevin,19372,0.0,0.0,0.0,Palma Arriba
+Kevin,19422,0.0,0.0,0.0,Palma Arriba
+Kevin,19472,0.0,0.0,0.0,Palma Arriba
+Kevin,19522,0.0,0.0,0.0,Palma Arriba
+Kevin,19572,0.0,0.0,0.0,Palma Arriba
+Kevin,19622,0.0,0.0,0.0,Palma Arriba
+Kevin,19672,0.0,0.0,0.0,Palma Arriba
+Kevin,19722,0.0,0.0,0.0,Palma Arriba
+Kevin,19772,0.0,0.0,0.0,Palma Arriba
+Kevin,19822,0.0,0.0,0.0,Palma Arriba
+Kevin,19872,0.0,0.0,0.0,Palma Arriba
+Kevin,19922,0.0,0.0,0.0,Palma Arriba
+Kevin,19972,0.0,0.0,0.0,Palma Arriba
+Kevin,20022,0.0,0.0,0.0,Palma Arriba
+Kevin,20072,0.0,0.0,0.0,Palma Arriba
+Kevin,20122,0.0,0.0,0.0,Palma Arriba
+Kevin,20172,0.0,0.0,0.0,Palma Arriba
+Kevin,20222,0.0,0.0,0.0,Palma Arriba
+Kevin,20272,0.0,0.0,0.0,Palma Arriba
+Kevin,20322,0.0,0.0,0.0,Palma Arriba
+Kevin,20372,0.0,0.0,0.0,Palma Arriba
+Kevin,20422,0.0,0.0,0.0,Palma Arriba
+Kevin,20472,0.0,0.0,0.0,Palma Arriba
+Kevin,20522,0.0,0.0,0.0,Palma Arriba
+Kevin,20572,0.0,0.0,0.0,Palma Arriba
+Kevin,20622,0.0,0.0,0.0,Palma Arriba
+Kevin,20672,0.0,0.0,0.0,Palma Arriba
+Kevin,20722,0.0,0.0,0.0,Palma Arriba
+Kevin,20772,0.0,0.0,0.0,Palma Arriba
+Kevin,20822,0.0,0.0,0.0,Palma Arriba
+Kevin,20872,0.0,0.0,0.0,Palma Arriba
+Kevin,20922,0.0,0.0,0.0,Palma Arriba
+Kevin,20972,0.0,0.0,0.0,Palma Arriba
+Kevin,21022,0.0,0.0,0.0,Palma Arriba
+Kevin,21072,0.0,0.0,0.0,Palma Arriba
+Kevin,21122,0.0,0.0,0.0,Palma Arriba
+Kevin,21172,0.0,0.0,0.0,Palma Arriba
+Kevin,21222,0.0,0.0,0.0,Palma Arriba
+Kevin,21272,0.0,0.0,0.0,Palma Arriba
+Kevin,21322,0.0,0.0,0.0,Palma Arriba
+Kevin,21372,0.0,0.0,0.0,Palma Arriba
+Kevin,21422,0.0,0.0,0.0,Palma Arriba
+Kevin,21472,0.0,0.0,0.0,Palma Arriba
+Kevin,21522,0.0,0.0,0.0,Palma Arriba
+Kevin,21572,0.0,0.0,0.0,Palma Arriba
+Kevin,21622,0.0,0.0,0.0,Palma Arriba
+Kevin,21672,0.0,0.0,0.0,Palma Arriba
+Kevin,21722,0.0,0.0,0.0,Palma Arriba
+Kevin,21772,0.0,0.0,0.0,Palma Arriba
+Kevin,21822,0.0,0.0,0.0,Palma Arriba
+Kevin,21872,0.0,0.0,0.0,Palma Arriba
+Kevin,21922,0.0,0.0,0.0,Palma Arriba
+Kevin,21972,0.0,0.0,0.0,Palma Arriba
+Kevin,22022,0.0,0.0,0.0,Palma Arriba
+Kevin,22072,0.0,0.0,0.0,Palma Arriba
+Kevin,22122,0.0,0.0,0.0,Palma Arriba
+Kevin,22172,0.0,0.0,0.0,Palma Arriba
+Kevin,22222,0.0,0.0,0.0,Palma Arriba
+Kevin,22272,0.0,0.0,0.0,Palma Arriba
+Kevin,22322,0.0,0.0,0.0,Palma Arriba
+Kevin,22372,0.0,0.0,0.0,Rest
+Kevin,22422,0.0,0.0,0.0,Rest
+Kevin,22472,0.0,0.0,0.0,Rest
+Kevin,22522,0.0,0.0,0.0,Rest
+Kevin,22572,0.0,0.0,0.0,Rest
+Kevin,22622,0.0,0.0,0.0,Rest
+Kevin,22672,0.0,0.0,0.0,Rest
+Kevin,22722,0.0,0.0,0.0,Rest
+Kevin,22772,0.0,0.0,0.0,Rest
+Kevin,22822,0.0,0.0,0.0,Rest
+Kevin,22872,0.0,0.0,0.0,Rest
+Kevin,22922,0.0,0.0,0.0,Rest
+Kevin,22972,0.0,0.0,0.0,Rest
+Kevin,23022,0.0,0.0,0.0,Rest
+Kevin,23072,0.0,0.0,0.0,Rest
+Kevin,23122,0.0,0.0,0.0,Rest
+Kevin,23172,0.0,0.0,0.0,Rest
+Kevin,23222,0.0,0.0,0.0,Rest
+Kevin,23272,0.0,0.0,0.0,Rest
+Kevin,23322,0.0,0.0,0.0,Rest
+Kevin,23372,0.0,0.0,0.0,Rest
+Kevin,23422,0.0,0.0,0.0,Rest
+Kevin,23472,0.0,0.0,0.0,Rest
+Kevin,23522,0.0,0.0,0.0,Rest
+Kevin,23572,0.0,0.0,0.0,Rest
+Kevin,23622,0.0,0.0,0.0,Rest
+Kevin,23672,0.0,0.0,0.0,Rest
+Kevin,23722,0.0,0.0,0.0,Rest
+Kevin,23772,0.0,0.0,0.0,Rest
+Kevin,23822,0.0,0.0,0.0,Rest
+Kevin,23872,0.0,0.0,0.0,Rest
+Kevin,23922,0.0,0.0,0.0,Rest
+Kevin,23972,0.0,0.0,0.0,Rest
+Kevin,24022,0.0,0.0,0.0,Rest
+Kevin,24072,0.0,0.0,0.0,Rest
+Kevin,24122,0.0,0.0,0.0,Rest
+Kevin,24172,0.0,0.0,0.0,Rest
+Kevin,24222,0.0,0.0,0.0,Rest
+Kevin,24272,0.0,0.0,0.0,Rest
+Kevin,24322,0.0,0.0,0.0,Rest
+Kevin,24372,0.0,0.0,0.0,Rest
+Kevin,24422,0.0,0.0,0.0,Rest
+Kevin,24472,0.0,0.0,0.0,Rest
+Kevin,24522,0.0,0.0,0.0,Rest
+Kevin,24572,0.0,0.0,0.0,Rest
+Kevin,24622,0.0,0.0,0.0,Rest
+Kevin,24672,0.0,0.0,0.0,Rest
+Kevin,24722,0.0,0.0,0.0,Rest
+Kevin,24772,0.0,0.0,0.0,Rest
+Kevin,24822,0.0,0.0,0.0,Rest
+Kevin,24872,0.0,0.0,0.0,Rest
+Kevin,24922,0.0,0.0,0.0,Rest
+Kevin,24972,0.0,0.0,0.0,Rest
+Kevin,25022,0.0,0.0,0.0,Rest
+Kevin,25072,0.0,0.0,0.0,Rest
+Kevin,25122,0.0,0.0,0.0,Rest
+Kevin,25172,0.0,0.0,0.0,Rest
+Kevin,25222,0.0,0.0,0.0,Rest
+Kevin,25272,0.0,0.0,0.0,Rest
+Kevin,25322,0.0,0.0,0.0,Rest
+Kevin,25372,0.0,0.0,0.0,Rest
+Kevin,25422,0.0,0.0,0.0,Rest
+Kevin,25472,0.0,0.0,0.0,Rest
+Kevin,25522,0.0,0.0,0.0,Rest
+Kevin,25572,0.0,0.0,0.0,Rest
+Kevin,25622,0.0,0.0,0.0,Rest
+Kevin,25672,0.0,0.0,0.0,Rest
+Kevin,25722,0.0,0.0,0.0,Rest
+Kevin,25772,0.0,0.0,0.0,Rest
+Kevin,25822,0.0,0.0,0.0,Rest
+Kevin,25872,0.0,0.0,0.0,Rest
+Kevin,25922,0.0,0.0,0.0,Rest
+Kevin,25972,0.0,0.0,0.0,Rest
+Kevin,26022,0.0,0.0,0.0,Rest
+Kevin,26072,0.0,0.0,0.0,Rest
+Kevin,26122,0.0,0.0,0.0,Rest
+Kevin,26172,0.0,0.0,0.0,Rest
+Kevin,26222,0.0,0.0,0.0,Rest
+Kevin,26272,0.0,0.0,0.0,Rest
+Kevin,26322,0.0,0.0,0.0,Rest
+Kevin,26372,0.0,0.0,0.0,Rest
+Kevin,26422,0.0,0.0,0.0,Rest
+Kevin,26472,0.0,0.0,0.0,Rest
+Kevin,26522,0.0,0.0,0.0,Rest
+Kevin,26572,0.0,0.0,0.0,Rest
+Kevin,26622,0.0,0.0,0.0,Rest
+Kevin,26672,0.0,0.0,0.0,Rest
+Kevin,26722,0.0,0.0,0.0,Rest
+Kevin,26772,0.0,0.0,0.0,Rest
+Kevin,26822,0.0,0.0,0.0,Rest
+Kevin,26872,0.0,0.0,0.0,Rest
+Kevin,26922,0.0,0.0,0.0,Rest
+Kevin,26972,0.0,0.0,0.0,Rest
+Kevin,27022,0.0,0.0,0.0,Rest
+Kevin,27072,0.0,0.0,0.0,Rest
+Kevin,27122,0.0,0.0,0.0,Rest
+Kevin,27172,0.0,0.0,0.0,Rest
+Kevin,27222,0.0,0.0,0.0,Rest
+Kevin,27272,0.0,0.0,0.0,Rest
+Kevin,27322,0.0,0.0,0.0,Rest
+Kevin,27372,0.0,0.0,0.0,Cerrar Mano
+Kevin,27422,0.0,0.0,0.0,Cerrar Mano
+Kevin,27472,0.0,0.0,0.0,Cerrar Mano
+Kevin,27522,0.0,0.0,0.0,Cerrar Mano
+Kevin,27572,0.0,0.0,0.0,Cerrar Mano
+Kevin,27622,0.0,0.0,0.0,Cerrar Mano
+Kevin,27672,0.0,0.0,0.0,Cerrar Mano
+Kevin,27722,0.0,0.0,0.0,Cerrar Mano
+Kevin,27772,0.0,0.0,0.0,Cerrar Mano
+Kevin,27822,0.0,0.0,0.0,Cerrar Mano
+Kevin,27872,0.0,0.0,0.0,Cerrar Mano
+Kevin,27922,0.0,0.0,0.0,Cerrar Mano
+Kevin,27972,0.0,0.0,0.0,Cerrar Mano
+Kevin,28022,0.0,0.0,0.0,Cerrar Mano
+Kevin,28072,0.0,0.0,0.0,Cerrar Mano
+Kevin,28122,0.0,0.0,0.0,Cerrar Mano
+Kevin,28172,0.0,0.0,0.0,Cerrar Mano
+Kevin,28222,0.0,0.0,0.0,Cerrar Mano
+Kevin,28272,0.0,0.0,0.0,Cerrar Mano
+Kevin,28322,0.0,0.0,0.0,Cerrar Mano
+Kevin,28372,0.0,0.0,0.0,Cerrar Mano
+Kevin,28422,0.0,0.0,0.0,Cerrar Mano
+Kevin,28472,0.0,0.0,0.0,Cerrar Mano
+Kevin,28522,0.0,0.0,0.0,Cerrar Mano
+Kevin,28572,0.0,0.0,0.0,Cerrar Mano
+Kevin,28622,0.0,0.0,0.0,Cerrar Mano
+Kevin,28672,0.0,0.0,0.0,Cerrar Mano
+Kevin,28722,0.0,0.0,0.0,Cerrar Mano
+Kevin,28772,0.0,0.0,0.0,Cerrar Mano
+Kevin,28822,0.0,0.0,0.0,Cerrar Mano
+Kevin,28872,0.0,0.0,0.0,Cerrar Mano
+Kevin,28922,0.0,0.0,0.0,Cerrar Mano
+Kevin,28972,0.0,0.0,0.0,Cerrar Mano
+Kevin,29022,0.0,0.0,0.0,Cerrar Mano
+Kevin,29072,0.0,0.0,0.0,Cerrar Mano
+Kevin,29122,0.0,0.0,0.0,Cerrar Mano
+Kevin,29172,0.0,0.0,0.0,Cerrar Mano
+Kevin,29222,0.0,0.0,0.0,Cerrar Mano
+Kevin,29272,0.0,0.0,0.0,Cerrar Mano
+Kevin,29322,0.0,0.0,0.0,Cerrar Mano
+Kevin,29372,0.0,0.0,0.0,Cerrar Mano
+Kevin,29422,0.0,0.0,0.0,Cerrar Mano
+Kevin,29472,0.0,0.0,0.0,Cerrar Mano
+Kevin,29522,0.0,0.0,0.0,Cerrar Mano
+Kevin,29572,0.0,0.0,0.0,Cerrar Mano
+Kevin,29622,0.0,0.0,0.0,Cerrar Mano
+Kevin,29672,0.0,0.0,0.0,Cerrar Mano
+Kevin,29722,0.0,0.0,0.0,Cerrar Mano
+Kevin,29772,0.0,0.0,0.0,Cerrar Mano
+Kevin,29822,0.0,0.0,0.0,Cerrar Mano
+Kevin,29872,0.0,0.0,0.0,Cerrar Mano
+Kevin,29922,0.0,0.0,0.0,Cerrar Mano
+Kevin,29972,0.0,0.0,0.0,Cerrar Mano
+Kevin,30022,0.0,0.0,0.0,Cerrar Mano
+Kevin,30072,0.0,0.0,0.0,Cerrar Mano
+Kevin,30122,0.0,0.0,0.0,Cerrar Mano
+Kevin,30172,0.0,0.0,0.0,Cerrar Mano
+Kevin,30222,0.0,0.0,0.0,Cerrar Mano
+Kevin,30272,0.0,0.0,0.0,Cerrar Mano
+Kevin,30322,0.0,0.0,0.0,Cerrar Mano
+Kevin,30372,0.0,0.0,0.0,Cerrar Mano
+Kevin,30422,0.0,0.0,0.0,Cerrar Mano
+Kevin,30472,0.0,0.0,0.0,Cerrar Mano
+Kevin,30522,0.0,0.0,0.0,Cerrar Mano
+Kevin,30572,0.0,0.0,0.0,Cerrar Mano
+Kevin,30622,0.0,0.0,0.0,Cerrar Mano
+Kevin,30672,0.0,0.0,0.0,Cerrar Mano
+Kevin,30722,0.0,0.0,0.0,Cerrar Mano
+Kevin,30772,0.0,0.0,0.0,Cerrar Mano
+Kevin,30822,0.0,0.0,0.0,Cerrar Mano
+Kevin,30872,0.0,0.0,0.0,Cerrar Mano
+Kevin,30922,0.0,0.0,0.0,Cerrar Mano
+Kevin,30972,0.0,0.0,0.0,Cerrar Mano
+Kevin,31022,0.0,0.0,0.0,Cerrar Mano
+Kevin,31072,0.0,0.0,0.0,Cerrar Mano
+Kevin,31122,0.0,0.0,0.0,Cerrar Mano
+Kevin,31172,0.0,0.0,0.0,Cerrar Mano
+Kevin,31222,0.0,0.0,0.0,Cerrar Mano
+Kevin,31272,0.0,0.0,0.0,Cerrar Mano
+Kevin,31322,0.0,0.0,0.0,Cerrar Mano
+Kevin,31372,0.0,0.0,0.0,Cerrar Mano
+Kevin,31422,0.0,0.0,0.0,Cerrar Mano
+Kevin,31472,0.0,0.0,0.0,Cerrar Mano
+Kevin,31522,0.0,0.0,0.0,Cerrar Mano
+Kevin,31572,0.0,0.0,0.0,Cerrar Mano
+Kevin,31622,0.0,0.0,0.0,Cerrar Mano
+Kevin,31672,0.0,0.0,0.0,Cerrar Mano
+Kevin,31722,0.0,0.0,0.0,Cerrar Mano
+Kevin,31772,0.0,0.0,0.0,Cerrar Mano
+Kevin,31822,0.0,0.0,0.0,Cerrar Mano
+Kevin,31872,0.0,0.0,0.0,Cerrar Mano
+Kevin,31922,0.0,0.0,0.0,Cerrar Mano
+Kevin,31972,0.0,0.0,0.0,Cerrar Mano
+Kevin,32022,0.0,0.0,0.0,Cerrar Mano
+Kevin,32072,0.0,0.0,0.0,Cerrar Mano
+Kevin,32122,0.0,0.0,0.0,Cerrar Mano
+Kevin,32172,0.0,0.0,0.0,Cerrar Mano
+Kevin,32222,0.0,0.0,0.0,Cerrar Mano
+Kevin,32272,0.0,0.0,0.0,Cerrar Mano
+Kevin,32322,0.0,0.0,0.0,Cerrar Mano

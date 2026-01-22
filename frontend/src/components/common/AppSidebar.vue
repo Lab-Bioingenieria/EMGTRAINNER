@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
+  Database,
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -28,6 +29,12 @@ const navigation = [
     path: "/dashboard",
     icon: Users,
     description: "Gestión y monitoreo",
+  },
+  {
+    name: "Almacenamiento",
+    path: "/storage",
+    icon: Database,
+    description: "Historial CSV",
   },
   {
     name: "Sesión Doctor",
