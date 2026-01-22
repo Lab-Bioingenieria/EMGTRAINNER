@@ -1,31 +1,100 @@
+import os
+import glob
+import sys
+
 from hand.core.dynamixel_interface import DynamixelInterface
 from hand.control.hand_controller import execute_gesture
-from hand.models.hand_profiles import SIX_DOF_HAND, TWO_MOTORS
-from hand.core.physics import (current_to_torque_nm, torque_to_fingertip_force, total_grip_force,)
+from hand.models.hand_profiles import ELEVEN_DOF_HAND, SIX_DOF_HAND, TWO_MOTORS
+from hand.core.physics import (
+    current_to_torque_nm,
+    torque_to_fingertip_force,
+    total_grip_force,
+)
 from hand.models.anthropometry import get_finger_length_m
 
-def main():
-    dx = DynamixelInterface(port_name="COM4")
-    dx.initialize()
-    dx.scan_motors()
+
+def find_u2d2_port() -> str | None:
+    """
+    Busca puerto de U2D2
+    1) DYNAMIXEL_PORT si existe
+    2) /dev/serial/by-id/*FTDI* (estable en Linux)
+    3) /dev/ttyUSB* (fallback típico)
+    4) COM* (fallback Windows)
+    """
+    env_port = os.getenv("DYNAMIXEL_PORT")
+    if env_port and os.path.exists(env_port):
+        return env_port
+
+    # Linux estable por-id
+    by_id = glob.glob("/dev/serial/by-id/*FTDI*")
+    if by_id:
+        # opcional: ordenar para elegir consistente
+        by_id.sort()
+        return by_id[0]
+
+    # Linux fallback
+    tty_usb = glob.glob("/dev/ttyUSB*")
+    if tty_usb:
+        tty_usb.sort()
+        return tty_usb[0]
+
+    # Windows fallback
+    com_ports = glob.glob("COM[0-9]*")
+    if com_ports:
+        com_ports.sort()
+        return com_ports[0]
+
+    return None
+
+
+def main() -> int:
+    port = find_u2d2_port()
+    if not port:
+        print("[ERROR] - U2D2 no detectado. Conecta el dispositivo o define DYNAMIXEL_PORT.")
+        return 1
+
+    print(f"[INFO] - Usando puerto Dynamixel: {port}")
+
+    dx = DynamixelInterface(port_name=port)
+
+    try:
+        dx.initialize()
+        ids = dx.scan_motors()
+    except Exception as e:
+        print(f"[ERROR] - No se pudo inicializar/escanear Dynamixel en {port}: {e}")
+        return 1
+
+    if not ids:
+        print("[ERROR] - No se detectaron motores. Revisa alimentación, baudrate, cableado, IDs.")
+        return 1
 
     print("[TEST] - Ejecutando gesto REST")
-    execute_gesture(dx, TWO_MOTORS, gesture_name="REST")
+    execute_gesture(dx, ELEVEN_DOF_HAND, gesture_name="OPEN")
 
-    finger_forces = {}
+    finger_forces: dict[str, float] = {}
 
     print("[TEST] - Calculando fuerzas por dedo")
 
     for finger_name, finger_profile in SIX_DOF_HAND.fingers.items():
+        # Tomar el primer motor NO bloqueado del dedo
+        try:
+            motor = next(m for m in finger_profile.motors.values() if not m.locked)
+        except StopIteration:
+            print(f"[WARN] - {finger_name}: no tiene motor libre (todos locked). Saltando.")
+            continue
 
-        # Usar el primer motor libre del dedo
-        motor = next(
-            m for m in finger_profile.motors.values() if not m.locked
-        )
+        # Si ese motor no existe en el bus, saltar sin romper todo
+        if motor.motor_id not in ids:
+            print(f"[WARN] - {finger_name}: motor ID {motor.motor_id} no está detectado. Saltando.")
+            continue
 
-        current_a = dx.read_current_amps(motor.motor_id)
+        try:
+            current_a = dx.read_current_amps(motor.motor_id)
+        except Exception as e:
+            print(f"[WARN] - {finger_name}: no se pudo leer corriente (ID {motor.motor_id}): {e}")
+            continue
+
         torque_nm = current_to_torque_nm(current_a)
-
         lever_arm = get_finger_length_m(finger_name)
         force_n = torque_to_fingertip_force(torque_nm, lever_arm)
 
@@ -40,7 +109,8 @@ def main():
 
     total_force = total_grip_force(finger_forces)
     print(f"\n[RESULTADO] Fuerza total de agarre: {total_force:.2f} N")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

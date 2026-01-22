@@ -15,6 +15,7 @@ click-repl==0.3.0
 colorama==0.4.6
 cryptography==46.0.3
 dnspython==2.4.2
+dynamixel-sdk==3.7.31
 ecdsa==0.19.1
 email-validator==2.1.0.post1
 fastapi==0.109.0

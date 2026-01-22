@@ -1,5 +1,7 @@
 import time
-from typing import List
+import os
+import glob
+from typing import List, Optional
 import dynamixel_sdk as dxl
 
 # CONFIGURACION GENERAL
@@ -38,13 +40,38 @@ MOTOR_GROUPS = {
     "wrist":  [12, 13],
 }
 
+def find_u2d2_port() -> Optional[str]:
+   env_port = os.getenv("DYNAMIXEL_PORT")
+   if env_port and os.path.exists(env_port):
+      return env_port
+
+   candidates = glob.glob("/dev/serial/by-id/*FTDI*")
+   if candidates:
+      candidates.sort()
+      return candidates[0]
+   usb = glob.glob("/dev/ttyUSB*")
+   if usb:
+      usb.sort()
+      return usv[0]
+
+   return None
 
 # CLASE PRINCIPAL
 class DynamixelInterface:
     CURRENT_UNIT_TO_AMP = 0.00269     # XL330 datasheet
     DEFAULT_CURRENT_LIMIT_UNITS = int(0.8 / CURRENT_UNIT_TO_AMP)  # =297
     
-    def __init__(self, port_name: str, baudrate: int = DEFAULT_BAUDRATE):
+    def __init__(self, port_name: Optional[str] = None, baudrate: int = DEFAULT_BAUDRATE):
+        
+        if not port_name:
+            port_name = find_u2d2_port()
+
+        if not port_name:
+           raise RuntimeError(
+               "[ERROR] - No se detectó el U2D2.\n"
+               "Conecta el dispositivo o define DYNAMIXEL_PORT.\n"
+               "Ejemplo: export DYNAMIXEL_PORT=/dev/serial/by-id/usb-FTDI_...\n")
+
         self.port_name = port_name
         self.baudrate = baudrate
         

@@ -1,28 +1,46 @@
 from hand.core.dynamixel_interface import DynamixelInterface
 import time
 import os
+import glob
 
-TEST_MOTOR_ID = 15          # Solo un motor
-DELTA_DEG = 45              # movimiento pequeño
+TEST_MOTOR_ID = 11
+DELTA_DEG = 45
+
+def find_u2d2_port():
+    env_port = os.getenv("DYNAMIXEL_PORT")
+    if env_port and os.path.exists(env_port):
+        return env_port
+
+    candidates = glob.glob("/dev/serial/by-id/*FTDI*")
+    if candidates:
+        return candidates[0]
+
+    usb = glob.glob("/dev/ttyUSB*")
+    if usb:
+        return usb[0]
+
+    return None
 
 def main():
-    port = os.getenv(
-            "DYNAMIXEL_PORT",
-            "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0"
-        )
+    port = find_u2d2_port()
+    if not port:
+        print("[ERROR] U2D2 no detectado. Conecta el dispositivo.")
+        return 1
+
+    print("[INFO] Usando puerto:", port)
+
     dx = DynamixelInterface(port_name=port)
     dx.initialize()
     dx.scan_motors()
 
     print("\n[TEST] - Leyendo posición inicial...")
     initial_pos = dx.read_position(TEST_MOTOR_ID)
-    print(f"Posición inicial (ticks): {initial_pos}")
+    print("Posición inicial (ticks):", initial_pos)
 
-    # Converción de grados a ticks centrados
     delta_ticks = dx.degrees_to_ticks_centered(DELTA_DEG) - 2048
     target_pos = initial_pos + delta_ticks
 
-    print(f"[TEST] - Moviendo motor {TEST_MOTOR_ID} +{DELTA_DEG}°")
+    print("[TEST] - Moviendo motor {} +{}°".format(TEST_MOTOR_ID, DELTA_DEG))
     dx.move_motor_safe(motor_id=TEST_MOTOR_ID, goal_position=target_pos)
 
     time.sleep(1)
@@ -31,6 +49,7 @@ def main():
     dx.move_motor_safe(motor_id=TEST_MOTOR_ID, goal_position=initial_pos)
 
     print("[OK] - Prueba completada con éxito")
+    return 0
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
