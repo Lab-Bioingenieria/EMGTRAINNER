@@ -7,13 +7,14 @@ import PatientHandVisualization from '../../components/patient/PatientHandVisual
 import PauseButton from '../../components/common/PauseButton.vue'
 import { ALL_GESTURES, DEFAULT_DEVICE_ID } from '../../lib/constants'
 import type { Gesture } from '../../lib/constants'
-import { ChevronRight, Play, Pause, ArrowLeft, Activity, RefreshCw, Maximize, CheckCircle2 } from 'lucide-vue-next'
+import { ChevronRight, Play, Pause, ArrowLeft, Activity, RefreshCw, Maximize, CheckCircle2, FileText, Download } from 'lucide-vue-next'
 import { EmgService } from '../../services/emg.service'
 import { PatientService } from '../../services/patient.service'
 
 const emgSignals = ref([
     { id: 1, status: 'active' }, { id: 2, status: 'active' }, { id: 3, status: 'active' }
 ])
+const lastSession = ref<any>(null)
 
 type Step = 'mode-selection' | 'setup' | 'protocols' | 'training' | 'completed'
 const step = ref<Step>('mode-selection')
@@ -32,6 +33,7 @@ const isExecuting = ref(false)
 const timer = ref(5)
 const completedSteps = ref<number[]>([])
 const currentOrderId = ref<string | null>(null)
+const touchedName = ref(false)
 
 // Auto Flow State
 const isCountingDown = ref(false)
@@ -100,11 +102,14 @@ const startCountdown = () => {
 
 const startExecution = () => {
     isExecuting.value = true
+    if(gestures.value[currentStep.value]) {
+        EmgService.setMovementLabel(gestures.value[currentStep.value].name)
+    }
     timer.value = gestureDuration.value
     runTimer('execution')
 }
 
-const completeGesture = () => {
+const completeGesture = async () => {
     clearInterval(intervalId)
     isExecuting.value = false
     if (!completedSteps.value.includes(currentStep.value)) {
@@ -114,12 +119,24 @@ const completeGesture = () => {
     if (currentStep.value < gestures.value.length - 1) {
         startRest()
     } else {
+        // Stop EMG Session and Get CSV
+        try {
+            await EmgService.stopSession()
+            // Small delay to ensure file write
+            setTimeout(async () => {
+                lastSession.value = await EmgService.getLatestSession()
+            }, 500)
+        } catch (e) {
+            console.error("Failed to stop session", e)
+        }
+
         step.value = 'completed'
     }
 }
 
 const startRest = () => {
     isResting.value = true
+    EmgService.setMovementLabel('Rest')
     restTimer.value = 5
     runTimer('rest')
 }
@@ -141,6 +158,15 @@ const confirmProtocols = async () => {
             console.error("Failed to start order:", error)
         }
     }
+    
+    // Start EMG Data Collection
+    try {
+        await EmgService.setSessionInfo(patientName.value)
+        await EmgService.startSession()
+    } catch (e) {
+        console.error("Failed to start EMG session", e)
+    }
+
     enterFullscreen()
     step.value = 'training'
     currentStep.value = 0
@@ -214,21 +240,45 @@ const enterFullscreen = () => {
 let pollingInterval: number
 
 const updateDeviceStatus = async () => {
-    const status = await EmgService.getDeviceStatus(DEFAULT_DEVICE_ID)
-    if (status.is_online) {
-        // Mock mapping if sensors are empty, or use real data
-        // For now, if online, set all to active
-        emgSignals.value = emgSignals.value.map(s => ({ ...s, status: 'active' }))
-    } else {
-        emgSignals.value = emgSignals.value.map(s => ({ ...s, status: 'inactive' }))
+    try {
+        const status = await EmgService.getDeviceStatus(DEFAULT_DEVICE_ID)
+        
+        if (status.is_online) {
+            emgSignals.value = emgSignals.value.map(s => ({ ...s, status: 'active' }))
+        } else {
+            emgSignals.value = emgSignals.value.map(s => ({ ...s, status: 'inactive' }))
+            
+            // Try auto-reconnect on each poll if offline
+            // This is "silent" reconnection
+            try {
+                await EmgService.connect()
+            } catch (ignore) {
+                // Ignore errors during silent reconnect attempts
+            }
+        }
+    } catch (e) {
+        console.error("Status check failed", e)
     }
 }
 
 import { onMounted } from 'vue'
 
-onMounted(() => {
-    updateDeviceStatus()
-    pollingInterval = window.setInterval(updateDeviceStatus, 2000)
+onMounted(async () => {
+    await updateDeviceStatus()
+    
+    // Auto-connect if offline
+    const initialStatus = await EmgService.getDeviceStatus(DEFAULT_DEVICE_ID)
+    if (!initialStatus.is_online) {
+        console.log("Device offline, attempting auto-mount connection...")
+        try {
+            await EmgService.connect()
+            await updateDeviceStatus() // Refresh status after connect attempt
+        } catch (e) {
+            console.error("Auto-connect failed", e)
+        }
+    }
+
+    pollingInterval = window.setInterval(updateDeviceStatus, 1000)
 })
 
 onUnmounted(() => {
@@ -302,8 +352,8 @@ onUnmounted(() => {
                  </div>
                  <div class="grid-2 gap-input">
                      <div class="field">
-                         <label class="label">Nombre del Paciente</label>
-                         <input v-model="patientName" placeholder="Opcional" class="input" />
+                         <label class="label">Nombre del Paciente <span class="text-red">*</span></label>
+                         <input v-model="patientName" placeholder="Requerido" class="input" :class="{ 'input-error': !patientName && touchedName }" @blur="touchedName = true" />
                      </div>
                      <div class="field">
                           <label class="label">Edad</label>
@@ -351,12 +401,12 @@ onUnmounted(() => {
                      </div>
                  </div>
                  <span class="badge" :class="activeSignals >=3 ? 'badge-success' : 'badge-error'">
-                     {{ activeSignals >= 3 ? 'Listo para iniciar' : 'Verificar sensores' }}
+                     {{ activeSignals >= 3 ? 'Sensores Conectados' : 'Sensores Desconectados' }}
                  </span>
              </div>
 
              <button class="btn btn-primary w-full py-action flex-center" 
-                     :disabled="selectedGestures.length === 0"
+                     :disabled="selectedGestures.length === 0 || !patientName.trim()"
                      @click="startTraining">
                      Iniciar Entrenamiento <ChevronRight class="icon-sm ml-2" />
              </button>
@@ -504,6 +554,24 @@ onUnmounted(() => {
                  </div>
                  <h2 class="title-primary mb-3">Sesión Completada</h2>
                  <p class="subtitle-text mb-8">Ha completado toda la rutina seleccionada.</p>
+                 
+                 <!-- CSV Result Display -->
+                 <div v-if="lastSession" class="csv-result-card mb-8">
+                     <div class="csv-icon-box">
+                         <FileText class="icon-md text-green" />
+                     </div>
+                     <div class="csv-info">
+                         <p class="csv-name">{{ lastSession.filename }}</p>
+                         <p class="csv-meta">{{ (lastSession.size_bytes / 1024).toFixed(1) }} KB • {{ new Date(lastSession.created_at).toLocaleTimeString() }}</p>
+                     </div>
+                     <a :href="`http://localhost:8000/v1/storage/sessions/${lastSession.filename}`" 
+                        download 
+                        class="btn-icon-only"
+                        title="Descargar CSV">
+                         <Download class="icon-sm" />
+                     </a>
+                 </div>
+
                  <button class="btn btn-outline w-full" @click="resetSession">Nueva Sesión</button>
             </div>
         </div>
@@ -518,6 +586,25 @@ onUnmounted(() => {
 .container-xl { max-width: 1200px; margin: 0 auto; width: 100%; }
 .container-sm { max-width: 800px; margin: 0 auto; width: 100%; }
 .container-xs { max-width: 440px; margin: 0 auto; width: 100%; margin-top: 4rem; }
+
+/* CSV Card */
+.csv-result-card {
+    display: flex; align-items: center; gap: 1rem;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem;
+    text-align: left;
+}
+.csv-icon-box {
+    width: 2.5rem; height: 2.5rem; background: #dcfce7; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+}
+.csv-info { flex: 1; min-width: 0; }
+.csv-name { font-weight: 600; font-size: 0.9rem; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.csv-meta { font-size: 0.75rem; color: #64748b; }
+.btn-icon-only {
+    width: 2.25rem; height: 2.25rem; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; color: #475569; transition: all 0.2s;
+}
+.btn-icon-only:hover { background: #e2e8f0; color: #0f172a; }
 
 /* Text Typography */
 .title-primary { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
@@ -677,8 +764,8 @@ onUnmounted(() => {
 }
 
 .visualization-wrapper { 
-    width: 400px; 
-    height: 400px; 
+    width: 650px; 
+    height: 650px; 
     transition: opacity 0.5s; 
 }
 

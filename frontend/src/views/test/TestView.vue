@@ -7,6 +7,7 @@ import {
     PlayCircle, StopCircle 
 } from 'lucide-vue-next'
 import { HealthService } from '../../services/health.service'
+import { EmgService } from '../../services/emg.service'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import EmgSerialPlotter from '../../components/common/EmgSerialPlotter.vue'
 import { Box3, Vector3 } from 'three'
@@ -51,9 +52,21 @@ const checkConnection = async () => {
     }
 }
 
-const startTest = () => {
+const startTest = async () => {
     isRunningTest.value = true
-    setTimeout(() => isRunningTest.value = false, 2000)
+    try {
+        await EmgService.setSessionInfo('System Test')
+        await EmgService.startSession('test')
+        await EmgService.setMovementLabel('Diagnostics')
+        
+        setTimeout(async () => {
+            await EmgService.stopSession()
+            isRunningTest.value = false
+        }, 5000)
+    } catch (e) {
+        console.error("Diagnostic failed", e)
+        isRunningTest.value = false
+    }
 }
 
 // Load 3D model

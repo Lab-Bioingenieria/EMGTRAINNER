@@ -86,6 +86,39 @@ async def disconnect_emg():
     return emg_service.disconnect_from_device()
 
 
+@sensor_router.post("/emg/start")
+async def start_emg_session(category: str = ""):
+    """Send START_SESSION command to ESP32"""
+    # Ensure we are connected first
+    status = emg_service.get_connection_status()
+    if not status["connected"]:
+        return {"error": "Device not connected. Connect first."}
+        
+    emg_service.start_streaming(category=category)
+    return {"message": "Session started", "status": "streaming", "category": category}
+
+
+@sensor_router.post("/emg/stop")
+async def stop_emg_session():
+    """Send STOP_SESSION command to ESP32"""
+    emg_service.stop_streaming()
+    return {"message": "Session stopped", "status": "idle"}
+
+
+@sensor_router.post("/emg/session/info")
+async def set_session_info(name: str):
+    """Set patient name for current/next session"""
+    emg_service.set_session_info(name)
+    return {"message": f"Session info updated: {name}"}
+
+
+@sensor_router.post("/emg/label")
+async def set_movement_label(label: str):
+    """Set current movement label"""
+    emg_service.set_current_label(label)
+    return {"message": f"Label updated: {label}"}
+
+
 @sensor_router.get("/emg/sample")
 async def get_emg_sample():
     """Get a single sample of EMG data (for testing)"""

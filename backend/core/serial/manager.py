@@ -58,7 +58,7 @@ class SerialManager:
             
         except Exception as e:
             print(f"Error connecting to serial port: {e}")
-            return False
+            raise e
     
     def disconnect(self) -> None:
         """Close serial connection"""
@@ -68,8 +68,20 @@ class SerialManager:
             self.port = None
     
     def is_connected(self) -> bool:
-        """Check if serial port is connected"""
-        return self.connection is not None and self.connection.is_open
+        """Check if serial port is connected and physically present"""
+        if self.connection is None or not self.connection.is_open:
+            return False
+
+        # Additional check: Verify the port still exists in the OS
+        # This catches physical disconnections (unplugging USB)
+        try:
+            available_ports = [p.device for p in serial.tools.list_ports.comports()]
+            if self.port not in available_ports:
+                self.disconnect()
+                return False
+            return True
+        except Exception:
+            return False
     
     def read_line(self) -> Optional[str]:
         """
