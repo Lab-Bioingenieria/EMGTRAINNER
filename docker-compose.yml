@@ -15,9 +15,11 @@ services:
     container_name: backend
     ports:
       - "8000:8000"
-    devices:
-      - /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0
-      - /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
+    privileged: true
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - /dev/:/dev
     environment:
       DYNAMIXEL_PORT: /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0
       EMG_PORT: /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
