@@ -16,8 +16,21 @@ const emgSignals = ref([
 ])
 const lastSession = ref<any>(null)
 
-type Step = 'mode-selection' | 'setup' | 'protocols' | 'training' | 'completed'
+type Step = 'mode-selection' | 'setup' | 'protocols' | 'tutorial' | 'training' | 'completed'
 const step = ref<Step>('mode-selection')
+const tutorialStep = ref(0)
+const maxTutorialTime = 4000
+
+// TTS Helper
+const speak = (text: string) => {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang = 'es-ES'
+        utterance.rate = 1.0
+        window.speechSynthesis.speak(utterance)
+    }
+}
 type TrainingMode = 'TLC' | 'LLC'
 const trainingMode = ref<TrainingMode>('TLC')
 
@@ -103,7 +116,9 @@ const startCountdown = () => {
 const startExecution = () => {
     isExecuting.value = true
     if(gestures.value[currentStep.value]) {
-        EmgService.setMovementLabel(gestures.value[currentStep.value].name)
+        const gestureName = gestures.value[currentStep.value].name
+        EmgService.setMovementLabel(gestureName)
+        speak(gestureName)
     }
     timer.value = gestureDuration.value
     runTimer('execution')
@@ -137,6 +152,7 @@ const completeGesture = async () => {
 const startRest = () => {
     isResting.value = true
     EmgService.setMovementLabel('Rest')
+    speak("Descansa")
     restTimer.value = 5
     runTimer('rest')
 }
@@ -148,6 +164,50 @@ const resetSession = () => {
     patientAge.value = ''
     isResting.value = false
     isCountingDown.value = false
+}
+
+const startTutorial = () => {
+    step.value = 'tutorial'
+    currentStep.value = 0
+    tutorialStep.value = 0
+    enterFullscreen()
+    speak("Bienvenido. Haremos un breve repaso de los movimientos.")
+    setTimeout(playTutorialStep, 3500)
+}
+
+const playTutorialStep = () => {
+    if (tutorialStep.value < selectedGestures.value.length) {
+        const gesture = selectedGestures.value[tutorialStep.value]
+        speak(`Movimiento: ${gesture.name}. Prepárate.`)
+        // Auto-advance logic
+        setTimeout(() => {
+             if (step.value === 'tutorial') nextTutorialStep()
+        }, maxTutorialTime)
+    } else {
+        finishTutorial()
+    }
+}
+
+const nextTutorialStep = () => {
+    tutorialStep.value++
+    if (tutorialStep.value < selectedGestures.value.length) {
+        playTutorialStep()
+    } else {
+        finishTutorial()
+    }
+}
+
+const finishTutorial = () => {
+    speak("Tutorial completado. Iniciando entrenamiento.")
+    step.value = 'training'
+    currentStep.value = 0
+    completedSteps.value = []
+    startTrainingByFlow()
+}
+
+const skipTutorial = () => {
+    window.speechSynthesis.cancel()
+    finishTutorial()
 }
 
 const confirmProtocols = async () => {
@@ -167,11 +227,7 @@ const confirmProtocols = async () => {
         console.error("Failed to start EMG session", e)
     }
 
-    enterFullscreen()
-    step.value = 'training'
-    currentStep.value = 0
-    completedSteps.value = []
-    startTrainingByFlow()
+    startTutorial()
 }
 
 const backToModeSelection = () => {
@@ -443,6 +499,42 @@ onUnmounted(() => {
                  <button class="btn btn-primary w-full py-large flex-center shadow-btn" 
                          @click="confirmProtocols">
                          Entendido, Iniciar Sesión <CheckCircle2 class="ml-2 icon-md" />
+                 </button>
+             </div>
+        </div>
+
+        <!-- TUTORIAL PHASE -->
+        <div v-else-if="step === 'tutorial'" class="container-sm">
+             <div class="card p-extra text-center tutorial-card">
+                 <h2 class="title-primary mb-2">Tutorial de Movimientos</h2>
+                 <p class="subtitle-text mb-8">Observe y prepárese para realizar los siguientes gestos.</p>
+
+                 <div class="tutorial-highlight mb-8">
+                      <div class="tutorial-vis-wrapper">
+                         <PatientHandVisualization 
+                            :gesture="selectedGestures[tutorialStep]?.name || ''" 
+                            :is-active="true" 
+                         />
+                      </div>
+                      <h3 class="gesture-title-large">
+                          {{ selectedGestures[tutorialStep]?.name || 'Finalizando...' }}
+                      </h3>
+                      <p class="gesture-subtitle">
+                          {{ selectedGestures[tutorialStep]?.nameEn }}
+                      </p>
+                 </div>
+
+                 <div class="tutorial-progress">
+                     <div class="progress-bar-bg">
+                         <div class="progress-bar-fill" 
+                              :style="{ width: `${((tutorialStep) / selectedGestures.length) * 100}%` }">
+                         </div>
+                     </div>
+                     <p class="progress-text">{{ tutorialStep + 1 }} de {{ selectedGestures.length }}</p>
+                 </div>
+
+                 <button class="btn btn-outline w-full mt-8" @click="skipTutorial">
+                     Saltar Tutorial
                  </button>
              </div>
         </div>
@@ -839,4 +931,25 @@ onUnmounted(() => {
 @keyframes pulse { 50% { opacity: .5; } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(1rem); } to { opacity: 1; transform: translateY(0); } }
 .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+/* Tutorial Styles */
+.tutorial-card { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 500px; }
+.tutorial-vis-wrapper { 
+    width: 300px; 
+    height: 300px; 
+    margin: 0 auto 1.5rem; 
+    background: #f8fafc; 
+    border-radius: 20px; 
+    overflow: hidden; 
+    border: 1px solid #e2e8f0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.gesture-title-large { font-size: 2rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem; }
+.gesture-subtitle { font-size: 1.1rem; color: #64748b; font-weight: 500; }
+.tutorial-progress { width: 100%; max-width: 300px; margin: 0 auto; }
+.progress-bar-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; margin-bottom: 0.5rem; }
+.progress-bar-fill { height: 100%; background: #2563eb; transition: width 0.3s ease; }
+.progress-text { font-size: 0.875rem; color: #94a3b8; }
 </style>
