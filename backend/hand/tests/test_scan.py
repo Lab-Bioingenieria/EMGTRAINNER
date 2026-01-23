@@ -34,6 +34,7 @@ def main():
     dx.initialize()
     ids = dx.scan_motors()
     print("Motores detectados:", ids)
+
     return 0
 
 

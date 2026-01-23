@@ -1,7 +1,7 @@
 import time
 import os
 import glob
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 import dynamixel_sdk as dxl
 
 # CONFIGURACION GENERAL
@@ -27,34 +27,34 @@ POSITION_MODE = 3
 # PARAMETROS DE SEGURIDAD
 TORQUE_CONSTANT_NM_PER_AMP = 0.0011
 MAX_CURRENT_A = 0.6               # limite seguro
-DEFAULT_PROFILE_VELOCITY = 20
+DEFAULT_PROFILE_VELOCITY = 55
 DEFAULT_PROFILE_ACCELERATION = 10
 
-# GRUPOS DE MOTORES
-MOTOR_GROUPS = {
-    "thumb":  [1, 2, 3],
-    "index":  [4, 5],
-    "middle": [6, 7],
-    "ring":   [8, 9],
-    "pinky":  [10, 11],
-    "wrist":  [12, 13],
-}
-
 def find_u2d2_port() -> Optional[str]:
-   env_port = os.getenv("DYNAMIXEL_PORT")
-   if env_port and os.path.exists(env_port):
-      return env_port
+    env_port = os.getenv("DYNAMIXEL_PORT")
+    if env_port and os.path.exists(env_port):
+        return env_port
 
-   candidates = glob.glob("/dev/serial/by-id/*FTDI*")
-   if candidates:
-      candidates.sort()
-      return candidates[0]
-   usb = glob.glob("/dev/ttyUSB*")
-   if usb:
-      usb.sort()
-      return usv[0]
+    candidates = glob.glob("/dev/serial/by-id/FTDI")
+    if candidates:
+        candidates.sort()
+        return candidates[0]
 
-   return None
+    usb = glob.glob("/dev/ttyUSB*")
+    if usb:
+        usb.sort()
+        return usb[0]
+
+    return None
+
+def _int32_to_le_bytes(value: int) -> List[int]:
+    # 4 bytes little-endian
+    return [
+        value & 0xFF,
+        (value >> 8) & 0xFF,
+        (value >> 16) & 0xFF,
+        (value >> 24) & 0xFF,
+    ]
 
 # CLASE PRINCIPAL
 class DynamixelInterface:
@@ -165,7 +165,63 @@ class DynamixelInterface:
             else:
                 stable_count = 0
 
-            time.sleep(0.05)
+            time.sleep(0.02)
+
+    # MOVIMIENTO SIMULTÁNEO (SYNC WRITE)
+    def move_motors_sync_safe(
+        self,
+        targets: Dict[int, int],
+        timeout_s: float = 1.0,
+        current_limits_a: Optional[Dict[int, float]] = None,) -> None:
+        """
+        targets: {motor_id: goal_position_ticks}
+        current_limits_a: {motor_id: max_current_a} opcional (si no, usa MAX_CURRENT_A global)
+        """
+        if not targets:
+            return
+
+        group = dxl.GroupSyncWrite(self.port_handler, self.packet_handler, ADDR_GOAL_POSITION, 4)
+
+        for motor_id, goal_pos in targets.items():
+            param = _int32_to_le_bytes(goal_pos)
+            ok = group.addParam(motor_id, param)
+            if not ok:
+                raise RuntimeError(f"[ERROR] - No se pudo agregar motor {motor_id} al SyncWrite")
+
+        dxl_comm_result = group.txPacket()
+        group.clearParam()
+
+        if dxl_comm_result != dxl.COMM_SUCCESS:
+            raise RuntimeError(f"[ERROR] - SyncWrite fallo: {self.packet_handler.getTxRxResult(dxl_comm_result)}")
+
+        # Monitoreo de corriente
+        start_time = time.time()
+        stable_counts: Dict[int, int] = {mid: 0 for mid in targets.keys()}
+
+        while time.time() - start_time < timeout_s:
+            for motor_id in targets.keys():
+                limit = MAX_CURRENT_A
+                if current_limits_a and motor_id in current_limits_a:
+                    limit = min(limit, current_limits_a[motor_id])
+
+                try:
+                    current_a = self.read_current_amps(motor_id)
+                except Exception:
+                    # Si falla la lectura, no parar toda la sesión
+                    continue
+
+                if current_a > limit:
+                    stable_counts[motor_id] += 1
+                    if stable_counts[motor_id] >= 3:
+                        self.disable_torque(motor_id)
+                    raise RuntimeError(
+                        f"[WARNING] - Sobrecorriente motor {motor_id}: {current_a:.2f} A (lim {limit:.2f} A)"
+                    )
+                else:
+                    stable_counts[motor_id] = 0
+
+            time.sleep(0.02)
+
 
     # CONVERSIONES
     @staticmethod

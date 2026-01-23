@@ -1,10 +1,11 @@
 import os
 import glob
 import sys
+import time
 
 from hand.core.dynamixel_interface import DynamixelInterface
 from hand.control.hand_controller import execute_gesture
-from hand.models.hand_profiles import ELEVEN_DOF_HAND, SIX_DOF_HAND, TWO_MOTORS
+from hand.models.hand_profiles import ELEVEN_DOF_RIGHT, SIX_DOF_RIGHT, TWO_MOTORS
 from hand.core.physics import (
     current_to_torque_nm,
     torque_to_fingertip_force,
@@ -14,13 +15,7 @@ from hand.models.anthropometry import get_finger_length_m
 
 
 def find_u2d2_port() -> str | None:
-    """
-    Busca puerto de U2D2
-    1) DYNAMIXEL_PORT si existe
-    2) /dev/serial/by-id/*FTDI* (estable en Linux)
-    3) /dev/ttyUSB* (fallback típico)
-    4) COM* (fallback Windows)
-    """
+
     env_port = os.getenv("DYNAMIXEL_PORT")
     if env_port and os.path.exists(env_port):
         return env_port
@@ -50,7 +45,7 @@ def find_u2d2_port() -> str | None:
 def main() -> int:
     port = find_u2d2_port()
     if not port:
-        print("[ERROR] - U2D2 no detectado. Conecta el dispositivo o define DYNAMIXEL_PORT.")
+        print("[ERROR] - U2D2 no detectado. Conectar el dispositivo o define DYNAMIXEL_PORT.")
         return 1
 
     print(f"[INFO] - Usando puerto Dynamixel: {port}")
@@ -65,17 +60,40 @@ def main() -> int:
         return 1
 
     if not ids:
-        print("[ERROR] - No se detectaron motores. Revisa alimentación, baudrate, cableado, IDs.")
+        print("[ERROR] - No se detectaron motores. Revisar alimentación, baudrate, cableado, IDs.")
         return 1
 
-    print("[TEST] - Ejecutando gesto REST")
-    execute_gesture(dx, ELEVEN_DOF_HAND, gesture_name="OPEN")
+    print("[TEST] - Ejecutando Gesto")
+    """execute_gesture(dx, ELEVEN_DOF_RIGHT, gesture_name="BALL")"""
 
+
+    print("[TEST] - Ejecutando secuencia REST → POINT")
+	
+    for i in range(3):
+        print(f"\n[CICLO {i+1}] POINT (5 s)")
+        execute_gesture(dx, ELEVEN_DOF_RIGHT, gesture_name="CYLINDRICAL")
+        time.sleep(3.0)   # REST dura 5 segundos
+
+        print(f"[CICLO {i+1}] REST (4 s)")
+        execute_gesture(dx, ELEVEN_DOF_RIGHT, gesture_name="ZERO")
+        time.sleep(3.0)   # POINT dura 4 segundos
+        
+    """try:
+	execute_gesture(...)
+        time.sleep(...)
+    except KeyboardInterrupt:
+	print("[INFO] Sesión cancelada por el usuario")
+	break"""
+        
+    
     finger_forces: dict[str, float] = {}
+
+
+
 
     print("[TEST] - Calculando fuerzas por dedo")
 
-    for finger_name, finger_profile in SIX_DOF_HAND.fingers.items():
+    for finger_name, finger_profile in ELEVEN_DOF_RIGHT.fingers.items():
         # Tomar el primer motor NO bloqueado del dedo
         try:
             motor = next(m for m in finger_profile.motors.values() if not m.locked)

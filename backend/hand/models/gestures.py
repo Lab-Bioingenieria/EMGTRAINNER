@@ -4,6 +4,79 @@ GestureDefinition = Dict[str, Dict[str, float]]
 # finger -> joint -> angle_deg
 
 GESTURES: Dict[str, Dict[str, GestureDefinition]] = {
+
+    "BALL":{
+	"Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 60,
+                "CMC_AA": 95,
+                "CMC_FE": 30,
+            },
+            "index":  {"PIP": 65, "MCP": 65},
+            "middle": {"PIP": 70, "MCP": 50},
+            "ring":   {"PIP": 65, "MCP": 50},
+            "pinky":  {"PIP": 70, "MCP": 55},
+        },
+    },
+
+    "ZERO": {
+        "Two_Motors": {
+            "phalanx": {
+                "14": 0,
+                "15": 0,
+            },
+        }, 
+        "Six_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 0,
+                "CMC_AA": 0,
+            },
+            "index": {
+                "PIP": 0,
+                "CMP": 0,
+            },
+            "middle": {
+                "PIP": 0,
+                "MCP": 0,
+            },
+            "ring": {
+                "PIP": 0,
+                "MCP": 0,
+            },
+            "pinky": {
+                "PIP": 0,
+                "MCP": 0,
+            },
+        },
+        "Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 0,
+                "CMC_AA": 0,
+                "CMC_FE": 0,
+            },
+            "index":  {"PIP": 0, "MCP": 0},
+            "middle": {"PIP": 0, "MCP": 0},
+            "ring":   {"PIP": 0, "MCP": 0},
+            "pinky":  {"PIP": 0, "MCP": 0},
+        },
+
+        "Two_DOF_Left": {
+            "thumb": {
+                "MCP_FE": 0,
+            },
+            "phalanx": {
+                "II_MCP_FE": 0,
+                "II_PIP_FE": 0,
+                "III_MCP_FE": 0,
+                "III_PIP_FE": 0,
+                "IV_MCP_FE": 0,
+                "IV_PIP_FE": 0,
+                "V_MCP_FE": 0,
+                "V_PIP_FE": 0,
+            },
+        },
+    },
+
     "REST": {
 
         "Two_Motors": {
@@ -16,7 +89,7 @@ GESTURES: Dict[str, Dict[str, GestureDefinition]] = {
         "Six_DOF_Right": {
             "thumb": {
                 "MCP_FE": 30,
-                "CMC_AA": 35
+                "CMC_AA": 35,
             },
             "index": {
                 "PIP": 45,
@@ -146,7 +219,7 @@ GESTURES: Dict[str, Dict[str, GestureDefinition]] = {
         "Six_DOF_Right": {
             "thumb": {
                 "MCP_FE": 0,
-                "CMC_AA": 0
+                "CMC_AA": 0,
             },
             "index": {
                 "PIP": 100,
@@ -257,7 +330,7 @@ GESTURES: Dict[str, Dict[str, GestureDefinition]] = {
         "Six_DOF_Right": {
             "thumb": {
                 "MCP_FE": 60,
-                "CMC_AA": 65
+                "CMC_AA": 65,
             },
             "index":  {"PIP": 60, "MCP": 60},
             "middle": {"PIP": 10, "MCP": 5},

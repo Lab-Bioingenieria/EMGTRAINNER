@@ -3,8 +3,8 @@ import time
 import os
 import glob
 
-TEST_MOTOR_ID = 10
-DELTA_DEG = 80
+TEST_MOTOR_ID = 4
+DELTA_DEG = 30
 
 def find_u2d2_port():
     env_port = os.getenv("DYNAMIXEL_PORT")
@@ -37,16 +37,11 @@ def main():
     initial_pos = dx.read_position(TEST_MOTOR_ID)
     print("Posición inicial (ticks):", initial_pos)
 
-    delta_ticks = dx.degrees_to_ticks_centered(DELTA_DEG) - 2048
-    target_pos = initial_pos + delta_ticks
+    delta_ticks = dx.degrees_to_ticks_centered(DELTA_DEG)
+    target_pos = delta_ticks
 
     print("[TEST] - Moviendo motor {} +{}°".format(TEST_MOTOR_ID, DELTA_DEG))
     dx.move_motor_safe(motor_id=TEST_MOTOR_ID, goal_position=target_pos)
-
-    time.sleep(1)
-
-    print("[TEST] - Retornando a posición inicial")
-    dx.move_motor_safe(motor_id=TEST_MOTOR_ID, goal_position=initial_pos)
 
     print("[OK] - Prueba completada con éxito")
     return 0

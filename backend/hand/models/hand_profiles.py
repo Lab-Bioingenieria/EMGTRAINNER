@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Dict, List, Tuple, Literal
+from dataclasses import dataclass, field
+from typing import Dict, List, Tuple, Literal, Set
 HandSide = Literal["RIGHT", "LEFT"]
 
 @dataclass
@@ -24,6 +24,12 @@ class HandProfile:
     fingers: Dict[str, FingerProfile]
     locked_motors: List[int]
 
+    # Ejemplo: [["index","middle","ring","pinky"], ["thumb"]]
+    execution_groups: List[List[str]] = field(default_factory=list)
+
+    all_fingers_simultaneous_gestures: Set[str] = field(default_factory=set)
+
+
 # Utilidades
 
 def apply_hand_orientation(angle: float, motor: MotorConfig, side: HandSide):
@@ -35,55 +41,59 @@ def apply_hand_orientation(angle: float, motor: MotorConfig, side: HandSide):
 
 # Perfiles de Protesis
 
-ELEVEN_DOF_HAND = HandProfile(
+ELEVEN_DOF_RIGHT = HandProfile(
     name="Eleven_DOF_Right",
     side="RIGHT",
     locked_motors=[12, 13],
+    execution_groups=[["index", "middle", "ring", "pinky"], ["thumb"]],
+    all_fingers_simultaneous_gestures={"LIKE", "REST", "OPEN"},
     fingers={
         "thumb": FingerProfile(
             "thumb",
             motors={
-                "MCP_FE": MotorConfig(1, 0, 60, 30, 0.8),
-                "CMC_AA": MotorConfig(2, 0, 60, 20, 0.8),
+                "MCP_FE": MotorConfig(1, 0, 120, 0, 0.8),
+                "CMC_AA": MotorConfig(2, 0, 100, 0, 0.8),
                 "CMC_FE": MotorConfig(3, 0, 45, 0, 0.8),
             },
         ),
         "index": FingerProfile(
             "index",
             motors={
-                "PIP": MotorConfig(4, 0, 90, 45, 0.8),
-                "MCP": MotorConfig(5, 0, 90, 30, 0.8),
+                "PIP": MotorConfig(4, 0, 90, 0, 0.8),
+                "MCP": MotorConfig(5, 0, 90, 0, 0.8),
             },
         ),
         "middle": FingerProfile(
             "middle",
             motors={
-                "PIP": MotorConfig(6, 0, 90, 55, 0.8),
-                "MCP": MotorConfig(7, 0, 90, 35, 0.8),
+                "PIP": MotorConfig(6, 0, 90, 0, 0.8),
+                "MCP": MotorConfig(7, 0, 90, 0, 0.8),
             },
         ),
         "ring": FingerProfile(
             "ring",
             motors={
-                "PIP": MotorConfig(8, 0, 90, 45, 0.8),
-                "MCP": MotorConfig(9, 0, 90, 40, 0.8),
+                "PIP": MotorConfig(8, 0, 90, 0, 0.8),
+                "MCP": MotorConfig(9, 0, 90, 0, 0.8),
             },
         ),
         "pinky": FingerProfile(
             "pinky",
             motors={
-                "PIP": MotorConfig(10, 0, 90, 35, 0.8),
-                "MCP": MotorConfig(11, 0, 90, 45, 0.8),
+                "PIP": MotorConfig(10, 0, 90, 0, 0.8),
+                "MCP": MotorConfig(11, 0, 90, 0, 0.8),
             },
         ),
     },
 )
 
 
-SIX_DOF_HAND = HandProfile(
+SIX_DOF_RIGHT = HandProfile(
     name="Six_DOF_Right",
     side="RIGHT",
     locked_motors=[3,12, 13],
+    execution_groups=[["index", "middle", "ring", "pinky"], ["thumb"]],
+    all_fingers_simultaneous_gestures={"LIKE", "REST", "OPEN"},
     fingers={
         "thumb": FingerProfile(
             "thumb",
@@ -125,7 +135,7 @@ SIX_DOF_HAND = HandProfile(
 )
 
 
-TWO_DOF_HAND = HandProfile(
+TWO_DOF_LEFT = HandProfile(
     name="Two_DOF_Left",
     side="LEFT",
     locked_motors=[2, 3, 12, 13],
@@ -198,7 +208,8 @@ TWO_MOTORS = HandProfile(
 # Registro de Perfiles
 
 HAND_PROFILES: Dict[str, HandProfile] = {
-    SIX_DOF_HAND.name: SIX_DOF_HAND,
-    TWO_DOF_HAND.name: TWO_DOF_HAND,
+    ELEVEN_DOF_RIGHT.name: ELEVEN_DOF_RIGHT,
+    SIX_DOF_RIGHT.name: SIX_DOF_RIGHT,
+    TWO_DOF_LEFT.name: TWO_DOF_LEFT,
     TWO_MOTORS.name:   TWO_MOTORS,
 }
