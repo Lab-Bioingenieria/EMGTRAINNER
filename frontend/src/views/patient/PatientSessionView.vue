@@ -4,12 +4,22 @@ import { useRouter } from 'vue-router'
 import TopHeader from '../../components/common/TopHeader.vue'
 import GestureProgress from '../../components/patient/GestureProgress.vue'
 import RadialTimer from '../../components/patient/RadialTimer.vue'
-import PatientHandVisualization from '../../components/patient/PatientHandVisualization.vue'
+import HandViewer from '../../components/HandViewer.vue'
+import { useJointStore } from '../../stores/joint.store'
 import { ALL_GESTURES } from '../../lib/constants'
 import type { Gesture } from '../../lib/constants'
 import { Wifi, ChevronRight, Play, Maximize, CheckCircle2 } from 'lucide-vue-next'
 
 const router = useRouter()
+const jointStore = useJointStore()
+const wsStatus = computed(() => jointStore.wsConnected)
+const lastGesture = ref<{gesture?:string, conf?:number}|null>(null)
+
+// listen for gesture events to show status
+window.addEventListener('gesture-event', (ev: any) => {
+    const d = ev.detail
+    lastGesture.value = { gesture: d.gesture, conf: d.conf }
+})
 
 // --- State ---
 const step = ref<'selection' | 'code' | 'protocols' | 'training' | 'completed'>('selection')
@@ -97,6 +107,13 @@ const startCountdown = () => {
 const startStep = () => {
     isExecuting.value = true
     timer.value = 5
+    // start mock playback for viewer based on current gesture
+    try {
+        const name = (currentGesture.value && currentGesture.value.name) ? currentGesture.value.name.toUpperCase() : 'OPEN'
+        jointStore.startMock([name], timer.value * 1000)
+    } catch (e) {
+        console.warn('Joint mock start failed', e)
+    }
     intervalId = window.setInterval(() => {
         timer.value--
         if (timer.value <= 0) {
@@ -108,6 +125,8 @@ const startStep = () => {
 const finishStep = () => {
     clearInterval(intervalId)
     isExecuting.value = false
+    // stop mock playback
+    try { jointStore.stopMock() } catch(e) { /* ignore */ }
     if (!completedSteps.value.includes(currentStep.value)) {
         completedSteps.value.push(currentStep.value)
     }
@@ -318,12 +337,14 @@ onUnmounted(() => clearInterval(intervalId))
                          </p>
                     </div>
 
-                    <!-- Hand Visualization -->
-                    <div class="visualization-box">
-                         <PatientHandVisualization 
-                            :gesture="(isResting ? nextGesture?.name : currentGesture?.name) || ''" 
-                            :is-active="!isResting" 
-                         />
+                    <!-- Hand Visualization (3D viewer) -->
+                    <div class="visualization-box" style="width:320px;height:320px;">
+                                 <HandViewer />
+                                 <div style="position:absolute;right:8px;top:8px;z-index:20">
+                                     <div style="font-size:12px">WS: <strong>{{ wsStatus ? 'connected' : 'disconnected' }}</strong></div>
+                                     <div style="font-size:12px">Last: <strong>{{ lastGesture?.gesture || '-' }}</strong> <small>{{ lastGesture?.conf ?? '' }}</small></div>
+                                     <div style="margin-top:6px"><button class="btn btn-outline" @click="jointStore.connectWsGesture('ws://localhost:8000/v1/hand-realtime/ws/gesture')">Connect WS</button></div>
+                                 </div>
                     </div>
                 </div>
 

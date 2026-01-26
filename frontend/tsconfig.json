@@ -11,9 +11,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "types": [
-      "vite/client"
-    ],
+    "types": [],
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
