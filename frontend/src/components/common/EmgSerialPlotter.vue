@@ -19,7 +19,7 @@ const dataBuffer = ref<{s1: number[], s2: number[], s3: number[]}>({
     s3: new Array(bufferLength).fill(0)
 })
 
-let animationFrameId: number
+let animationFrameId: number = 0
 const colors = ['#e11d48', '#2563eb', '#16a34a'] // Red, Blue, Green in hex (Tailwind colors)
 
 const connectWebSocket = () => {
@@ -160,7 +160,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    cancelAnimationFrame(animationFrameId)
+    if (animationFrameId) cancelAnimationFrame(animationFrameId)
     window.removeEventListener('resize', resizeCanvas)
     if (socket.value) socket.value.close()
 })

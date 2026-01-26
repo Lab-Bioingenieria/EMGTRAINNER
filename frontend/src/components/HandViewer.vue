@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { useJointStore } from '@/stores/joint.store'
@@ -98,11 +99,11 @@ onMounted(() => {
 
   const loader = new GLTFLoader()
   const src = props.glb ?? '/models/dynahand.glb'
-  loader.load(src, (gltf) => {
+  loader.load(src, (gltf: GLTF) => {
     scene!.add(gltf.scene)
 
     // cache bones by name (search the scene)
-    gltf.scene.traverse((obj) => {
+    gltf.scene.traverse((obj: THREE.Object3D) => {
       if (obj.type === 'Bone' || obj.name) {
         bonesMap.set(obj.name, obj)
       }
@@ -113,10 +114,10 @@ onMounted(() => {
       console.info('[HandViewer] cached bones:', names.length)
       console.info('[HandViewer] bone sample:', names.slice(0, 50))
     } catch (err) { console.warn('[HandViewer] bones log failed', err) }
-  })
+  }, undefined, (err: any) => { console.warn('[HandViewer] gltf load error', err) })
 
   // watch last payload to detect missing bones for incoming JointState payloads
-  watch(lastPayload, (nv) => {
+  watch(lastPayload, (nv: any | null) => {
     if (!nv) return
     const joints = nv.joints ?? nv.joint_state ?? null
     if (!joints) return
