@@ -102,6 +102,10 @@ class EMGDataService:
             if any(keyword in line for keyword in ['timestamp', 'SISTEMA', '=', 'CSV_START', 'EMG Devices', 'CMD_ACK', '---']):
                 return None
             
+            # DEBUG PRINT
+            # print(f"DEBUG: Processing line: {line.strip()}")
+
+            
             parts = line.split(',')
             data = None
             
@@ -130,12 +134,16 @@ class EMGDataService:
             
             # If valid data and streaming, write to CSV
             if data and self.is_streaming:
+                print(f"DEBUG: Writing row: {data}")
                 csv_service.write_row(data)
+            elif data:
+                print(f"DEBUG: Data parsed but not streaming: {data}")
                 
             return data
             
         except (ValueError, IndexError) as e:
             # Silent fail for noise lines to keep logs clean
+            print(f"DEBUG: Parse error for line '{line.strip()}': {e}")
             return None
     
     def read_emg_sample(self) -> Optional[Dict[str, Any]]:
@@ -186,7 +194,7 @@ class EMGDataService:
 
         self.is_streaming = True
         self.serial_manager.write_line("START_SESSION")
-        csv_service.start_new_session(category=category)
+        csv_service.start_new_session(patient_name=self.current_patient_name)
         
         # Start background thread
         self._streaming_thread = threading.Thread(target=self._streaming_loop, daemon=True)

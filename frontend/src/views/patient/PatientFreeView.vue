@@ -72,6 +72,40 @@ const toggleGesture = (g: Gesture) => {
     }
 }
 
+// API Helper for LLC
+const fetchNextGestureSuggestion = async (): Promise<string | null> => {
+    try {
+        const response = await fetch(`http://localhost:8000/learning/next-gesture/${patientName.value || 'Guest'}`)
+        if (response.ok) {
+            const data = await response.json()
+            return data.next_gesture
+        }
+    } catch (e) {
+        console.error("Error fetching next gesture:", e)
+    }
+    return null
+}
+
+const getNextGesture = async (): Promise<Gesture> => {
+    let nextName: string | null = null
+    
+    // Always fetch from backend in LLC
+    nextName = await fetchNextGestureSuggestion()
+    
+    // Fallback or Random if null
+    if (!nextName) {
+        // Pick random that isn't the immediate last one
+        const last = gestures.value.length > 0 ? gestures.value[gestures.value.length - 1] : null
+        const candidates = ALL_GESTURES.filter(g => g.name !== last?.name)
+        const random = candidates[Math.floor(Math.random() * candidates.length)]
+        return random
+    }
+    
+    // Find gesture object by name
+    const found = ALL_GESTURES.find(g => g.name === nextName)
+    return found || ALL_GESTURES[0] // Should exist
+}
+
 const startTraining = async () => {
     try {
         const order = await PatientService.createOrder({
@@ -86,13 +120,20 @@ const startTraining = async () => {
         currentOrderId.value = `local-${Date.now()}`
     }
 
-    // Prepare gesture list based on repetitions
-    const circuit = [...selectedGestures.value]
-    let expanded: Gesture[] = []
-    for(let i=0; i < circuitRepetitions.value; i++) {
-        expanded = expanded.concat(circuit)
+    if (trainingMode.value === 'LLC') {
+        // Initialize with Dynamic Gestures
+        gestures.value = []
+        gestures.value.push(await getNextGesture())
+        gestures.value.push(await getNextGesture())
+    } else {
+        // TLC Mode: Use selected gestures
+        const circuit = [...selectedGestures.value]
+        let expanded: Gesture[] = []
+        for(let i=0; i < circuitRepetitions.value; i++) {
+            expanded = expanded.concat(circuit)
+        }
+        gestures.value = expanded
     }
-    gestures.value = expanded
 
     step.value = 'protocols'
     currentStep.value = 0
@@ -131,21 +172,29 @@ const completeGesture = async () => {
         completedSteps.value.push(currentStep.value)
     }
     
-    if (currentStep.value < gestures.value.length - 1) {
-        startRest()
+    if (trainingMode.value === 'LLC') {
+         // LLC: Always Fetch Next and Continue
+         const next = await getNextGesture()
+         gestures.value.push(next)
+         startRest()
     } else {
-        // Stop EMG Session and Get CSV
-        try {
-            await EmgService.stopSession()
-            // Small delay to ensure file write
-            setTimeout(async () => {
-                lastSession.value = await EmgService.getLatestSession()
-            }, 500)
-        } catch (e) {
-            console.error("Failed to stop session", e)
-        }
+        // TLC: Check if finished
+        if (currentStep.value < gestures.value.length - 1) {
+            startRest()
+        } else {
+            // Stop EMG Session and Get CSV
+            try {
+                await EmgService.stopSession()
+                // Small delay to ensure file write
+                setTimeout(async () => {
+                    lastSession.value = await EmgService.getLatestSession()
+                }, 500)
+            } catch (e) {
+                console.error("Failed to stop session", e)
+            }
 
-        step.value = 'completed'
+            step.value = 'completed'
+        }
     }
 }
 
@@ -429,8 +478,8 @@ onUnmounted(() => {
                   </div>
              </div>
 
-             <!-- Gestures -->
-             <div class="card p-content section-spacer">
+             <!-- Gestures (Only for TLC) -->
+             <div v-if="trainingMode === 'TLC'" class="card p-content section-spacer">
                  <div class="flex-row-between mb-4">
                      <span class="card-title">Selección de Gestos</span>
                      <span class="badge" :class="selectedGestures.length > 0 ? 'badge-primary' : 'badge-neutral'">
@@ -462,7 +511,7 @@ onUnmounted(() => {
              </div>
 
              <button class="btn btn-primary w-full py-action flex-center" 
-                     :disabled="selectedGestures.length === 0 || !patientName.trim()"
+                     :disabled="(!patientName.trim()) || (trainingMode === 'TLC' && selectedGestures.length === 0)"
                      @click="startTraining">
                      Iniciar Entrenamiento <ChevronRight class="icon-sm ml-2" />
              </button>

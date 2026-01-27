@@ -14,13 +14,18 @@ class CSVService:
         # Ensure directory exists
         os.makedirs(self.storage_dir, exist_ok=True)
 
-    def start_new_session(self, prefix: str = "session", category: str = ""):
+    def start_new_session(self, prefix: str = "session", patient_name: str = "Guest"):
         """Create a new CSV file for the session"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.current_filename = f"{prefix}_{timestamp}.csv"
         
+        # Sanitize patient name for directory usage
+        safe_name = "".join(c for c in patient_name if c.isalnum() or c in (' ', '_', '-')).strip()
+        if not safe_name:
+            safe_name = "Guest"
+
         # Determine target directory
-        target_dir = os.path.join(self.storage_dir, category) if category else self.storage_dir
+        target_dir = os.path.join(self.storage_dir, safe_name)
         os.makedirs(target_dir, exist_ok=True)
         
         filepath = os.path.join(target_dir, self.current_filename)
