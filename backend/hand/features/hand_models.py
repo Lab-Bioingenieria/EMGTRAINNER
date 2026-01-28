@@ -1,4 +1,3 @@
-# hand_models.py
 from dataclasses import dataclass
 from typing import Dict, List, Literal
 
