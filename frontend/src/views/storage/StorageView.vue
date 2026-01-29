@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { EmgService } from '../../services/emg.service'
 import { FileText, Download, Search, Calendar, Database, FolderOpen, ArrowRight } from 'lucide-vue-next'
 import TopHeader from '../../components/common/TopHeader.vue'
+import { API_BASE_URL } from '../../lib/constants'
 
 interface SessionFile {
     filename: string;
@@ -130,7 +131,7 @@ onMounted(() => {
                              {{ formatSize(file.size_bytes) }}
                          </div>
                          <div class="col-action">
-                             <a :href="`http://localhost:8000/v1/storage/sessions/${file.filename}`" 
+                             <a :href="`${API_BASE_URL}/storage/sessions/${file.filename}`" 
                                 download 
                                 class="btn-download"
                                 title="Descargar CSV">

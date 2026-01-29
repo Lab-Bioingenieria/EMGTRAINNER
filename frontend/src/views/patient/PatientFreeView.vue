@@ -5,7 +5,7 @@ import GestureProgress from '../../components/patient/GestureProgress.vue'
 import RadialTimer from '../../components/patient/RadialTimer.vue'
 import PatientHandVisualization from '../../components/patient/PatientHandVisualization.vue'
 import PauseButton from '../../components/common/PauseButton.vue'
-import { ALL_GESTURES, DEFAULT_DEVICE_ID } from '../../lib/constants'
+import { ALL_GESTURES, DEFAULT_DEVICE_ID, API_BASE_URL } from '../../lib/constants'
 import type { Gesture } from '../../lib/constants'
 import { ChevronRight, Play, Pause, ArrowLeft, Activity, RefreshCw, Maximize, CheckCircle2, FileText, Download } from 'lucide-vue-next'
 import { EmgService } from '../../services/emg.service'
@@ -656,7 +656,7 @@ onUnmounted(() => {
                          <p class="csv-name">{{ lastSession.filename }}</p>
                          <p class="csv-meta">{{ (lastSession.size_bytes / 1024).toFixed(1) }} KB • {{ new Date(lastSession.created_at).toLocaleTimeString() }}</p>
                      </div>
-                     <a :href="`http://localhost:8000/v1/storage/sessions/${lastSession.filename}`" 
+                     <a :href="`${API_BASE_URL}/storage/sessions/${lastSession.filename}`" 
                         download 
                         class="btn-icon-only"
                         title="Descargar CSV">
