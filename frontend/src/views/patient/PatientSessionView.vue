@@ -41,17 +41,61 @@ const selectMode = (mode: 'supervised' | 'free') => {
 }
 
 // Supervised Logic
-const connectSession = () => {
+const patientName = ref('Guest') // Should be dynamic, but defaulting context for now
+
+// API Helper
+const fetchNextGestureSuggestion = async (): Promise<string | null> => {
+    try {
+        // Need full URL because frontend might be on different port/proxy
+        // Assuming backend is at localhost:8000 based on standard setup. 
+        // Ideally should use env var or config.
+        const response = await fetch(`http://localhost:8000/learning/next-gesture/${patientName.value}`)
+        if (response.ok) {
+            const data = await response.json()
+            return data.next_gesture
+        }
+    } catch (e) {
+        console.error("Error fetching next gesture:", e)
+    }
+    return null
+}
+
+const getNextGesture = async (): Promise<Gesture> => {
+    let nextName: string | null = null
+    
+    if (trainingMode.value === 'LLC') {
+        nextName = await fetchNextGestureSuggestion()
+    }
+    
+    // Fallback or Random if null
+    if (!nextName) {
+        // Pick random that isn't the immediate last one
+        const last = gestures.value.length > 0 ? gestures.value[gestures.value.length - 1] : null
+        const candidates = ALL_GESTURES.filter(g => g.name !== last?.name)
+        const random = candidates[Math.floor(Math.random() * candidates.length)]
+        return random
+    }
+    
+    // Find gesture object by name
+    const found = ALL_GESTURES.find(g => g.name === nextName)
+    return found || ALL_GESTURES[0] // Should exist
+}
+
+// Supervised Logic
+const connectSession = async () => {
     // Mock simulation
     const mode = Math.random() > 0.5 ? 'TLC' : 'LLC'
     trainingMode.value = mode
     
+    gestures.value = [] // Reset
+    
     if (mode === 'TLC') {
         gestures.value = ALL_GESTURES.slice(0, 4)
     } else {
-        gestures.value = [...ALL_GESTURES].sort(() => Math.random() - 0.5)
+        // Initialize with 2 random gestures for LLC to start buffer
+        gestures.value.push(await getNextGesture())
+        gestures.value.push(await getNextGesture())
     }
-    
     
     step.value = 'protocols'
     currentStep.value = 0
@@ -105,18 +149,27 @@ const startStep = () => {
     }, 1000)
 }
 
-const finishStep = () => {
+const finishStep = async () => {
     clearInterval(intervalId)
     isExecuting.value = false
     if (!completedSteps.value.includes(currentStep.value)) {
         completedSteps.value.push(currentStep.value)
     }
     
-    if (currentStep.value < gestures.value.length - 1) {
-        startRest()
+    // For LLC, ensure we always have a "next" gesture ready
+    if (trainingMode.value === 'LLC') {
+        const next = await getNextGesture()
+        gestures.value.push(next)
     } else {
-        step.value = 'completed'
+        // For TLC, if we reached the end, we finish.
+         if (currentStep.value >= gestures.value.length - 1) {
+            step.value = 'completed'
+            return
+        }
     }
+    
+    // Continue if there are more
+    startRest()
 }
 
 const startRest = () => {
@@ -341,7 +394,11 @@ onUnmounted(() => clearInterval(intervalId))
                     
                     <!-- Progress -->
                     <div class="progress-info">
-                        <p class="progress-number">{{ currentStep + 1 }}<span class="progress-total">/{{ gestures.length }}</span></p>
+                        <p class="progress-number">
+                             {{ currentStep + 1 }}
+                             <span v-if="trainingMode === 'TLC'" class="progress-total">/{{ gestures.length }}</span>
+                             <span v-else class="progress-total">/ ∞</span>
+                        </p>
                     </div>
                 </div>
             </div>
