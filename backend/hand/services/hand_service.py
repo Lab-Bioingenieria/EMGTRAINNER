@@ -10,8 +10,7 @@ class HandService:
         # Puerto desde entorno (Docker / Jetson)
         port = os.getenv(
             "DYNAMIXEL_PORT",
-            "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0"
-        )
+            "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0")
 
         self.dx = DynamixelInterface(port_name=port)
         self.profile: Optional[HandProfile] = None

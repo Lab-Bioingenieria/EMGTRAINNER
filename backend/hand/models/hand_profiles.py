@@ -52,7 +52,7 @@ ELEVEN_DOF_RIGHT = HandProfile(
             "thumb",
             motors={
                 "MCP_FE": MotorConfig(1, 0, 120, 0, 0.8),
-                "CMC_AA": MotorConfig(2, 0, 100, 0, 0.8),
+                "CMC_AA": MotorConfig(2, 0, 110, 0, 0.8),
                 "CMC_FE": MotorConfig(3, 0, 45, 0, 0.8),
             },
         ),
