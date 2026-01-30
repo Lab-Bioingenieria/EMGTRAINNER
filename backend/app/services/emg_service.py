@@ -11,6 +11,7 @@ from app.services.csv_service import csv_service
 
 import threading
 import time
+import re
 
 class EMGDataService:
     """Service for managing EMG data collection and processing"""
@@ -89,60 +90,63 @@ class EMGDataService:
 
     def parse_emg_line(self, line: str) -> Optional[Dict[str, Any]]:
         """
-        Parse CSV line from ESP32 into structured data
-        
-        Args:
-            line: Raw CSV line from serial
-            
-        Returns:
-            Parsed EMG data or None if invalid
+        Parse CSV/Serial line from ESP32 into structured data
+        Handles both comma-separated and space-separated formats.
         """
         try:
-            # Skip headers, system messages, and keep-alive
-            if any(keyword in line for keyword in ['timestamp', 'SISTEMA', '=', 'CSV_START', 'EMG Devices', 'CMD_ACK', '---']):
+            # Skip headers/metadata
+            if any(keyword in line for keyword in ['SISTEMA', '=', 'CSV_START', 'EMG Devices', 'CMD_ACK', '---']):
                 return None
             
-            # DEBUG PRINT
-            # print(f"DEBUG: Processing line: {line.strip()}")
+            # Clean and split by comma or whitespace
+            line = line.strip()
+            if not line:
+                return None
+                
+            parts = re.split(r'[,\s]+', line)
+            parts = [p for p in parts if p] # remove empty strings
+            
+            if not parts:
+                return None
 
+            data = {}
             
-            parts = line.split(',')
-            data = None
+            # Determine if first part is timestamp (simple heuristic: > 1000000000 is likely epoch ms or similar)
+            # ESP32 usually sends millis() which is small, or nothing. 
+            # If backend needs absolute time, we should generate it here if strictly growing text isn't found.
             
-            # Case 1: Full format (7 columns) - Legacy support or full capability
-            if len(parts) >= 7:
-                data = {
-                    "timestamp": int(parts[0]),
-                    "emg1": float(parts[2]),
-                    "emg2": float(parts[3]),
-                    "emg3": float(parts[4]),
-                    # Using backend state instead of serial data for these fields now
-                    "name": self.current_patient_name,
-                    "label": self.current_label
-                }
+            # For now, we assume ESP32 sends straight data values (Muscle Levels) as per user provided code.
+            # We generate the timestamp on the backend to be safe.
             
-            # Case 2: Minimal format (4 columns) - Current ESP32 code
-            elif len(parts) >= 4:
-                data = {
-                    "timestamp": int(parts[0]),
-                    "emg1": float(parts[1]),
-                    "emg2": float(parts[2]),
-                    "emg3": float(parts[3]),
-                    "name": self.current_patient_name,
-                    "label": self.current_label
-                }
+            current_time_ms = int(time.time() * 1000)
             
+            # Map values to emgX
+            # We assume all parts are sensor values
+            emg_values = []
+            try:
+                emg_values = [float(p) for p in parts]
+            except ValueError:
+                # If conversion fails, it might contain text, skip
+                return None
+
+            data = {
+                "timestamp": current_time_ms,
+                "name": self.current_patient_name,
+                "label": self.current_label
+            }
+            
+            # Add dynamic EMG columns
+            for i, val in enumerate(emg_values):
+                data[f"emg{i+1}"] = val
+
             # If valid data and streaming, write to CSV
-            if data and self.is_streaming:
-                print(f"DEBUG: Writing row: {data}")
+            if self.is_streaming:
+                # print(f"DEBUG: Writing row: {data}")
                 csv_service.write_row(data)
-            elif data:
-                print(f"DEBUG: Data parsed but not streaming: {data}")
                 
             return data
             
-        except (ValueError, IndexError) as e:
-            # Silent fail for noise lines to keep logs clean
+        except Exception as e:
             print(f"DEBUG: Parse error for line '{line.strip()}': {e}")
             return None
     

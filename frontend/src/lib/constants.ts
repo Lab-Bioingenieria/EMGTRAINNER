@@ -7,14 +7,13 @@ export interface Gesture {
 }
 
 export const ALL_GESTURES: Gesture[] = [
-    { id: "1", name: "Palma Abajo", nameEn: "Palm Down" },
-    { id: "2", name: "Palma Arriba", nameEn: "Palm Up" },
-    { id: "3", name: "Cerrar Mano", nameEn: "Close Hand" },
-    { id: "4", name: "Abrir Mano", nameEn: "Open Hand" },
-    { id: "5", name: "Pinza Cerrada", nameEn: "Close Pinch" },
-    { id: "6", name: "Pinza Abierta", nameEn: "Open Pinch" },
-    { id: "7", name: "Mano en Reposo", nameEn: "Rest Hand" },
-    { id: "8", name: "Apuntar con Índice", nameEn: "Point Index" },
+    { id: "1", name: "Abrir", nameEn: "Open" },
+    { id: "2", name: "Cerrar", nameEn: "Close" },
+    { id: "3", name: "Like", nameEn: "Like" },
+    { id: "4", name: "Apuntar", nameEn: "Point" },
+    { id: "5", name: "Pinza", nameEn: "Pinch" },
+    { id: "6", name: "Cilindrico", nameEn: "Cylindrical" },
+    { id: "7", name: "Esférico", nameEn: "Spherical" },
 ];
 
 export interface EmgSignal {
@@ -23,6 +22,6 @@ export interface EmgSignal {
     status: "active" | "warning" | "inactive";
 }
 
-export const API_BASE_URL = "http://localhost:8000/v1";
+export const API_BASE_URL = "/v1";
 export const DEFAULT_DEVICE_ID = "esp32-myo-1";
 

@@ -12,7 +12,7 @@ async def list_sessions() -> List[Dict[str, Any]]:
     """List all stored CSV sessions"""
     return csv_service.list_sessions()
 
-@storage_router.get("/sessions/{filename}")
+@storage_router.get("/sessions/{filename:path}")
 async def get_session_file(filename: str):
     """Download a specific session CSV file"""
     file_path = csv_service.get_session_path(filename)

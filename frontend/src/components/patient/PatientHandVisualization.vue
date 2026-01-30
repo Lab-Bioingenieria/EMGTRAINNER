@@ -9,6 +9,17 @@ const props = defineProps<{
 const currentFrame = ref(1)
 let intervalId: number | null = null
 
+// Random stickiness for Spherical to avoid flickering between Cube/Ball on re-renders if not desired,
+// but since we want "can show two", let's randomize when the gesture *changes* to Spherical.
+// We'll use a ref that updates whenever the gesture changes.
+const sphericalVariant = ref<'Cube' | 'Ball'>('Ball')
+
+watch(() => props.gesture, (newVal) => {
+    if (newVal.toLowerCase().includes('esférico') || newVal.toLowerCase().includes('spherical')) {
+        sphericalVariant.value = Math.random() > 0.5 ? 'Cube' : 'Ball'
+    }
+}, { immediate: true })
+
 const startAnimation = () => {
     if (intervalId) clearInterval(intervalId)
     intervalId = window.setInterval(() => {
@@ -24,27 +35,40 @@ onUnmounted(() => {
     if (intervalId) clearInterval(intervalId)
 })
 
-const gestureMapping = computed(() => {
+interface MediaSource {
+    type: 'video' | 'image';
+    src: string;
+}
+
+const gestureMedia = computed((): MediaSource => {
     const g = props.gesture.toLowerCase().trim()
     
-    // Mapping logic based on directory structure
-    // Directories: Pinch, close, like, open, point, rest, salute
-    // Files pattern: /movements/[dir]/DynaHand-[Capitalized]-1.png
+    // Video Mappings
+    if (g.includes('cerrar') || g.includes('close')) return { type: 'video', src: '/movements_video/Close.mp4' }
+    if (g.includes('abrir') || g.includes('open')) return { type: 'video', src: '/movements_video/Open.mp4' }
+    if (g.includes('pinza') || g.includes('pinch')) return { type: 'video', src: '/movements_video/Pinch.mp4' }
+    if (g.includes('cilindrico') || g.includes('cylindrical')) return { type: 'video', src: '/movements_video/Cylindrical.mp4' }
     
-    if (g.includes('cerrar') || g.includes('close')) return { dir: 'close', file: 'Close' }
-    if (g.includes('abrir') || g.includes('open')) return { dir: 'open', file: 'Open' }
-    if (g.includes('pinza') || g.includes('pinch')) return { dir: 'Pinch', file: 'Pinch' }
-    if (g.includes('apuntar') || g.includes('point')) return { dir: 'point', file: 'Point' }
-    if (g.includes('reposo') || g.includes('rest')) return { dir: 'rest', file: 'Rest' }
-    if (g.includes('abajo') || g.includes('down')) return { dir: 'salute', file: 'Salute' } // Approximation
-    if (g.includes('arriba') || g.includes('up')) return { dir: 'like', file: 'Like' }   // Approximation (Thumb Up?)
-    
-    return { dir: 'rest', file: 'Rest' } // Default
-})
+    // New Video Mappings (AVI)
+    if (g.includes('apuntar') || g.includes('point')) return { type: 'video', src: '/movements_video/Point.avi' }
+    if (g.includes('arriba') || g.includes('like')) return { type: 'video', src: '/movements_video/Like.avi' }
 
-const imagePath = computed(() => {
-    const { dir, file } = gestureMapping.value
-    return `/movements/${dir}/DynaHand-${file}-${currentFrame.value}.png`
+    // Spherical - Random choice
+    if (g.includes('esférico') || g.includes('spherical')) {
+        return { type: 'video', src: `/movements_video/${sphericalVariant.value}.mp4` }
+    }
+
+    // Image Fallbacks (Rest, etc.)
+    let dir = 'rest'
+    let file = 'Rest'
+
+    if (g.includes('reposo') || g.includes('rest')) { dir = 'rest'; file = 'Rest' }
+    else if (g.includes('abajo') || g.includes('down')) { dir = 'salute'; file = 'Salute' }
+    
+    return { 
+        type: 'image', 
+        src: `/movements/${dir}/DynaHand-${file}-${currentFrame.value}.png`
+    }
 })
 </script>
 
@@ -52,17 +76,32 @@ const imagePath = computed(() => {
   <div class="hand-viz-container">
       <div class="viz-content" :class="{ 'active-pulse': isActive }">
           <transition name="fade" mode="out-in">
+              <!-- Video Player -->
+              <video 
+                v-if="gestureMedia.type === 'video'"
+                :key="gestureMedia.src"
+                :src="gestureMedia.src"
+                autoplay 
+                loop 
+                muted 
+                playsinline
+                class="hand-media"
+              ></video>
+
+              <!-- Image Fallback -->
               <img 
-                :key="imagePath"
-                :src="imagePath" 
+                v-else
+                :key="gestureMedia.src"
+                :src="gestureMedia.src" 
                 alt="Hand Visualization" 
-                class="hand-image"
+                class="hand-media"
               />
           </transition>
       </div>
       <p class="viz-label">
           <span class="status-dot" :class="{ active: isActive }"></span>
           Visualización en tiempo real
+          <span v-if="gestureMedia.type === 'video'" class="badge-mini">VIDEO</span>
       </p>
   </div>
 </template>
@@ -90,9 +129,11 @@ const imagePath = computed(() => {
     justify-content: center;
     width: 100%;
     position: relative;
+    overflow: hidden;
+    border-radius: 8px;
 }
 
-.hand-image {
+.hand-media {
     max-width: 100%;
     max-height: 550px;
     object-fit: contain;
@@ -100,7 +141,7 @@ const imagePath = computed(() => {
     transition: transform 0.3s ease;
 }
 
-.active-pulse .hand-image {
+.active-pulse .hand-media {
     filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.4));
     transform: scale(1.02);
 }
@@ -126,6 +167,16 @@ const imagePath = computed(() => {
 .status-dot.active {
     background-color: #22c55e;
     box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.badge-mini {
+    font-size: 0.65rem;
+    background: #eff6ff;
+    color: #3b82f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #dbeafe;
+    font-weight: 600;
 }
 
 /* Transitions */

@@ -13,6 +13,7 @@ class CSVService:
         
         # Ensure directory exists
         os.makedirs(self.storage_dir, exist_ok=True)
+        self.header_written = False
 
     def start_new_session(self, prefix: str = "session", patient_name: str = "Guest"):
         """Create a new CSV file for the session"""
@@ -32,11 +33,9 @@ class CSVService:
         
         try:
             self.current_file = open(filepath, mode='w', newline='')
-            self.csv_writer = csv.writer(self.current_file)
-            
-            # Write Header
-            headers = ["name", "timestamp", "emg1", "emg2", "emg3", "label"]
-            self.csv_writer.writerow(headers)
+            # Defer writer creation until first row to know columns
+            self.csv_writer = None
+            self.header_written = False
             
             print(f"Started new CSV session: {filepath}")
             return self.current_filename
@@ -46,17 +45,24 @@ class CSVService:
 
     def write_row(self, data: Dict[str, Any]):
         """Write a row of data to the current CSV"""
-        if self.csv_writer and data:
+        if self.current_file and data:
             try:
-                row = [
-                    data.get("name", "Unknown"),
-                    data.get("timestamp", 0),
-                    data.get("emg1", 0.0),
-                    data.get("emg2", 0.0),
-                    data.get("emg3", 0.0),
-                    data.get("label", "Rest")
-                ]
-                self.csv_writer.writerow(row)
+                # Initialize DictWriter on first write
+                if not self.header_written:
+                    # fixed order for common fields, others sorted
+                    fixed_fields = ['timestamp', 'name', 'label']
+                    other_fields = sorted([k for k in data.keys() if k not in fixed_fields])
+                    fieldnames = fixed_fields + other_fields
+                    
+                    self.csv_writer = csv.DictWriter(self.current_file, fieldnames=fieldnames)
+                    self.csv_writer.writeheader()
+                    self.header_written = True
+
+                # Write row
+                if self.csv_writer:
+                    self.csv_writer.writerow(data)
+                    self.current_file.flush() # Ensure it's written to disk
+                    
             except Exception as e:
                 print(f"Error writing to CSV: {e}")
 
@@ -72,6 +78,7 @@ class CSVService:
                 self.current_file = None
                 self.csv_writer = None
                 self.current_filename = None
+                self.header_written = False
 
     def list_sessions(self) -> List[Dict[str, Any]]:
         """List all available CSV sessions recursively"""

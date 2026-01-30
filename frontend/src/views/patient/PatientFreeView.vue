@@ -201,7 +201,20 @@ const completeGesture = async () => {
 const startRest = () => {
     isResting.value = true
     EmgService.setMovementLabel('Rest')
-    speak("Descansa")
+    
+    // Check if a circuit loop just finished
+    // currentStep is the index of the gesture just completed.
+    // If the next step index (currentStep + 1) is a multiple of the circuit length (selectedGestures.length),
+    // then we just finished one full circuit loop.
+    const circuitLength = selectedGestures.value.length // Only relevant in TLC mode mostly
+    const nextStepIndex = currentStep.value + 1
+    
+    if (trainingMode.value === 'TLC' && circuitLength > 0 && nextStepIndex % circuitLength === 0) {
+        speak("Circuito completado. Baje la mano.")
+    } else {
+        speak("Descansa")
+    }
+
     restTimer.value = 5
     runTimer('rest')
 }
@@ -248,10 +261,12 @@ const nextTutorialStep = () => {
 
 const finishTutorial = () => {
     speak("Tutorial completado. Iniciando entrenamiento.")
-    step.value = 'training'
-    currentStep.value = 0
-    completedSteps.value = []
-    startTrainingByFlow()
+    setTimeout(() => {
+        step.value = 'training'
+        currentStep.value = 0
+        completedSteps.value = []
+        startTrainingByFlow()
+    }, 2000)
 }
 
 const skipTutorial = () => {
@@ -526,19 +541,13 @@ onUnmounted(() => {
                  </div>
 
                  <div class="protocol-grid">
-                     <div class="protocol-item">
-                         <div class="emoji-icon"><span>🧴</span></div>
-                         <h3>Limpieza</h3>
-                         <p>Limpiar la piel con alcohol para mejorar la señal.</p>
-                     </div>
-                     
-                     <div class="protocol-item">
+                     <div class="protocol-item warning-mode">
                          <div class="emoji-icon"><span>🧠</span></div>
                          <h3>Concentración</h3>
                          <p>Mantenga máxima atención durante los ejercicios.</p>
                      </div>
 
-                     <div class="protocol-item">
+                     <div class="protocol-item warning-mode">
                          <div class="emoji-icon"><span>🖥️</span></div>
                          <h3>Pantalla Completa</h3>
                          <p>La sesión se mostrará en pantalla completa.</p>
@@ -850,10 +859,21 @@ onUnmounted(() => {
 /* Protocols */
 .protocol-header { margin-bottom: 2rem; }
 .protocol-grid { display: flex; gap: 1rem; padding: 1rem; justify-content: center; }
-.protocol-item { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
-.emoji-icon { font-size: 2.5rem; margin-bottom: 1rem; }
-.protocol-item h3 { font-size: 1.125rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
-.protocol-item p { color: #64748b; font-size: 0.875rem; }
+.protocol-item { 
+    background: #fef2f2; /* red-50 */
+    border: 2px solid #ef4444; /* red-500 */
+    border-radius: 12px; 
+    padding: 2rem; 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-align: center; 
+    box-shadow: 0 4px 6px rgba(220, 38, 38, 0.1);
+}
+.emoji-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+.protocol-item h3 { font-size: 1.5rem; font-weight: 800; color: #dc2626; margin-bottom: 0.75rem; text-transform: uppercase; }
+.protocol-item p { color: #b91c1c; font-size: 1.1rem; font-weight: 600; line-height: 1.5; }
 
 /* Fullscreen Focus Mode */
 .focus-overlay { position: fixed; inset: 0; z-index: 50; background-color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; top: 0; left: 0; width: 100vw; height: 100vh; }
