@@ -4,29 +4,60 @@ GestureDefinition = Dict[str, Dict[str, float]]
 # finger -> joint -> angle_deg
 
 GESTURES: Dict[str, Dict[str, GestureDefinition]] = {
-    "REST": {
+
+    "BALL":{
+	"Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 60,
+                "CMC_AA": 95,
+                "CMC_FE": 30,
+            },
+            "index":  {"PIP": 65, "MCP": 65},
+            "middle": {"PIP": 70, "MCP": 50},
+            "ring":   {"PIP": 65, "MCP": 50},
+            "pinky":  {"PIP": 70, "MCP": 55},
+        },
+    },
+
+    "ZERO": {
+        "Two_Motors": {
+            "phalanx": {
+                "14": 0,
+                "15": 0,
+            },
+        }, 
         "Six_DOF_Right": {
             "thumb": {
-                "MCP_FE": 30,
-                "CMC_AA": 35,
-                "CMC_FE": 45,
+                "MCP_FE": 0,
+                "CMC_AA": 0,
             },
             "index": {
-                "PIP": 45,
-                "CMP": 30,
+                "PIP": 0,
+                "CMP": 0,
             },
             "middle": {
-                "PIP": 55,
-                "MCP": 35,
+                "PIP": 0,
+                "MCP": 0,
             },
             "ring": {
-                "PIP": 45,
-                "MCP": 40,
+                "PIP": 0,
+                "MCP": 0,
             },
             "pinky": {
-                "PIP": 35,
-                "MCP": 45,
+                "PIP": 0,
+                "MCP": 0,
             },
+        },
+        "Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 0,
+                "CMC_AA": 0,
+                "CMC_FE": 0,
+            },
+            "index":  {"PIP": 0, "MCP": 0},
+            "middle": {"PIP": 0, "MCP": 0},
+            "ring":   {"PIP": 0, "MCP": 0},
+            "pinky":  {"PIP": 0, "MCP": 0},
         },
 
         "Two_DOF_Left": {
@@ -46,17 +77,324 @@ GESTURES: Dict[str, Dict[str, GestureDefinition]] = {
         },
     },
 
-    "SALUTE": {
+    "REST": {
+
+        "Two_Motors": {
+            "phalanx": {
+                "14": 60,
+                "15": 45,
+            },
+        }, 
+
         "Six_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 30,
+                "CMC_AA": 35,
+            },
+            "index": {
+                "PIP": 45,
+                "CMP": 30,
+            },
+            "middle": {
+                "PIP": 55,
+                "MCP": 35,
+            },
+            "ring": {
+                "PIP": 45,
+                "MCP": 40,
+            },
+            "pinky": {
+                "PIP": 35,
+                "MCP": 45,
+            },
+        },
+        "Eleven_DOF_Right": {
             "thumb": {
                 "MCP_FE": 30,
                 "CMC_AA": 35,
                 "CMC_FE": 45,
             },
-            "index": {"MCP": 0,  "PIP": 0},
-            "middle": {"MCP": 0, "PIP": 0},
-            "ring": {"MCP": 0,   "PIP": 0},
-            "pinky": {"MCP": 0,  "PIP": 0},
+            "index":  {"PIP": 45, "MCP": 30},
+            "middle": {"PIP": 55, "MCP": 35},
+            "ring":   {"PIP": 45, "MCP": 40},
+            "pinky":  {"PIP": 35, "MCP": 45},
         },
+
+        "Two_DOF_Left": {
+            "thumb": {
+                "MCP_FE": 20,
+            },
+            "phalanx": {
+                "II_MCP_FE": 30,
+                "II_PIP_FE": 45,
+                "III_MCP_FE": 30,
+                "III_PIP_FE": 45,
+                "IV_MCP_FE": 30,
+                "IV_PIP_FE": 45,
+                "V_MCP_FE": 30,
+                "V_PIP_FE": 45,
+            },
+        },
+    },
+
+    "SALUTE": {
+        "Six_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 30,
+                "CMC_AA": 20,
+            },
+            "index":  {"MCP": 5, "PIP": 10},
+            "middle": {"MCP": 5, "PIP": 10},
+            "ring":   {"MCP": 5, "PIP": 10},
+            "pinky":  {"MCP": 5, "PIP": 10},
+        },
+
+        "Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 30,
+                "CMC_AA": 20,
+                "CMC_FE": 40,
+            },
+            "index":  {"MCP": 5, "PIP": 10},
+            "middle": {"MCP": 5, "PIP": 10},
+            "ring":   {"MCP": 5, "PIP": 10},
+            "pinky":  {"MCP": 5, "PIP": 10},
+        },
+        
+        "Two_DOF_Left": {
+            "thumb": {
+                "MCP_FE": 0,
+            },
+            "phalanx": {
+                "II_MCP_FE": 0,
+                "II_PIP_FE": 10,
+                "III_MCP_FE": 0,
+                "III_PIP_FE": 10,
+                "IV_MCP_FE": 0,
+                "IV_PIP_FE": 10,
+                "V_MCP_FE": 0,
+                "V_PIP_FE": 10,
+            },
+        },
+    },
+
+
+    "POINT": {
+        "Six_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 65,
+                "CMC_AA": 40
+            },
+            "index": {
+                "PIP": 0,
+                "CMP": 0,
+            },
+            "middle": {
+                "PIP": 100,
+                "MCP": 75,
+            },
+            "ring": {
+                "PIP": 100,
+                "MCP": 75,
+            },
+            "pinky": {
+                "PIP": 100,
+                "MCP": 75,
+            },
+        },
+        "Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 65,
+                "CMC_AA": 40,
+                "CMC_FE": 45,
+            },
+            "index":  {"PIP": 0, "MCP": 0},
+            "middle": {"PIP": 100, "MCP": 75},
+            "ring":   {"PIP": 100, "MCP": 75},
+            "pinky":  {"PIP": 100, "MCP": 75},
+        },
+    },
+
+    "LIKE": {
+        "Six_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 0,
+                "CMC_AA": 0,
+            },
+            "index": {
+                "PIP": 100,
+                "CMP": 90,
+            },
+            "middle": {
+                "PIP": 100,
+                "MCP": 90,
+            },
+            "ring": {
+                "PIP": 100,
+                "MCP": 90,
+            },
+            "pinky": {
+                "PIP": 100,
+                "MCP": 90,
+            },
+        },
+
+        "Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 0,
+                "CMC_AA": 0,
+                "CMC_FE": 30,
+            },
+            "index":  {"PIP": 100, "MCP": 90},
+            "middle": {"PIP": 100, "MCP": 90},
+            "ring":   {"PIP": 100, "MCP": 90},
+            "pinky":  {"PIP": 100, "MCP": 90},
+        },
+    },
+
+    "OPEN": {
+        "Six_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 10,
+                "CMC_AA": 0,
+            },
+            "index":  {"PIP": 0, "MCP": 0},
+            "middle": {"PIP": 0, "MCP": 0},
+            "ring":   {"PIP": 0, "MCP": 0},
+            "pinky":  {"PIP": 0, "MCP": 0},
+        },
+
+        "Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 10,
+                "CMC_AA": 0,
+                "CMC_FE": 30,
+            },
+            "index":  {"PIP": 0, "MCP": 0},
+            "middle": {"PIP": 0, "MCP": 0},
+            "ring":   {"PIP": 0, "MCP": 0},
+            "pinky":  {"PIP": 0, "MCP": 0},
+        },
+        
+        "Two_DOF_Left": {
+            "thumb": {
+                "MCP_FE": 0,
+            },
+            "phalanx": {
+                "II_PIP_FE":  0,  "II_MCP_FE": 0,
+                "III_PIP_FE": 0, "III_MCP_FE": 0,
+                "IV_PIP_FE":  0,  "IV_MCP_FE": 0,
+                "V_PIP_FE":   0,   "V_MCP_FE": 0,
+            },
+        },
+    },
+
+    "CLOSE": {
+        "Six_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 50,
+                "CMC_AA": 60,
+            },
+            "index":  {"PIP": 100, "MCP": 90},
+            "middle": {"PIP": 100, "MCP": 90},
+            "ring":   {"PIP": 100, "MCP": 90},
+            "pinky":  {"PIP": 100, "MCP": 90},
+        },
+
+        "Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 50,
+                "CMC_AA": 60,
+                "CMC_FE": 45,
+            },
+            "index":  {"PIP": 100, "MCP": 90},
+            "middle": {"PIP": 100, "MCP": 90},
+            "ring":   {"PIP": 100, "MCP": 90},
+            "pinky":  {"PIP": 100, "MCP": 90},
+        },
+        
+        "Two_DOF_Left": {
+            "thumb": {
+                "MCP_FE": 30,
+            },
+            "phalanx": {
+                "II_PIP_FE":  45,  "II_MCP_FE": 45,
+                "III_PIP_FE": 45, "III_MCP_FE": 45,
+                "IV_PIP_FE":  45,  "IV_MCP_FE": 45,
+                "V_PIP_FE":   45,   "V_MCP_FE": 45,
+            },
+        },
+    },
+
+    "PINCH": {
+        "Six_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 60,
+                "CMC_AA": 65,
+            },
+            "index":  {"PIP": 60, "MCP": 60},
+            "middle": {"PIP": 10, "MCP": 5},
+            "ring":   {"PIP": 10, "MCP": 5},
+            "pinky":  {"PIP": 10, "MCP": 5},
+        },
+        "Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 60,
+                "CMC_AA": 65,
+                "CMC_FE": 30,
+            },
+            "index":  {"PIP": 60, "MCP": 60},
+            "middle": {"PIP": 10, "MCP": 5},
+            "ring":   {"PIP": 10, "MCP": 5},
+            "pinky":  {"PIP": 10, "MCP": 5},
+        }
+    },
+
+    "CYLINDRICAL": {
+        "Six_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 60,
+                "CMC_AA": 90,
+            },
+            "index":  {"PIP": 65, "MCP": 65},
+            "middle": {"PIP": 65, "MCP": 65},
+            "ring":   {"PIP": 65, "MCP": 65},
+            "pinky":  {"PIP": 65, "MCP": 65},
+        },
+        "Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 60,
+                "CMC_AA": 90,
+                "CMC_FE": 30,
+            },
+            "index":  {"PIP": 65, "MCP": 65},
+            "middle": {"PIP": 65, "MCP": 65},
+            "ring":   {"PIP": 65, "MCP": 65},
+            "pinky":  {"PIP": 65, "MCP": 65},
+        }
+    },
+
+    "SPHERICAL": {
+        "Eleven_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 30,
+                "CMC_AA": 45,
+                "CMC_FE": 30,
+            },
+            "index":  {"PIP": 45, "MCP": 20},
+            "middle": {"PIP": 50, "MCP": 20},
+            "ring":   {"PIP": 55, "MCP": 20},
+            "pinky":  {"PIP": 60, "MCP": 20},
+        },
+        "Six_DOF_Right": {
+            "thumb": {
+                "MCP_FE": 60,
+                "CMC_AA": 70,
+            },
+            "index":  {"PIP": 45, "MCP": 20},
+            "middle": {"PIP": 55, "MCP": 20},
+            "ring":   {"PIP": 60, "MCP": 25},
+            "pinky":  {"PIP": 65, "MCP": 25},
+        }    
     },
 }

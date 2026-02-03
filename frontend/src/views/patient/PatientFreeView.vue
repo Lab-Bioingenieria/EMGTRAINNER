@@ -285,7 +285,7 @@ const confirmProtocols = async () => {
     
     // Start EMG Data Collection
     try {
-        await EmgService.setSessionInfo(patientName.value)
+        await EmgService.setSessionInfo(patientName.value, patientAge.value)
         await EmgService.startSession()
     } catch (e) {
         console.error("Failed to start EMG session", e)

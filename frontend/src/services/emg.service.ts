@@ -52,8 +52,8 @@ export class EmgService {
         }
     }
 
-    static async setSessionInfo(name: string) {
-        return api.post(`/monitoring/sensor/emg/session/info?name=${encodeURIComponent(name || 'Anonymous')}`);
+    static async setSessionInfo(name: string, age: string = "") {
+        return api.post(`/monitoring/sensor/emg/session/info?name=${encodeURIComponent(name || 'Anonymous')}&age=${encodeURIComponent(age)}`);
     }
 
     static async setMovementLabel(label: string) {

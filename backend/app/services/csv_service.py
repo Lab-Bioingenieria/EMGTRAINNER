@@ -49,8 +49,11 @@ class CSVService:
             try:
                 # Initialize DictWriter on first write
                 if not self.header_written:
-                    # fixed order for common fields, others sorted
-                    fixed_fields = ['timestamp', 'name', 'label']
+                    # User requested strict format: name,age,emg1,emg2,emg3,labels
+                    # mapped to keys: nombre, edad, emg1, emg2, emg3, labels
+                    fixed_fields = ['nombre', 'edad', 'emg1', 'emg2', 'emg3', 'labels']
+                    
+                    # If there are extra fields (e.g. emg4), append them
                     other_fields = sorted([k for k in data.keys() if k not in fixed_fields])
                     fieldnames = fixed_fields + other_fields
                     
@@ -61,7 +64,8 @@ class CSVService:
                 # Write row
                 if self.csv_writer:
                     self.csv_writer.writerow(data)
-                    self.current_file.flush() # Ensure it's written to disk
+                    self.current_file.flush() # Ensure it's written to disk buffer
+                    os.fsync(self.current_file.fileno()) # Force write to physical disk
                     
             except Exception as e:
                 print(f"Error writing to CSV: {e}")

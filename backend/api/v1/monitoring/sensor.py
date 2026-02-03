@@ -106,10 +106,10 @@ async def stop_emg_session():
 
 
 @sensor_router.post("/emg/session/info")
-async def set_session_info(name: str):
+async def set_session_info(name: str, age: str = None):
     """Set patient name for current/next session"""
-    emg_service.set_session_info(name)
-    return {"message": f"Session info updated: {name}"}
+    emg_service.set_session_info(name, age)
+    return {"message": f"Session info updated: {name} ({age})"}
 
 
 @sensor_router.post("/emg/label")

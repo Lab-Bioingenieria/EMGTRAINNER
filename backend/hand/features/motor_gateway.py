@@ -2,7 +2,7 @@ import time
 import dynamixel_sdk as dxl
 
 PROTOCOL_VERSION = 2.0
-PORT_NAME = "COM4"
+PORT_NAME = "COM16"
 BAUDRATE = 1000000
 
 ADDR_TORQUE_ENABLE = 64

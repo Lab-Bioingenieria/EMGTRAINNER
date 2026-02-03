@@ -15,18 +15,33 @@ class SerialManager:
         self.connection: Optional[serial.Serial] = None
         self.port: Optional[str] = None
     
-    def find_device_port(self, identifier: str = "USB") -> Optional[str]:
+    def find_device_port(self, identifier: str = "USB", excluded_identifiers: list = None) -> Optional[str]:
         """
         Find serial port by identifier
         
         Args:
             identifier: String to search in port description
+            excluded_identifiers: List of strings to exclude (e.g. ['FTDI'])
             
         Returns:
             Port device name or None
         """
+        if excluded_identifiers is None:
+            excluded_identifiers = []
+
         ports = serial.tools.list_ports.comports()
         for port in ports:
+            # Check exclusions first
+            is_excluded = False
+            for exclude in excluded_identifiers:
+                if exclude in port.description or exclude in str(port.hwid):
+                    is_excluded = True
+                    break
+            
+            if is_excluded:
+                continue
+
+            # Check match
             if identifier in port.description or identifier in str(port.hwid):
                 return port.device
         return None
@@ -43,7 +58,14 @@ class SerialManager:
         """
         try:
             if port is None:
-                port = self.find_device_port()
+                # Try to avoid FTDI (used by Dynamixel)
+                # Also prefer typical ESP32 drivers
+                port = self.find_device_port(identifier="Silicon", excluded_identifiers=["FTDI"])
+                if port is None:
+                     port = self.find_device_port(identifier="CH340", excluded_identifiers=["FTDI"])
+                if port is None:
+                     # Fallback to generic USB but exclude FTDI
+                     port = self.find_device_port(identifier="USB", excluded_identifiers=["FTDI"])
             
             if port is None:
                 raise Exception("No device port found")
