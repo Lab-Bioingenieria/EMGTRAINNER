@@ -50,13 +50,11 @@ const gestureMedia = computed((): MediaSource => {
     if (g.includes('cilindrico') || g.includes('cylindrical')) return { type: 'video', src: '/movements_video/Cylindrical.mp4' }
     
     // New Video Mappings (AVI)
-    if (g.includes('apuntar') || g.includes('point')) return { type: 'video', src: '/movements_video/Point.avi' }
-    if (g.includes('arriba') || g.includes('like')) return { type: 'video', src: '/movements_video/Like.avi' }
+    if (g.includes('apuntar') || g.includes('point')) return { type: 'video', src: '/movements_video/Point.mp4' }
+    if (g.includes('arriba') || g.includes('like')) return { type: 'video', src: '/movements_video/Like.mp4' }
 
     // Spherical - Random choice
-    if (g.includes('esférico') || g.includes('spherical')) {
-        return { type: 'video', src: `/movements_video/${sphericalVariant.value}.mp4` }
-    }
+    if (g.includes('esférico') || g.includes('spherical')) return { type: 'video', src: '/movements_video/Spherical.mp4'}
 
     // Image Fallbacks (Rest, etc.)
     let dir = 'rest'
