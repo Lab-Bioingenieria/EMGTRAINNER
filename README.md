@@ -148,8 +148,8 @@ Este proyecto es privado y está desarrollado con fines académicos.
 
 ## 👨‍💻 Autor
 
-- **Tu Nombre** - [Tu GitHub]
-
+- Kevin Fernández - [Tu GitHub]
+- Nager Naranja - 
 ---
 
 ⭐ Si este proyecto te fue útil, considera darle una estrella
