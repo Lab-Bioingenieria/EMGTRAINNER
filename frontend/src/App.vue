@@ -1,37 +1,43 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppSidebar from './components/common/AppSidebar.vue'
 
 const route = useRoute()
-// Optionally hide sidebar on login/public pages if any exist later
-const showSidebar = true 
+const isLoginPage = computed(() => route.name === 'Login')
+const isHomePage  = computed(() => route.name === 'Home')
+const showSidebar = computed(() => !isLoginPage.value && !isHomePage.value)
 </script>
 
 <template>
-  <div class="app-layout">
-     <AppSidebar v-if="route.name !== 'Home'" />
-     <main class="main-wrapper">
-        <RouterView />
-     </main>
+  <RouterView v-if="isLoginPage" />
+  <div v-else-if="isHomePage" class="home-shell">
+    <main class="home-main">
+      <RouterView />
+    </main>
+  </div>
+  <div v-else class="shell">
+    <AppSidebar />
+    <main class="main-content">
+      <RouterView />
+    </main>
   </div>
 </template>
 
 <style>
-/* Global Resets handled by style.css, here layout specifics */
-body { margin: 0; background-color: #f8fafc; }
-
-.app-layout {
-  display: flex;
+.home-shell {
   height: 100vh;
   width: 100vw;
-  overflow: hidden;
-}
-
-.main-wrapper {
-  flex: 1;
+  background: var(--bone-50);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  position: relative;
+}
+.home-main {
+  flex: 1;
+  overflow-y: auto;
+}
+.main-content {
+  overflow-y: auto;
+  height: 100vh;
 }
 </style>

@@ -1,296 +1,228 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import { useRoute } from 'vue-router'
-import {
-  Activity,
-  Brain,
-  Users,
-  Stethoscope,
-  Hand,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardCheck,
-  Database,
-} from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { authService } from '@/services/auth.service'
 
-const route = useRoute()
-const collapsed = ref(false)
+const route  = useRoute()
+const router = useRouter()
 
-const navigation = [
-  {
-    name: "AI Model Console",
-    path: "/ai-console",
-    icon: Brain,
-    description: "Análisis del modelo",
-  },
-  {
-    name: "Panel de Pacientes",
-    path: "/dashboard",
-    icon: Users,
-    description: "Gestión y monitoreo",
-  },
-  {
-    name: "Almacenamiento",
-    path: "/storage",
-    icon: Database,
-    description: "Historial CSV",
-  },
-  {
-    name: "Sesión Doctor",
-    path: "/doctor",
-    icon: Stethoscope,
-    description: "Crear protocolos",
-  },
-  {
-    name: "Sesión Paciente",
-    path: "/patient",
-    icon: Hand,
-    description: "Entrenamiento",
-  },
-  {
-    name: "Test",
-    path: "/test",
-    icon: ClipboardCheck,
-    description: "Evaluación y calibración",
-  },
+const main = [
+  { id: 'home',      path: '/',           label: 'Inicio',             sub: 'Panel general',       icon: 'layers' },
+  { id: 'ai',        path: '/ai-console', label: 'AI Model Console',   sub: 'Análisis del modelo', icon: 'brain' },
+  { id: 'dashboard', path: '/dashboard',  label: 'Panel de Pacientes', sub: 'Gestión y monitoreo', icon: 'users' },
+  { id: 'storage',   path: '/storage',    label: 'Almacenamiento',     sub: 'Historial CSV',       icon: 'db' },
 ]
 
-// Auto-collapse logic based on route
-watch(() => route.path, (newPath) => {
-    if (newPath.startsWith('/patient')) {
-        collapsed.value = true
-    }
-}, { immediate: true })
+const session = [
+  { id: 'doctor',  path: '/doctor',  label: 'Sesión Doctor',   sub: 'Crear protocolos', icon: 'steth' },
+  { id: 'patient', path: '/patient', label: 'Sesión Paciente', sub: 'Entrenamiento',    icon: 'hand' },
+  { id: 'test',    path: '/test',    label: 'Test & Calibrar', sub: 'Evaluación',       icon: 'adjust' },
+]
 
-const sidebarClass = computed(() => collapsed.value ? 'collapsed' : 'expanded')
+const isActive = (path: string) => {
+  if (path === '/') return route.path === '/'
+  return route.path.startsWith(path)
+}
+
+function logout() {
+  authService.clearToken()
+  router.push('/login')
+}
 </script>
 
 <template>
-  <aside class="app-sidebar" :class="sidebarClass">
-    <!-- Header -->
-    <div class="sidebar-header">
-      <router-link to="/" class="logo-link">
-        <Activity class="logo-icon" />
-        <span v-if="!collapsed" class="logo-text">MyoTrainer</span>
+  <aside class="sidebar">
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <div class="brand-mark">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--bone-50)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12h3l2-7 4 14 3-9 2 5h4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">EMGtrainner</div>
+        <div class="brand-sub">sEMG · v2.4.1</div>
+      </div>
+    </div>
+
+    <!-- Workspace section -->
+    <div class="nav-section">Workspace</div>
+    <div class="nav">
+      <router-link
+        v-for="item in main"
+        :key="item.id"
+        :to="item.path"
+        class="nav-item"
+        :class="{ active: isActive(item.path) }"
+      >
+        <span class="nav-icon">
+          <SidebarIcon :name="item.icon" />
+        </span>
+        <span class="nav-text">
+          <span>{{ item.label }}</span>
+          <span class="nav-sub">{{ item.sub }}</span>
+        </span>
       </router-link>
     </div>
 
-    <!-- Navigation -->
-    <nav class="sidebar-nav">
+    <!-- Session section -->
+    <div class="nav-section">Sesión</div>
+    <div class="nav">
       <router-link
-        v-for="item in navigation"
-        :key="item.path"
+        v-for="item in session"
+        :key="item.id"
         :to="item.path"
         class="nav-item"
-        :class="{ 'active': route.path.startsWith(item.path) }"
+        :class="{ active: isActive(item.path) }"
       >
-        <component :is="item.icon" class="nav-icon" />
-        <div v-if="!collapsed" class="nav-content">
-          <span class="nav-title">{{ item.name }}</span>
-          <span class="nav-desc">{{ item.description }}</span>
-        </div>
+        <span class="nav-icon">
+          <SidebarIcon :name="item.icon" />
+        </span>
+        <span class="nav-text">
+          <span>{{ item.label }}</span>
+          <span class="nav-sub">{{ item.sub }}</span>
+        </span>
       </router-link>
-    </nav>
+    </div>
 
     <!-- Footer -->
-    <div class="sidebar-footer">
-      <router-link to="/settings" class="nav-item settings-link" :class="{ 'active': route.path === '/settings' }">
-        <Settings class="nav-icon" />
-        <span v-if="!collapsed">Configuración</span>
-      </router-link>
-      
-      <button class="collapse-btn" @click="collapsed = !collapsed">
-        <ChevronRight v-if="collapsed" class="btn-icon" />
-        <ChevronLeft v-else class="btn-icon" />
+    <div class="sidebar-foot">
+      <div class="device-card">
+        <div class="device-row">
+          <span class="device-name">Ottobock bebionic</span>
+          <span class="dot live" />
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:11px;">
+          <span class="mono" style="color:var(--ink-4); letter-spacing:0.04em">BLDC · 6 DOF</span>
+          <span class="mono" style="color:var(--ink-4)">82%</span>
+        </div>
+        <div class="bar pulse" style="height:4px"><span style="width:82%" /></div>
+      </div>
+
+      <button class="nav-item logout-btn" @click="logout">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>
+          </svg>
+        </span>
+        <span class="nav-text">
+          <span>Cerrar sesión</span>
+          <span class="nav-sub">Dra. C. Morales</span>
+        </span>
       </button>
     </div>
   </aside>
 </template>
 
+<!-- icon component inline -->
+<script lang="ts">
+const icons: Record<string, string> = {
+  layers:  '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/><path d="m3 18 9 5 9-5"/>',
+  brain:   '<path d="M9 4a3 3 0 0 0-3 3v.5A2.5 2.5 0 0 0 4 10v.5A2.5 2.5 0 0 0 4 15v.5A2.5 2.5 0 0 0 6 18v.5A2.5 2.5 0 0 0 9 21V4Z"/><path d="M15 4a3 3 0 0 1 3 3v.5A2.5 2.5 0 0 1 20 10v.5A2.5 2.5 0 0 1 20 15v.5A2.5 2.5 0 0 1 18 18v.5A2.5 2.5 0 0 1 15 21V4Z"/>',
+  users:   '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="8.5" r="3"/><path d="M16 14a5 5 0 0 1 5.5 6"/>',
+  db:      '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+  steth:   '<path d="M5 3v6a5 5 0 0 0 10 0V3"/><path d="M5 3h2"/><path d="M13 3h2"/><path d="M10 14v3a4 4 0 0 0 8 0v-1"/><circle cx="18" cy="11" r="2"/>',
+  hand:    '<path d="M9 11V5a1.5 1.5 0 0 1 3 0v6"/><path d="M12 11V4a1.5 1.5 0 0 1 3 0v7"/><path d="M15 11V5.5a1.5 1.5 0 0 1 3 0V14"/><path d="M9 11V7a1.5 1.5 0 0 0-3 0v7c0 4 3 7 6 7h1c3 0 5-2.5 5-5"/>',
+  adjust:  '<path d="M4 6h10M4 12h7M4 18h13"/><circle cx="18" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="21" cy="18" r="2"/>',
+}
+
+import { defineComponent, h } from 'vue'
+
+const SidebarIcon = defineComponent({
+  props: { name: { type: String, required: true } },
+  setup(props) {
+    return () => h('svg', {
+      width: 16, height: 16,
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': '1.6',
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+      innerHTML: icons[props.name] ?? '',
+    })
+  }
+})
+
+export { SidebarIcon }
+</script>
+
 <style scoped>
-/* Variables mimic standard token colors used across the app */
-.app-sidebar {
-    display: flex;
-    flex-direction: column;
-    background-color: #ffffff;
-    border-right: 1px solid #e2e8f0;
-    height: 100vh;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    flex-shrink: 0;
-    z-index: 50;
+.sidebar {
+  background: var(--paper);
+  border-right: 1px solid var(--bone-200);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100vh;
+  width: 240px;
+  flex-shrink: 0;
 }
 
-.expanded { width: 260px; }
-.collapsed { width: 72px; } /* Slightly wider for better touch target */
-
-/* Header */
-.sidebar-header {
-    width: 100%;
-    height: 4rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* border-bottom: 1px solid #f1f5f9; Optional: removed for cleaner look */
+/* Brand */
+.sidebar-brand {
+  padding: 18px 18px 16px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--bone-200);
 }
-
-.logo-icon {
-    
-    color: #2563eb;
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    padding: 0.25rem;
-    border-radius: 8px;
+.brand-mark {
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  background: var(--ink);
+  border-radius: 6px;
 }
+.brand-name { font-weight: 600; font-size: 14.5px; letter-spacing: -0.01em; }
+.brand-sub  { font-family: var(--font-mono); font-size: 10px; color: var(--ink-4); letter-spacing: 0.1em; text-transform: uppercase; }
 
-
-.collapsed .sidebar-header {
-    justify-content: center;
-    padding: 0;
+/* Nav sections */
+.nav-section {
+  padding: 14px 12px 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-4);
 }
-
-.logo-link {
-    text-decoration: none;
-    color: #0f172a;
-    gap: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-
-.logo-text {
-
-    font-weight: 700;
-    font-size: 1.125rem;
-    letter-spacing: -0.025em;
-    color: #1e293b;
-}
-
-/* Nav */
-.sidebar-nav {
-    flex: 1;
-    padding: 0 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
+.nav { display: flex; flex-direction: column; gap: 1px; padding: 0 8px; }
 
 .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.625rem 0.75rem;
-    border-radius: 8px;
-    text-decoration: none;
-    color: #64748b;
-    transition: all 0.2s ease;
-    min-height: 48px;
-    position: relative;
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  color: var(--ink-3);
+  font-size: 13.5px; font-weight: 500;
+  text-align: left; width: 100%;
+  text-decoration: none;
+  transition: background 0.12s;
 }
-
-/* Collapsed Nav Item State */
-.collapsed .nav-item {
-    justify-content: center;
-    padding: 0.625rem 0;
-    gap: 0;
-}
-
-.nav-item:hover {
-    background-color: #f8fafc;
-    color: #0f172a;
-}
-
-.nav-item.active {
-    background-color: #eff6ff;
-    color: #2563eb;
-}
-
-/* Active indicator strip for premium feel */
-.nav-item.active::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 24px;
-    background-color: #2563eb;
-    border-radius: 0 4px 4px 0;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.expanded .nav-item.active::before {
-    opacity: 1;
-}
+.nav-item:hover { background: var(--bone-100); color: var(--ink); }
+.nav-item.active { background: var(--ink); color: var(--bone-50); }
+.nav-item.active .nav-sub { color: var(--bone-300); }
 
 .nav-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    flex-shrink: 0;
-    transition: color 0.2s;
+  display: grid; place-items: center;
+  width: 18px; height: 18px; opacity: 0.85;
+  flex-shrink: 0;
 }
-
-/* Tooltip behavior for collapsed state could be added here, 
-   but for now we rely on the clean visual icon */
-
-.nav-content {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.nav-title {
-    font-size: 0.9rem;
-    font-weight: 500;
-    line-height: 1.2;
-}
-
-.nav-desc {
-    font-size: 0.75rem;
-    opacity: 0.7;
-    margin-top: 1px;
-}
+.nav-text { display: flex; flex-direction: column; line-height: 1.2; }
+.nav-sub  { font-family: var(--font-mono); font-size: 10px; color: var(--ink-4); letter-spacing: 0.04em; margin-top: 2px; }
 
 /* Footer */
-.sidebar-footer {
-    padding: 1rem 0.75rem;
-    border-top: 1px solid #f1f5f9;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    background-color: #ffffff;
+.sidebar-foot {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid var(--bone-200);
+  display: flex; flex-direction: column; gap: 8px;
 }
+.device-card {
+  padding: 10px 12px;
+  background: var(--bone-100);
+  border-radius: 8px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.device-row { display: flex; align-items: center; justify-content: space-between; }
+.device-name { font-size: 12px; font-weight: 500; }
 
-.collapse-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center; /* Always center the icon/content */
-    padding: 0.5rem;
-    border-radius: 8px;
-    border: 1px solid #f1f5f9;
-    background: white;
-    color: #64748b;
-    cursor: pointer;
-    transition: all 0.2s;
-    width: 100%;
-}
-
-.expanded .collapse-btn {
-     justify-content: flex-end; /* Push icon to right if expanded */
-     border: none; /* Cleaner look when expanded */
-     background: transparent;
-}
-
-.collapsed .collapse-btn {
-    border-color: transparent;
-    background: #f8fafc;
-}
-
-.collapse-btn:hover {
-    background-color: #f1f5f9;
-    color: #0f172a;
-}
+.logout-btn { cursor: pointer; }
 </style>

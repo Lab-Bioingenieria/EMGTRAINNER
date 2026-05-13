@@ -36,26 +36,22 @@ const connectWebSocket = () => {
         socket.value.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data)
-                // Assuming data is { s1: 123, s2: 456, s3: 789 } or { sensors: [123, 456, 789] }
-                // Adjust parsing based on actual backend format.
-                // Looking at typical simple ESP32 streams, it's often keys like 'emg1', 'ch1', or array.
-                // I will safeguard multiple formats.
-                
+
                 let s1 = 0, s2 = 0, s3 = 0
-                
+
                 if (Array.isArray(data)) {
                     s1 = data[0] || 0
                     s2 = data[1] || 0
                     s3 = data[2] || 0
                 } else if (data.sensors && Array.isArray(data.sensors)) {
-                     s1 = data.sensors[0] || 0
-                     s2 = data.sensors[1] || 0
-                     s3 = data.sensors[2] || 0
+                    s1 = data.sensors[0] || 0
+                    s2 = data.sensors[1] || 0
+                    s3 = data.sensors[2] || 0
                 } else {
-                    // Try common keys
-                    s1 = data.s1 || data.emg1 || data.ch1 || data.channel1 || 0
-                    s2 = data.s2 || data.emg2 || data.ch2 || data.channel2 || 0
-                    s3 = data.s3 || data.emg3 || data.ch3 || data.channel3 || 0
+                    // Backend manda dc0/dc1/dc2 (normalizados 0-1)
+                    s1 = data.dc0 ?? data.s1 ?? data.emg1 ?? data.ch1 ?? 0
+                    s2 = data.dc1 ?? data.s2 ?? data.emg2 ?? data.ch2 ?? 0
+                    s3 = data.dc2 ?? data.s3 ?? data.emg3 ?? data.ch3 ?? 0
                 }
                 
                 // Shift and push
@@ -118,9 +114,9 @@ const draw = () => {
         
         data.forEach((val, index) => {
             const x = index * step
-            // Invert Y because canvas 0 is top
-            const y = height - (val / 4096) * height 
-            
+            // Valores normalizados 0-1 del backend → escalar al canvas con margen
+            const y = height - val * height * 0.85 - height * 0.05
+
             if (index === 0) ctx.moveTo(x, y)
             else ctx.lineTo(x, y)
         })

@@ -307,7 +307,7 @@ onUnmounted(() => {
 
 <style scoped>
 /* Base Layout */
-.page-layout { display: flex; flex-direction: column; height: 100%; background-color: #f8fafc; font-family: 'Roboto', sans-serif; }
+.page-layout { display: flex; flex-direction: column; height: 100%; background: var(--bone-50); font-family: var(--font-sans); }
 .content { flex: 1; overflow: auto; padding: 1.5rem; }
 .setup-container { max-width: 56rem; margin: 0 auto; width: 100%; }
 .dashboard-container { max-width: 80rem; margin: 0 auto; width: 100%; }

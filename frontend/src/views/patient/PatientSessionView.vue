@@ -207,7 +207,7 @@ onUnmounted(() => clearInterval(intervalId))
 
 <template>
   <div class="page-layout">
-    <TopHeader title="Sesión de Paciente" subtitle="Entrenamiento supervisado y autónomo" />
+    <TopHeader crumb="MÓDULO · SESIÓN PACIENTE" title="Sesión de Entrenamiento" />
 
     <div class="content flex-center-col">
        <!-- SELECTION PHASE -->
@@ -421,7 +421,7 @@ onUnmounted(() => clearInterval(intervalId))
 
 <style scoped>
 /* Standard Layout */
-.page-layout { display: flex; flex-direction: column; height: 100vh; background-color: #f8fafc; font-family: 'Roboto', sans-serif; }
+.page-layout { display: flex; flex-direction: column; height: 100vh; background: var(--bone-50); font-family: var(--font-sans); }
 .content { flex: 1; overflow: auto; padding: 2rem; display: flex; flex-direction: column; }
 .flex-center-col { align-items: center; }
 

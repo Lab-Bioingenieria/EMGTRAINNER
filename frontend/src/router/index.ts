@@ -3,6 +3,11 @@ import HomeView from '../views/HomeView.vue'
 
 const routes = [
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/LoginView.vue')
+  },
+  {
     path: '/',
     name: 'Home',
     component: HomeView
@@ -57,6 +62,13 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
+})
+
+router.beforeEach((to) => {
+  const isLoggedIn = typeof localStorage !== 'undefined' && !!localStorage.getItem('emgt_access_token')
+  if (to.name !== 'Login' && !isLoggedIn) {
+    return { name: 'Login' }
+  }
 })
 
 export default router
