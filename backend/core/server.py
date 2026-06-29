@@ -17,7 +17,7 @@ from core.fastapi.middlewares import (
     SQLAlchemyMiddleware,
 )
 
-from app.routers import learning, websocket
+from app.routers import learning, websocket, hand
 
 def on_auth_error(request: Request, exc: Exception):
     status_code, error_code, message = 401, None, str(exc)
@@ -36,6 +36,7 @@ def init_routers(app_: FastAPI) -> None:
     app_.include_router(router)
     app_.include_router(learning.router)
     app_.include_router(websocket.router)
+    app_.include_router(hand.router)
 
 
 def init_listeners(app_: FastAPI) -> None:
