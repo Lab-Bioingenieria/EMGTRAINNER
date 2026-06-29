@@ -1,13 +1,41 @@
-# Python
-/backend/.venv
+```
+# Compiled and build artifacts
+*.pyc
 __pycache__/
+*.o
+*.obj
 
-# Secretos
+# Dependencies
+.venv/
+venv/
+node_modules/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
 .env
-.env.*
-!*.env.example
+.env.local
+*.env.*
 
-# Archivos de sistema
-.DS_Store
-Thumbs.db
+# Editors
 .vscode/
+.idea/
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Python cache
+.mypy_cache/
+.pytest_cache/
+
+# Build directories
+dist/
+build/
+target/
+.gradle/
+```
