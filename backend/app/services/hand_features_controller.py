@@ -1,11 +1,11 @@
 import time
 from typing import Dict, List, Optional
 
-from features.motion_math import clamp, deg_to_ticks_xl330, ticks_to_deg_xl330
-from features.hand_models import HandProfile, MotorConfig, apply_hand_orientation
-from features.gesture_library import GESTURES
-from features.motor_gateway import DynamixelInterface
-from features.motor_feedback import MotorFeedback
+from app.utils.motion_math import clamp, deg_to_ticks_xl330, ticks_to_deg_xl330
+from app.schemas.hand_features_models import HandProfile, MotorConfig, apply_hand_orientation
+from app.services.hand_gesture_library import GESTURES
+from app.services.hand_motor_gateway import DynamixelInterface
+from app.services.hand_motor_feedback import MotorFeedback
 
 
 class DynamixelError(Exception):

@@ -1,8 +1,8 @@
 import time
 from typing import Optional
 from math import radians
-from .models import GestureEvent, PlannedGesture, JointEuler
-from hand.models.gestures import GESTURES
+from app.schemas.hand_realtime_models import GestureEvent, PlannedGesture, JointEuler
+from app.schemas.hand_gestures import GESTURES
 
 
 class GesturePlanner:

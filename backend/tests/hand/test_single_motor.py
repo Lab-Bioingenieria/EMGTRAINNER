@@ -1,4 +1,4 @@
-from hand.core.dynamixel_interface import DynamixelInterface
+from app.core.dynamixel_interface import DynamixelInterface
 import time
 import os
 import glob

@@ -106,7 +106,7 @@ async def start_training_session(
             raise HTTPException(status_code=500, detail=f"Failed to initialize hand: {str(e)}")
     
     # Import here to avoid circular dependencies
-    from hand.control.session_runner import TrainingSession
+    from app.services.hand_session_runner import TrainingSession
     
     try:
         session = TrainingSession(config.dict())

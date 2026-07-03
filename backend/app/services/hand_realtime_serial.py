@@ -9,7 +9,7 @@ def open_serial(port: str, baud: int = 115200):
         ser = serial.Serial(port, baud, timeout=0.1)
         return ser
     except Exception as e:
-        print(f"[realtime.serial_source] Could not open serial {port}: {e}")
+        print(f"[realtime.hand_realtime_serial] Could not open serial {port}: {e}")
         return None
 
 async def serial_generator(port: str, baud: int = 115200) -> AsyncGenerator[dict, None]:
@@ -32,8 +32,8 @@ async def serial_generator(port: str, baud: int = 115200) -> AsyncGenerator[dict
             # If line looks like CSV from ESP32, try parse and infer
             if ',' in s:
                 try:
-                    from ...emg.serial_emg_reader import parse_line
-                    from ...emg.emg_inference_stub import infer_from_emg
+                    from app.services.serial_emg_reader import parse_line
+                    from app.services.emg_inference_stub import infer_from_emg
                     parsed = parse_line(s)
                     if parsed:
                         gesture, conf = infer_from_emg(parsed.get('emg', []))

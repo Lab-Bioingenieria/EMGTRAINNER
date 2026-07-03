@@ -1,9 +1,10 @@
 export interface Patient {
-    id: string
+    id: number
+    patient_code: string
     name: string
     age: number
-    sessions: number
-    lastSession: string
+    sessions_count: number
+    last_session: string | null
     progress: number
     status: 'active' | 'inactive' | 'completed'
 }

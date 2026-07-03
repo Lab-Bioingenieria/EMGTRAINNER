@@ -2,6 +2,7 @@
 import type { TresObject } from '@tresjs/core'
 import { useLoop } from '@tresjs/core'
 import { shallowRef } from 'vue'
+import { Vector3 } from 'three'
 
 const { onBeforeRender } = useLoop()
 
@@ -16,20 +17,20 @@ onBeforeRender(({ elapsed }) => {
 </script>
 
 <template>
-  <TresPerspectiveCamera :position="[5, 5, 5]" :look-at="[0, 0, 0]" />
+  <TresPerspectiveCamera :position="new Vector3(5, 5, 5)" :look-at="new Vector3(0, 0, 0)" />
   <TresAmbientLight
     :intensity="0.5"
     color="white"
   />
   <TresMesh
     ref="boxRef"
-    :position="[0, 2, 0]"
+    :position="new Vector3(0, 2, 0)"
   >
     <TresBoxGeometry :args="[1, 1, 1]" />
     <TresMeshNormalMaterial />
   </TresMesh>
   <TresDirectionalLight
-    :position="[0, 2, 4]"
+    :position="new Vector3(0, 2, 4)"
     :intensity="1"
     cast-shadow
   />

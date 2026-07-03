@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@tresjs/eslint-config": "^1.1.0",
+    "@types/estree": "^1.0.9",
     "@types/three": "latest",
     "@vitejs/plugin-vue": "latest",
     "autoprefixer": "^10.4.23",

@@ -15,7 +15,7 @@ async def udp_listener(port: int = 8765) -> AsyncGenerator[dict, None]:
             obj = json.loads(data.decode('utf-8'))
             # debug log for received UDP test messages
             try:
-                print(f"[udp_source] recv from {addr}: {obj.get('gesture', '<no-gesture>')}")
+                print(f"[hand_realtime_udp] recv from {addr}: {obj.get('gesture', '<no-gesture>')}")
             except Exception:
                 pass
             yield obj

@@ -15,9 +15,9 @@ import re
 import asyncio
 
 # Hand Control Imports
-from hand.core.dynamixel_interface import DynamixelInterface, find_u2d2_port
-from hand.control.hand_controller import execute_gesture
-from hand.models.hand_profiles import ELEVEN_DOF_RIGHT
+from app.core.dynamixel_interface import DynamixelInterface, find_u2d2_port
+from app.services.hand_control_controller import execute_gesture
+from app.schemas.hand_profiles import ELEVEN_DOF_RIGHT
 
 from app.utils.umyo import umyo_parser
 from app.services.websocket_manager import websocket_manager

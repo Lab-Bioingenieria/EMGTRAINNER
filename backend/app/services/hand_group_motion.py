@@ -1,8 +1,8 @@
 import time
 from typing import Dict
-from ..core.dynamixel_interface import DynamixelInterface
-from ..models.hand_profiles import HandProfile, MotorConfig
-from hand.models.hand_profiles import apply_hand_orientation
+from app.core.dynamixel_interface import DynamixelInterface
+from app.schemas.hand_profiles import HandProfile, MotorConfig
+from app.schemas.hand_profiles import apply_hand_orientation
 
 
 def move_finger_sequential(dx: DynamixelInterface, profile: HandProfile, finger_name: str, target_angles: Dict[str, float], delay_s: float = 0.15,):

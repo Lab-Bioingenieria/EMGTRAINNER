@@ -4,10 +4,10 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict
 
-from ..core.physics import (current_to_torque_nm, torque_to_fingertip_force, total_grip_force,)
-from ..models.anthropometry import get_finger_length_m
-from ..services.hand_service import HandService
-from ..core.dynamixel_interface import DynamixelInterface
+from app.utils.physics import (current_to_torque_nm, torque_to_fingertip_force, total_grip_force,)
+from app.utils.anthropometry import get_finger_length_m
+from app.services.hand_service import HandService
+from app.core.dynamixel_interface import DynamixelInterface
 
 class TrainingSession:
     "Ejecuta una sesión clínica completa de entrenamiento"

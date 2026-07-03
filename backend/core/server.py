@@ -47,6 +47,15 @@ def init_listeners(app_: FastAPI) -> None:
             content={"error_code": exc.error_code, "message": exc.message},
         )
 
+    @app_.on_event("startup")
+    async def startup():
+        from core.database import Base
+        from core.database.session import engines
+        import app.models  # Ensures all models are loaded
+        
+        async with engines["writer"].begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
 
 def make_middleware() -> List[Middleware]:
     middleware = [

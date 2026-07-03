@@ -3,15 +3,15 @@ import glob
 import sys
 import time
 
-from hand.core.dynamixel_interface import DynamixelInterface
-from hand.control.hand_controller import execute_gesture
-from hand.models.hand_profiles import ELEVEN_DOF_RIGHT, SIX_DOF_RIGHT, TWO_MOTORS
-from hand.core.physics import (
+from app.core.dynamixel_interface import DynamixelInterface
+from app.services.hand_control_controller import execute_gesture
+from app.schemas.hand_profiles import ELEVEN_DOF_RIGHT, SIX_DOF_RIGHT, TWO_MOTORS
+from app.utils.physics import (
     current_to_torque_nm,
     torque_to_fingertip_force,
     total_grip_force,
 )
-from hand.models.anthropometry import get_finger_length_m
+from app.utils.anthropometry import get_finger_length_m
 
 
 def find_u2d2_port() -> str | None:

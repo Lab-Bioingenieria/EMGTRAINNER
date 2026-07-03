@@ -1,26 +1,35 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import TopHeader from '../../components/common/TopHeader.vue'
 import PatientProgressChart from '../../components/dashboard/PatientProgressChart.vue'
 import GestureComparisonChart from '../../components/dashboard/GestureComparisonChart.vue'
 import type { Patient } from '../../types/patient'
+import { authService } from '@/services/auth.service'
+import { API_BASE_URL } from '@/lib/constants'
 
-const patients: Patient[] = [
-  { id: "P-2341", name: "María González",   age: 45, sessions: 12, lastSession: "2026-05-10", progress: 89, status: "active" },
-  { id: "P-1892", name: "Carlos Rodríguez", age: 38, sessions: 8,  lastSession: "2026-05-10", progress: 76, status: "active" },
-  { id: "P-3021", name: "Ana Martínez",     age: 52, sessions: 15, lastSession: "2026-05-09", progress: 94, status: "active" },
-  { id: "P-4156", name: "Luis Fernández",   age: 41, sessions: 5,  lastSession: "2026-05-08", progress: 62, status: "inactive" },
-  { id: "P-5234", name: "Elena Sánchez",    age: 35, sessions: 20, lastSession: "2026-05-07", progress: 97, status: "completed" },
-  { id: "P-6789", name: "Roberto López",    age: 48, sessions: 3,  lastSession: "2026-05-05", progress: 45, status: "active" },
-]
+const patients = ref<Patient[]>([])
+
+onMounted(async () => {
+  const token = authService.getToken()
+  if (token) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/patients/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        patients.value = await res.json()
+      }
+    } catch(e) {}
+  }
+})
 
 const searchQuery  = ref('')
 const statusFilter = ref('all')
 
 const filteredPatients = computed(() =>
-  patients.filter(p => {
+  patients.value.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                        p.id.toLowerCase().includes(searchQuery.value.toLowerCase())
+                        p.patient_code.toLowerCase().includes(searchQuery.value.toLowerCase())
     const matchStatus = statusFilter.value === 'all' || p.status === statusFilter.value
     return matchSearch && matchStatus
   })
@@ -62,8 +71,8 @@ const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('')
             <span class="kicker">Pacientes Totales</span>
             <span class="dot" style="background:var(--ink)" />
           </div>
-          <div class="kpi-value">124</div>
-          <div class="kpi-meta"><span class="delta up">↑ +8</span> este mes</div>
+          <div class="kpi-value">{{ patients.length }}</div>
+          <div class="kpi-meta"><span class="delta up">↑ +{{ patients.length }}</span> este mes</div>
         </div>
         <div class="kpi">
           <div class="kpi-label">
@@ -86,7 +95,7 @@ const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('')
             <span class="kicker">Pacientes Activos</span>
             <span class="dot" style="background:var(--signal)" />
           </div>
-          <div class="kpi-value">89</div>
+          <div class="kpi-value">{{ patients.filter(p => p.status === 'active').length }}</div>
           <div class="kpi-meta">72% del total</div>
         </div>
       </div>
@@ -135,12 +144,12 @@ const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('')
                       <div class="avatar">{{ getInitials(p.name) }}</div>
                       <div>
                         <div style="font-weight:600">{{ p.name }}</div>
-                        <div class="mono muted" style="font-size:11px">{{ p.id }} · {{ p.age }} años</div>
+                        <div class="mono muted" style="font-size:11px">{{ p.patient_code }} · {{ p.age }} años</div>
                       </div>
                     </div>
                   </td>
-                  <td class="num">{{ p.sessions }}</td>
-                  <td class="mono muted" style="font-size:12px">{{ p.lastSession }}</td>
+                  <td class="num">{{ p.sessions_count }}</td>
+                  <td class="mono muted" style="font-size:12px">{{ p.last_session || '---' }}</td>
                   <td>
                     <div class="row" style="gap:10px">
                       <div class="bar signal" style="width:90px"><span :style="{ width: p.progress + '%' }" /></div>

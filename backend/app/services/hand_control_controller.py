@@ -1,8 +1,8 @@
 from typing import Dict, List, Tuple
 
-from ..models.gestures import GESTURES
-from ..models.hand_profiles import HandProfile, apply_hand_orientation, MotorConfig
-from ..core.dynamixel_interface import DynamixelInterface, DEFAULT_PROFILE_VELOCITY, DEFAULT_PROFILE_ACCELERATION, POSITION_MODE
+from app.schemas.hand_gestures import GESTURES
+from app.schemas.hand_profiles import HandProfile, apply_hand_orientation, MotorConfig
+from app.core.dynamixel_interface import DynamixelInterface, DEFAULT_PROFILE_VELOCITY, DEFAULT_PROFILE_ACCELERATION, POSITION_MODE
 
 def initialize_hand_profile(dx: DynamixelInterface, profile: HandProfile):
     for finger in profile.fingers.values():

@@ -23,8 +23,8 @@ services:
       RABBITMQ_DEFAULT_USER: rabbit
       RABBITMQ_DEFAULT_PASS: password
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5673:5672"
+      - "15673:15672"
 
   backend:
     build:
@@ -65,8 +65,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: builder
+    command: pnpm run dev --host 0.0.0.0
     ports:
-      - "80:80"
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
 

@@ -1,6 +1,6 @@
 import asyncio
 import time
-from ..models import GestureEvent
+from app.schemas.hand_realtime_models import GestureEvent
 
 async def mock_generator(rate_hz: float = 1.0):
     gestures = ['OPEN','CLOSE','PINCH','POINT','LIKE','CYLINDRICAL','SPHERICAL','SALUTE','REST','ZERO']

@@ -8,10 +8,10 @@ import os
 from typing import Optional, Dict, List, Any
 from datetime import datetime
 
-from hand.core.dynamixel_interface import DynamixelInterface
-from hand.control.hand_controller import initialize_hand_profile, execute_gesture
-from hand.models.hand_profiles import HAND_PROFILES, HandProfile
-from hand.models.gestures import GESTURES
+from app.core.dynamixel_interface import DynamixelInterface
+from app.services.hand_control_controller import initialize_hand_profile, execute_gesture
+from app.schemas.hand_profiles import HAND_PROFILES, HandProfile
+from app.schemas.hand_gestures import GESTURES
 
 
 class HandService:

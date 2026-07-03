@@ -1,6 +1,6 @@
 import os
 import glob
-from hand.core.dynamixel_interface import DynamixelInterface
+from app.core.dynamixel_interface import DynamixelInterface
 
 
 def find_u2d2_port():

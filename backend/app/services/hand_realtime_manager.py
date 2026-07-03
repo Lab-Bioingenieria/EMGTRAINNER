@@ -5,10 +5,10 @@ import json
 from typing import Set
 from fastapi import WebSocket
 
-from .models import GestureEvent
-from .planner import GesturePlanner
+from app.schemas.hand_realtime_models import GestureEvent
+from app.services.hand_realtime_planner import GesturePlanner
 
-from .sources import mock_source, serial_source, udp_source
+from app.services import hand_realtime_mock, hand_realtime_serial, hand_realtime_udp
 
 
 class RealtimeManager:
@@ -65,14 +65,14 @@ class RealtimeManager:
         try:
             if self.source == 'serial' and self.emg_port:
                 try:
-                    agen = serial_source.serial_generator(self.emg_port)
+                    agen = hand_realtime_serial.serial_generator(self.emg_port)
                 except Exception as e:
                     print(f"[realtime.manager] serial source failed opening: {e}. Falling back to mock.")
-                    agen = mock_source.mock_generator(rate_hz=1.0)
+                    agen = hand_realtime_mock.mock_generator(rate_hz=1.0)
             elif self.source == 'udp':
-                agen = udp_source.udp_listener(self.udp_port)
+                agen = hand_realtime_udp.udp_listener(self.udp_port)
             else:
-                agen = mock_source.mock_generator(rate_hz=1.0)
+                agen = hand_realtime_mock.mock_generator(rate_hz=1.0)
 
             async for item in agen:
                 # item may be dict or GestureEvent

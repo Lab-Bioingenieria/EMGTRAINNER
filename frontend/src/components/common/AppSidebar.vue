@@ -1,13 +1,32 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '@/services/auth.service'
+import { API_BASE_URL } from '@/lib/constants'
 
 const route  = useRoute()
 const router = useRouter()
 
+const username = ref('Usuario')
+
+onMounted(async () => {
+  const token = authService.getToken()
+  if (token) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.username) {
+          username.value = data.username
+        }
+      }
+    } catch(e) {}
+  }
+})
+
 const main = [
-  { id: 'home',      path: '/',           label: 'Inicio',             sub: 'Panel general',       icon: 'layers' },
   { id: 'ai',        path: '/ai-console', label: 'AI Model Console',   sub: 'Análisis del modelo', icon: 'brain' },
   { id: 'dashboard', path: '/dashboard',  label: 'Panel de Pacientes', sub: 'Gestión y monitoreo', icon: 'users' },
   { id: 'storage',   path: '/storage',    label: 'Almacenamiento',     sub: 'Historial CSV',       icon: 'db' },
@@ -34,15 +53,17 @@ function logout() {
   <aside class="sidebar">
     <!-- Brand -->
     <div class="sidebar-brand">
-      <div class="brand-mark">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--bone-50)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 12h3l2-7 4 14 3-9 2 5h4"/>
-        </svg>
-      </div>
-      <div>
-        <div class="brand-name">EMGtrainner</div>
-        <div class="brand-sub">sEMG · v2.4.1</div>
-      </div>
+      <router-link to="/" class="brand-link" style="display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit;">
+        <div class="brand-mark">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--bone-50)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12h3l2-7 4 14 3-9 2 5h4"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">EMGtrainner</div>
+          <div class="brand-sub">sEMG · v2.4.1</div>
+        </div>
+      </router-link>
     </div>
 
     <!-- Workspace section -->
@@ -108,7 +129,7 @@ function logout() {
         </span>
         <span class="nav-text">
           <span>Cerrar sesión</span>
-          <span class="nav-sub">Dra. C. Morales</span>
+          <span class="nav-sub">{{ username }}</span>
         </span>
       </button>
     </div>

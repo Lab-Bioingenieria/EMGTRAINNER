@@ -7,14 +7,7 @@ import GestureDistribution from '../../components/ai/GestureDistribution.vue'
 import ModelVersions from '../../components/ai/ModelVersions.vue'
 import type { Session } from '../../types/session'
 
-const sessions: Session[] = [
-  { id: "S-1247", patient: "María González",   date: "2026-05-12 14:22", gestures: 45, accuracy: 92.3, valid: true },
-  { id: "S-1246", patient: "Carlos Rodríguez", date: "2026-05-12 11:08", gestures: 38, accuracy: 88.7, valid: true },
-  { id: "S-1245", patient: "Ana Martínez",     date: "2026-05-11 16:40", gestures: 52, accuracy: 95.1, valid: false },
-  { id: "S-1244", patient: "Luis Fernández",   date: "2026-05-11 09:15", gestures: 41, accuracy: 89.4, valid: true },
-  { id: "S-1243", patient: "Elena Sánchez",    date: "2026-05-10 18:03", gestures: 36, accuracy: 84.2, valid: false },
-  { id: "S-1242", patient: "Roberto López",    date: "2026-05-10 14:55", gestures: 48, accuracy: 91.8, valid: true },
-]
+const sessions: Session[] = []
 
 const activeTab = ref('metrics')
 
@@ -22,18 +15,18 @@ const tabs = [
   { id: 'metrics',      label: 'Métricas' },
   { id: 'confusion',    label: 'Confusion matrix' },
   { id: 'distribution', label: 'Distribución' },
-  { id: 'sessions',     label: 'Sesiones', count: '1,247' },
-  { id: 'versions',     label: 'Versiones', count: '8' },
+  { id: 'sessions',     label: 'Sesiones', count: '0' },
+  { id: 'versions',     label: 'Versiones', count: '0' },
 ]
 
 const gestures = [
-  { name: 'Open',   pct: 96, color: 'var(--pulse)' },
-  { name: 'Close',  pct: 94, color: 'var(--pulse)' },
-  { name: 'Pinch',  pct: 89, color: 'var(--data)' },
-  { name: 'Cyl.',   pct: 91, color: 'var(--pulse)' },
-  { name: 'Sphere', pct: 93, color: 'var(--pulse)' },
-  { name: 'Wave',   pct: 87, color: 'var(--warn)' },
-  { name: 'Point',  pct: 95, color: 'var(--pulse)' },
+  { name: 'Open',   pct: 0, color: 'var(--pulse)' },
+  { name: 'Close',  pct: 0, color: 'var(--pulse)' },
+  { name: 'Pinch',  pct: 0, color: 'var(--data)' },
+  { name: 'Cyl.',   pct: 0, color: 'var(--pulse)' },
+  { name: 'Sphere', pct: 0, color: 'var(--pulse)' },
+  { name: 'Wave',   pct: 0, color: 'var(--warn)' },
+  { name: 'Point',  pct: 0, color: 'var(--pulse)' },
 ]
 
 const statusMap: Record<string, [string, string]> = {
@@ -46,12 +39,13 @@ const statusMap: Record<string, [string, string]> = {
   <div class="view-wrap">
     <TopHeader crumb="MÓDULO · AI MODEL CONSOLE" title="AI Model Console">
       <template #actions>
-        <button class="btn btn-ghost">
+        <button class="btn btn-ghost" onclick="document.getElementById('ai-model-upload').click()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/>
           </svg>
-          Importar dataset
+          Subir modelo de IA
         </button>
+        <input type="file" id="ai-model-upload" style="display: none" accept=".pt,.h5,.onnx,.pkl" />
       </template>
     </TopHeader>
 
@@ -63,32 +57,32 @@ const statusMap: Record<string, [string, string]> = {
             <span class="kicker">Precisión Global</span>
             <span class="dot" style="background:var(--ink)" />
           </div>
-          <div class="kpi-value">91.4<span class="unit">%</span></div>
-          <div class="kpi-meta"><span class="delta up">↑ +2.3%</span> vs. v2.4.0</div>
+          <div class="kpi-value">0.0<span class="unit">%</span></div>
+          <div class="kpi-meta"><span class="delta">--</span> sin entrenar</div>
         </div>
         <div class="kpi">
           <div class="kpi-label">
             <span class="kicker">F1 Promedio</span>
             <span class="dot" style="background:var(--data)" />
           </div>
-          <div class="kpi-value">0.92</div>
-          <div class="kpi-meta"><span class="delta up">↑ +0.04</span> macro · 7 clases</div>
+          <div class="kpi-value">0.00</div>
+          <div class="kpi-meta"><span class="delta">--</span> 0 clases</div>
         </div>
         <div class="kpi">
           <div class="kpi-label">
             <span class="kicker">Dataset</span>
             <span class="dot" style="background:var(--pulse)" />
           </div>
-          <div class="kpi-value">52,891</div>
-          <div class="kpi-meta"><span class="delta up">↑ 843</span> muestras válidas</div>
+          <div class="kpi-value">0</div>
+          <div class="kpi-meta"><span class="delta">--</span> muestras válidas</div>
         </div>
         <div class="kpi">
           <div class="kpi-label">
             <span class="kicker">Versión Activa</span>
-            <span class="dot" style="background:var(--signal)" />
+            <span class="dot" style="background:var(--warn)" />
           </div>
-          <div class="kpi-value">v2.4.1</div>
-          <div class="kpi-meta">entrenado hace 3 días</div>
+          <div class="kpi-value">---</div>
+          <div class="kpi-meta">sin modelo activo</div>
         </div>
       </div>
 
@@ -133,11 +127,11 @@ const statusMap: Record<string, [string, string]> = {
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
                 <div>
                   <div class="kicker">Inference latency</div>
-                  <div class="num" style="font-size:22px; margin-top:2px">14.3 <span class="muted" style="font-size:13px">ms</span></div>
+                  <div class="num" style="font-size:22px; margin-top:2px">0.0 <span class="muted" style="font-size:13px">ms</span></div>
                 </div>
                 <div>
                   <div class="kicker">Model size</div>
-                  <div class="num" style="font-size:22px; margin-top:2px">2.7 <span class="muted" style="font-size:13px">MB</span></div>
+                  <div class="num" style="font-size:22px; margin-top:2px">0.0 <span class="muted" style="font-size:13px">MB</span></div>
                 </div>
               </div>
             </div>
