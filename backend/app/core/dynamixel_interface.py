@@ -3,7 +3,7 @@ import os
 import glob
 from typing import Dict, List, Optional, Tuple
 import dynamixel_sdk as dxl
-
+from app.core.hardware_config import hardware_config
 # CONFIGURACION GENERAL
 PROTOCOL_VERSION = 2.0
 
@@ -31,36 +31,29 @@ DEFAULT_PROFILE_VELOCITY = 55
 DEFAULT_PROFILE_ACCELERATION = 10
 
 def find_u2d2_port() -> Optional[str]:
-    env_port = os.getenv("DYNAMIXEL_PORT", "COM16")
-    # On Windows, os.path.exists(COMx) is unreliable/False. Just skip check if strict.
-    # But for safety, let's favor glob detection unless forced.
-    
-    # Windows fallback
+    port = hardware_config.main_port
+    if port:
+        return port
+        
+    env_port = os.getenv("DYNAMIXEL_PORT")
+    if env_port:
+        return env_port
+        
     if os.name == 'nt':
         import serial.tools.list_ports
         ports = list(serial.tools.list_ports.comports())
-        # Prioritize FTDI if possible, or just return first valid COM
         for p in ports:
             if "FTDI" in p.description or "USB Serial Port" in p.description:
                  return p.device
-        
-        # Fallback to any COM
-        com_ports = glob.glob("COM[0-9]*")
-        if not com_ports:
-             # Try listing via serial tools if glob fails (glob works on files usually)
-             if ports:
-                 return ports[0].device
-             return env_port # Last resort force
-        com_ports.sort()
-        return com_ports[0]
+        if ports:
+            return ports[0].device
+        return None
 
-    # Linux stable by-id
     candidates = glob.glob("/dev/serial/by-id/*FTDI*")
     if candidates:
         candidates.sort()
         return candidates[0]
 
-    # Linux fallback
     usb = glob.glob("/dev/ttyUSB*")
     if usb:
         usb.sort()

@@ -1,25 +1,8 @@
-from app.core.dynamixel_interface import DynamixelInterface
+from app.core.dynamixel_interface import DynamixelInterface, find_u2d2_port
 import time
-import os
-import glob
 
 TEST_MOTOR_ID = 10
 DELTA_DEG = 80
-
-def find_u2d2_port():
-    env_port = os.getenv("DYNAMIXEL_PORT")
-    if env_port and os.path.exists(env_port):
-        return env_port
-
-    candidates = glob.glob("/dev/serial/by-id/*FTDI*")
-    if candidates:
-        return candidates[0]
-
-    usb = glob.glob("/dev/ttyUSB*")
-    if usb:
-        return usb[0]
-
-    return None
 
 def main():
     port = find_u2d2_port()

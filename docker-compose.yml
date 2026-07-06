@@ -32,6 +32,18 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    # IMPORTANTE PARA DESARROLLADORES:
+    # Para que el contenedor pueda comunicarse con el hardware (ej. Dynamixel U2D2, MCU de recolección),
+    # se debe mapear el puerto serial del host al contenedor usando 'devices'.
+    # 
+    # En Linux:
+    # devices:
+    #   - "/dev/ttyUSB0:/dev/ttyUSB0"
+    #   - "/dev/serial/by-id/usb-FTDI...:/dev/serial/by-id/usb-FTDI..."
+    #
+    # En Windows (Docker Desktop / WSL2), los puertos COM nativos no se mapean fácilmente usando 'devices'.
+    # Se recomienda correr el backend nativamente fuera de Docker en Windows si se necesita acceso serial,
+    # o usar herramientas como usbipd-win para enlazar el dispositivo USB a WSL2 y luego mapearlo como /dev/ttyUSBX.
     environment:
       - POSTGRES_URL=postgresql+asyncpg://postgres:password123@db:5432/fastapi-db
       - REDIS_URL=redis://redis:6379/7
@@ -49,6 +61,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     command: celery -A worker worker --loglevel=info
+    # IMPORTANTE: Al igual que el backend, si Celery necesita comunicarse con el hardware
+    # de forma asíncrona (ej. para calibración o tareas en segundo plano largas), 
+    # deberás descomentar y configurar el mapeo de 'devices'.
+    # devices:
+    #   - "/dev/ttyUSB0:/dev/ttyUSB0"
     environment:
       - POSTGRES_URL=postgresql+asyncpg://postgres:password123@db:5432/fastapi-db
       - REDIS_URL=redis://redis:6379/7

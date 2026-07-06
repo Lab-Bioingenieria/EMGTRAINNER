@@ -2,7 +2,6 @@ import time
 import dynamixel_sdk as dxl
 
 PROTOCOL_VERSION = 2.0
-PORT_NAME = "COM16"
 BAUDRATE = 1000000
 
 ADDR_TORQUE_ENABLE = 64
@@ -16,9 +15,14 @@ TORQUE_DISABLE = 0
 
 CURRENT_UNIT_TO_AMP = 0.00269
 
+from app.core.dynamixel_interface import find_u2d2_port
+
 class DynamixelInterface:
     def __init__(self):
-        self.port = dxl.PortHandler(PORT_NAME)
+        port_name = find_u2d2_port()
+        if not port_name:
+            raise RuntimeError("Port not configured or found")
+        self.port = dxl.PortHandler(port_name)
         self.packet = dxl.PacketHandler(PROTOCOL_VERSION)
 
     def initialize(self):

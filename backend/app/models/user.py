@@ -2,7 +2,7 @@ from enum import Enum
 from uuid import uuid4
 
 from sqlalchemy import BigInteger, Boolean, Column, Unicode
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.types import Uuid as UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base

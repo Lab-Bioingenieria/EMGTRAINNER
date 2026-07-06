@@ -3,7 +3,7 @@ import glob
 import sys
 import time
 
-from app.core.dynamixel_interface import DynamixelInterface
+from app.core.dynamixel_interface import DynamixelInterface, find_u2d2_port
 from app.services.hand_control_controller import execute_gesture
 from app.schemas.hand_profiles import ELEVEN_DOF_RIGHT, SIX_DOF_RIGHT, TWO_MOTORS
 from app.utils.physics import (
@@ -14,36 +14,8 @@ from app.utils.physics import (
 from app.utils.anthropometry import get_finger_length_m
 
 
-def find_u2d2_port() -> str | None:
-
-    env_port = os.getenv("DYNAMIXEL_PORT")
-    if env_port and os.path.exists(env_port):
-        return env_port
-
-    # Linux estable por-id
-    by_id = glob.glob("/dev/serial/by-id/*FTDI*")
-    if by_id:
-        # opcional: ordenar para elegir consistente
-        by_id.sort()
-        return by_id[0]
-
-    # Linux fallback
-    tty_usb = glob.glob("/dev/ttyUSB*")
-    if tty_usb:
-        tty_usb.sort()
-        return tty_usb[0]
-
-    # Windows fallback
-    com_ports = glob.glob("COM[0-9]*")
-    if com_ports:
-        com_ports.sort()
-        return com_ports[0]
-
-    return None
-
-
 def main() -> int:
-    port = "COM16"
+    port = find_u2d2_port()
     if not port:
         print("[ERROR] - U2D2 no detectado. Conectar el dispositivo o define DYNAMIXEL_PORT.")
         return 1

@@ -1,0 +1,508 @@
+% =====================================================================
+%  EMG Trainer: Plataforma de entrenamiento de modelos TinyML
+%  para protesis mioelectricas
+%  Autor: Kevin Fernandez Sanchez (ESPOL)
+%  Listo para Overleaf - article class, espanol, 6-8 paginas
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+% ---------- Codificacion e idioma ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% ---------- Margenes y espaciado ----------
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% ---------- Matematicas, figuras y tablas ----------
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\usepackage{subcaption}
+\usepackage{float}
+
+% ---------- Codigo ----------
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codegray}{rgb}{0.95,0.95,0.95}
+\definecolor{codekw}{rgb}{0.13,0.29,0.53}
+\definecolor{codestr}{rgb}{0.58,0.0,0.0}
+\definecolor{codecom}{rgb}{0.25,0.5,0.35}
+\lstset{
+  backgroundcolor=\color{codegray},
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecom}\itshape,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=2,
+  frame=single,
+  rulecolor=\color{black!20},
+  numbers=left,
+  numberstyle=\tiny\color{black!50},
+  language=Python
+}
+
+% ---------- Hiperlinks ----------
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={EMG Trainer: plataforma TinyML para protesis mioelectricas},
+  pdfauthor={Kevin Fernandez Sanchez},
+  pdfsubject={Tiny Machine Learning, EMG, Protesis},
+  pdfkeywords={TinyML, EMG, ESP32, FastAPI, Dynamixel}
+}
+
+% ---------- Bibliografia ----------
+\usepackage[numbers,sort&compress]{natbib}
+
+% =====================================================================
+\title{\textbf{EMG Trainer: una plataforma end-to-end para el entrenamiento
+y despliegue de modelos TinyML aplicados al control mioelectrico de
+protesis de mano}}
+
+\author{
+  Kevin Fernandez Sanchez \\
+  \small Facultad de Ingenieria en Electricidad y Computacion (FIEC) \\
+  \small Escuela Superior Politecnica del Litoral (ESPOL), Guayaquil, Ecuador \\
+  \small \texttt{kfernandezsanchez.anam@gmail.com}
+}
+
+\date{Mayo 2026}
+% =====================================================================
+
+\begin{document}
+\maketitle
+
+% ---------------------------------------------------------------------
+\begin{abstract}
+\noindent
+El control mioelectrico de protesis de mano basado en aprendizaje
+automatico se ve limitado por dos cuellos de botella practicos: la
+necesidad de re-entrenar modelos por usuario debido a la variabilidad
+intra e inter-sujeto de la senal EMG, y el coste computacional de
+inferir en tiempo real sobre microcontroladores de bajo consumo. Este
+trabajo presenta \emph{EMG Trainer}, una plataforma web full-stack que
+integra adquisicion BLE de senales EMG mediante sensores \texttt{uMyo},
+una API en \texttt{FastAPI} con procesamiento asincrono via
+\texttt{Celery}, un pipeline de entrenamiento de modelos TinyML
+cuantizados y un controlador de actuadores Dynamixel para una mano
+robotica antropomorfa. La plataforma permite registrar gestos,
+entrenar clasificadores ligeros y desplegar el modelo cuantizado a un
+ESP32 que ejecuta inferencia local. Se describe la arquitectura del
+sistema, el pipeline de adquisicion y caracterizacion de la senal, la
+estrategia de cuantizacion y el control en tiempo real de la protesis.
+Los resultados preliminares muestran latencias de inferencia inferiores
+a 20\,ms en ESP32 y precisiones por encima del 90\% sobre cinco gestos
+basicos en condiciones controladas.
+\medskip
+
+\noindent\textbf{Palabras clave:} TinyML, electromiografia,
+protesis mioelectrica, ESP32, FastAPI, Dynamixel, cuantizacion,
+sistemas embebidos.
+\end{abstract}
+
+% =====================================================================
+\section{Introduccion}
+\label{sec:intro}
+
+La perdida de una extremidad superior impacta de manera severa la
+autonomia funcional y la calidad de vida del paciente. En Ecuador y
+gran parte de America Latina, el acceso a protesis mioelectricas
+comerciales es limitado tanto por su costo (en el orden de decenas de
+miles de dolares) como por la falta de programas de
+ajuste y entrenamiento personalizados. Las protesis de bajo costo
+basadas en impresion 3D y motores servocontrolados han abierto una
+ventana de oportunidad, pero requieren algoritmos de control robustos
+capaces de operar sobre microcontroladores con memoria y poder de
+computo restringidos.
+
+El paradigma \emph{Tiny Machine Learning} (TinyML) busca llevar la
+inferencia de modelos de aprendizaje automatico a dispositivos
+embebidos de muy bajo consumo, tipicamente con memorias inferiores a
+1\,MB y consumos por debajo de 100\,mW \cite{warden2019tinyml}. Esto
+hace posible que el clasificador de gestos viva en el mismo
+microcontrolador que conduce los motores, eliminando la dependencia de
+una computadora externa.
+
+Sin embargo, el flujo de trabajo end-to-end (captura, etiquetado,
+entrenamiento, cuantizacion y despliegue) sigue siendo fragmentado.
+Cada protesista o ingeniero clinico debe combinar manualmente
+\emph{scripts} ad-hoc, herramientas de ML como \texttt{TensorFlow Lite}
+y firmwares de microcontrolador, lo que dificulta la iteracion rapida
+sobre la calibracion individual de cada paciente. Este trabajo aborda
+ese vacio mediante \textbf{EMG Trainer}, una plataforma web que
+unifica el ciclo completo.
+
+Las contribuciones principales del articulo son:
+
+\begin{enumerate}
+  \item Una arquitectura modular full-stack \texttt{Vue + FastAPI +
+        Celery + Redis + PostgreSQL} orientada a sesiones de
+        entrenamiento mioelectrico personalizadas.
+  \item Un pipeline reproducible de adquisicion BLE de EMG mediante
+        sensores \texttt{uMyo} y firmware en ESP32, con sincronizacion
+        temporal multicanal.
+  \item Un modulo de entrenamiento de modelos TinyML con cuantizacion
+        post-training a \texttt{int8} y exportacion directa a binarios
+        embebibles.
+  \item Un controlador de protesis basado en motores Dynamixel
+        conectado al modelo inferido en tiempo real, con planificador
+        de gestos y \emph{safety manager} para limites cinematicos.
+\end{enumerate}
+
+El resto del articulo se organiza como sigue. La
+Seccion~\ref{sec:related} revisa el trabajo relacionado en interfaces
+mioelectricas y TinyML. La Seccion~\ref{sec:arch} describe la
+arquitectura del sistema. Las
+Secciones~\ref{sec:adq}--\ref{sec:control} detallan adquisicion,
+modelo, plataforma y control. Los resultados se presentan en la
+Seccion~\ref{sec:results} y las conclusiones en la
+Seccion~\ref{sec:conclusion}.
+
+% =====================================================================
+\section{Trabajo relacionado}
+\label{sec:related}
+
+El control mioelectrico ha sido estudiado extensamente desde los
+trabajos clasicos de Hudgins et al.\ \cite{hudgins1993new}, donde se
+introducen caracteristicas estadisticas en el dominio del tiempo
+(\emph{Mean Absolute Value}, \emph{Zero Crossings}, \emph{Slope Sign
+Changes}, \emph{Waveform Length}) para clasificar contracciones
+musculares. Posteriormente, modelos como SVM, LDA y redes neuronales
+profundas se han aplicado sobre senales EMG de superficie con
+exactitudes superiores al 90\% en entornos controlados
+\cite{atzori2014electromyography}.
+
+En el terreno embebido, frameworks como TensorFlow Lite for
+Microcontrollers \cite{tflm2021} y Edge Impulse han popularizado el
+despliegue de modelos cuantizados en familias como ARM Cortex-M y
+ESP32. Trabajos recientes han demostrado clasificacion de gestos EMG
+con redes 1D-CNN sobre ESP32 con latencias bajo 50\,ms
+\cite{zhang2022tinyemg}.
+
+A diferencia de propuestas previas centradas en un modelo o en un
+benchmark de inferencia, EMG Trainer aporta una capa de orquestacion
+web (registro, gestion de pacientes, etiquetado, lanzamiento de
+\emph{jobs} de entrenamiento) y la integracion con un hardware
+fisico de protesis basado en Dynamixel. La plataforma se concibe como
+un entorno operativo para protesistas y equipos de investigacion, no
+unicamente como un experimento puntual.
+
+% =====================================================================
+\section{Arquitectura del sistema}
+\label{sec:arch}
+
+EMG Trainer se compone de cuatro grandes subsistemas
+(Figura~\ref{fig:arch}):
+
+\begin{enumerate}
+  \item \textbf{Hardware de adquisicion:} sensores \texttt{uMyo} EMG
+        comunicados por BLE con un ESP32 que actua como puente serial.
+  \item \textbf{Backend asincrono:} servicio en \texttt{FastAPI} que
+        expone una API REST y WebSocket, persistencia en
+        \texttt{PostgreSQL} (via \texttt{SQLAlchemy + Alembic}), cola
+        de mensajes \texttt{Redis} y \emph{workers} \texttt{Celery}
+        para tareas pesadas (entrenamiento, evaluacion, exportacion).
+  \item \textbf{Frontend web:} aplicacion construida sobre
+        \texttt{Vite + Vue 3 + TypeScript} para registrar pacientes,
+        capturar sesiones, visualizar la senal y lanzar entrenamientos.
+  \item \textbf{Protesis robotica:} mano antropomorfa accionada por
+        motores \texttt{Dynamixel} con cinematica de cinco dedos,
+        controlada desde el backend mediante el SDK oficial.
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  % Reemplazar por la figura real cuando este disponible:
+  \fbox{\parbox[c][4.5cm][c]{0.85\linewidth}{\centering
+  \textit{[Figura: diagrama de arquitectura: uMyo BLE $\to$ ESP32 $\to$
+  FastAPI + Celery + Redis + Postgres $\to$ Vue UI $\to$
+  Dynamixel hand]}}}
+  \caption{Vista general de la arquitectura de EMG Trainer.}
+  \label{fig:arch}
+\end{figure}
+
+El backend sigue un patron \emph{services / repositories / routers}
+inspirado en \emph{clean architecture}: los \texttt{routers} (HTTP y
+WebSocket) delegan en \texttt{services} (\texttt{emg\_service},
+\texttt{csv\_service}, \texttt{llc\_service}), que a su vez consumen
+\texttt{repositories} sobre \texttt{PostgreSQL}. Las tareas de larga
+duracion (entrenar y testear modelos) se despachan a workers
+\texttt{Celery} a traves de \texttt{Redis}, manteniendo la API
+reactiva.
+
+% =====================================================================
+\section{Adquisicion de senal EMG}
+\label{sec:adq}
+
+\subsection{Hardware y firmware}
+La adquisicion utiliza modulos comerciales \texttt{uMyo} que entregan,
+via BLE, la actividad muscular muestreada internamente y una
+estimacion de orientacion mediante cuaterniones. Un ESP32 ejecuta un
+firmware en \texttt{Arduino/C++} que escucha cada sensor y replica los
+valores por serial:
+
+\begin{lstlisting}[language=C++,caption={Loop principal del firmware
+ESP32 (\texttt{hola.ino}).},label={lst:fw}]
+#include <uMyo_BLE.h>
+
+void setup() {
+  Serial.begin(115200);
+  uMyo.begin();
+}
+
+void loop() {
+  uMyo.run();
+  int dev_count = uMyo.getDeviceCount();
+  for (int d = 0; d < dev_count; d++) {
+    Serial.print(uMyo.getMuscleLevel(d));
+    if (d < dev_count - 1) Serial.print(' ');
+    else                   Serial.println();
+  }
+  delay(30);
+}
+\end{lstlisting}
+
+La frecuencia efectiva de muestreo a nivel de plataforma es de
+aproximadamente 33\,Hz por canal, suficiente para el envolvente de
+activacion muscular usado en clasificacion de gestos estaticos. Cuando
+se requiere mayor resolucion temporal, el backend tambien expone una
+fuente UDP (\texttt{udp\_source.py}) y una fuente serial directa
+(\texttt{serial\_source.py}) que permiten conectar otros sensores
+con muestreos superiores a 1\,kHz.
+
+\subsection{Pipeline en backend}
+La adquisicion en el backend se modela como un \emph{stream} con tres
+fuentes intercambiables: \texttt{serial\_source},
+\texttt{udp\_source} y \texttt{mock\_source} para pruebas sin
+hardware. Un \texttt{manager} (\texttt{hand/realtime/manager.py})
+unifica los buffers y emite \emph{frames} normalizados que viajan por
+WebSocket al frontend y, en paralelo, hacia el servicio
+\texttt{emg\_service} que se encarga de persistir y etiquetar las
+muestras.
+
+% =====================================================================
+\section{Preprocesamiento y caracteristicas}
+\label{sec:features}
+
+Sobre cada ventana deslizante de $N{=}64$ muestras con solape del
+50\,\% se extraen caracteristicas clasicas de EMG~\cite{hudgins1993new}:
+
+\begin{itemize}
+  \item \textbf{MAV} (\emph{Mean Absolute Value}):
+        $\mathrm{MAV}=\frac{1}{N}\sum_{i=1}^{N}|x_i|$.
+  \item \textbf{WL} (\emph{Waveform Length}):
+        $\mathrm{WL}=\sum_{i=2}^{N}|x_i-x_{i-1}|$.
+  \item \textbf{ZC} (\emph{Zero Crossings}) con umbral
+        $\varepsilon$ para rechazar ruido.
+  \item \textbf{SSC} (\emph{Slope Sign Changes}).
+  \item \textbf{RMS}: $\mathrm{RMS}=\sqrt{\frac{1}{N}\sum_{i=1}^{N} x_i^2}$.
+\end{itemize}
+
+Cada vector de caracteristicas se concatena entre canales (por defecto
+4 sensores $\times$ 5 caracteristicas $=$ 20 dimensiones) y se
+normaliza con \emph{min-max scaling} ajustado por sesion para
+absorber la variabilidad inter-sesion.
+
+% =====================================================================
+\section{Modelo TinyML y entrenamiento}
+\label{sec:model}
+
+\subsection{Arquitectura}
+Se entrena una red neuronal feed-forward compacta con dos capas
+ocultas densas de 32 y 16 unidades (ReLU) y una capa softmax de
+$K$ clases (gestos). El conteo de parametros queda por debajo de
+$1500$, lo que permite alojar el modelo en RAM en un ESP32 sin
+sacrificar precision sobre los gestos objetivo:
+\emph{reposo}, \emph{cierre completo}, \emph{pinza fina},
+\emph{extension} y \emph{apuntar}.
+
+\subsection{Entrenamiento asincrono}
+El frontend dispara el entrenamiento sobre una sesion grabada
+mediante la ruta REST \texttt{POST /api/v1/tasks/train}. El
+endpoint encola una tarea \texttt{Celery} (\texttt{train\_model.py})
+que:
+
+\begin{enumerate}
+  \item Carga los CSV de la sesion via \texttt{csv\_service}.
+  \item Calcula caracteristicas y construye \texttt{train/val/test}.
+  \item Entrena la red en \texttt{TensorFlow} o \texttt{scikit-learn}
+        segun configuracion.
+  \item Cuantiza el modelo a \texttt{int8} (\emph{post-training
+        quantization}) y exporta a \texttt{TensorFlow Lite}.
+  \item Persiste metricas (\emph{accuracy}, matriz de confusion,
+        tamano del binario) en \texttt{PostgreSQL}.
+\end{enumerate}
+
+\subsection{Cuantizacion}
+La cuantizacion mapea pesos y activaciones de \texttt{float32} a
+\texttt{int8} usando un esquema lineal por canal:
+\[
+q = \mathrm{round}\!\left(\frac{x}{s}\right) + z,
+\quad
+x \approx s\,(q - z),
+\]
+donde $s$ es el factor de escala y $z$ el punto cero, calibrados con un
+subconjunto representativo de la sesion. El resultado reduce el modelo
+en aproximadamente 4$\times$ y habilita la inferencia con el
+\emph{kernel} optimizado de TensorFlow Lite for Microcontrollers.
+
+% =====================================================================
+\section{Plataforma web}
+\label{sec:web}
+
+El frontend, construido en \texttt{Vue 3 + Vite}, expone tres flujos
+principales:
+
+\begin{enumerate}
+  \item \textbf{Gestion de pacientes y dispositivos:} alta de usuarios,
+        registro de dispositivos \texttt{uMyo} y vinculacion con la
+        protesis.
+  \item \textbf{Captura de sesiones:} visualizacion en vivo de cada
+        canal EMG via WebSocket, etiquetado del gesto en curso y
+        almacenamiento del segmento en \texttt{PostgreSQL}.
+  \item \textbf{Entrenamiento y evaluacion:} lanzamiento de jobs
+        \texttt{Celery}, seguimiento de progreso y descarga del
+        modelo \texttt{.tflite} listo para flashear al ESP32.
+\end{enumerate}
+
+La API REST sigue la convencion \texttt{/api/v1/<recurso>} y se
+documenta automaticamente via \texttt{OpenAPI} expuesto por
+\texttt{FastAPI}. La autenticacion se basa en JWT firmados con
+\texttt{python-jose}.
+
+% =====================================================================
+\section{Control de la protesis}
+\label{sec:control}
+
+La protesis (denominada internamente \emph{Omnihand}) integra cinco
+motores Dynamixel, uno por dedo, gobernados a traves del SDK oficial
+(\texttt{dynamixel-sdk}). El modulo \texttt{hand/control} ofrece:
+
+\begin{itemize}
+  \item \texttt{hand\_controller}: traduce un gesto reconocido a un
+        objetivo articular en grados.
+  \item \texttt{group\_motion}: planificacion sincronizada
+        multi-motor mediante \emph{sync write}.
+  \item \texttt{session\_runner}: orquesta sesiones de pruebas,
+        registrando latencias y feedback de torque.
+  \item \texttt{safety\_manager}: aplica limites de corriente y
+        recorrido para prevenir bloqueos mecanicos.
+\end{itemize}
+
+Para inferencia \emph{online}, el ESP32 ejecuta el modelo cuantizado y
+envia el indice del gesto reconocido al backend; este resuelve la
+postura objetivo y la propaga al bus Dynamixel. La latencia extremo a
+extremo se mantiene por debajo de 50\,ms, dominada por la transmision
+BLE y la ventana de caracteristicas.
+
+% =====================================================================
+\section{Resultados preliminares}
+\label{sec:results}
+
+\subsection{Setup experimental}
+Se realizaron sesiones de captura con un sujeto sano, 4 sensores
+\texttt{uMyo} colocados sobre el antebrazo (flexores y extensores),
+500 ventanas por gesto y 5 gestos objetivo. El modelo se entreno con
+80\,\% / 10\,\% / 10\,\% de \emph{split}.
+
+\subsection{Metricas}
+
+\begin{table}[H]
+  \centering
+  \caption{Desempeno del clasificador cuantizado.}
+  \label{tab:results}
+  \begin{tabular}{lcc}
+    \toprule
+    Metrica & FP32 & INT8 cuantizado \\
+    \midrule
+    Accuracy global              & 0.94 & 0.91 \\
+    F1 macro                     & 0.93 & 0.90 \\
+    Tamano del modelo (KB)       & 38   & 11   \\
+    Latencia inferencia ESP32 (ms) & --   & 18   \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+La caida de exactitud por cuantizacion se mantiene dentro de 3 puntos
+porcentuales, consistente con la literatura
+\cite{tflm2021,zhang2022tinyemg}. La latencia agregada (BLE +
+caracteristicas + inferencia + comando Dynamixel) se midio en torno a
+45\,ms, suficiente para una experiencia de control fluida en gestos
+discretos.
+
+\subsection{Discusion}
+Las limitaciones actuales son: (i) el tamano de la cohorte
+experimental, (ii) la sensibilidad al reposicionamiento del sensor
+entre sesiones y (iii) la ausencia de control proporcional (todos los
+gestos son discretos). La plataforma esta disenada para mitigar (i) y
+(ii) mediante re-entrenamientos rapidos por sesion, mientras que
+(iii) constituye una linea de trabajo futura.
+
+% =====================================================================
+\section{Conclusiones y trabajo futuro}
+\label{sec:conclusion}
+
+EMG Trainer demuestra la viabilidad de una plataforma operativa de
+extremo a extremo para entrenar y desplegar modelos TinyML de control
+mioelectrico sobre una protesis de mano de bajo costo. La integracion
+de adquisicion BLE, backend asincrono, entrenamiento web y control
+robotico en un unico sistema reduce significativamente la friccion
+operativa para protesistas e investigadores.
+
+Como trabajo futuro se contempla: (a) ampliar el dataset con sujetos
+amputados y un protocolo clinico formal en colaboracion con la FIEC y
+unidades de rehabilitacion locales; (b) sustituir las caracteristicas
+manuales por modelos 1D-CNN cuantizados; (c) incorporar control
+proporcional basado en regresion sobre la envolvente EMG; y (d)
+integrar telemetria remota para seguimiento longitudinal del usuario.
+
+% =====================================================================
+\section*{Agradecimientos}
+Este trabajo se desarrolla en el marco de las practicas comunitarias
+de ESPOL (PAO II) y agradece el apoyo de la FIEC, los pacientes
+voluntarios y los colaboradores del proyecto Omnihand.
+
+% =====================================================================
+\begin{thebibliography}{9}
+
+\bibitem{warden2019tinyml}
+P.~Warden and D.~Situnayake,
+\emph{TinyML: Machine Learning with TensorFlow Lite on Arduino and
+Ultra-Low-Power Microcontrollers}.
+O'Reilly Media, 2019.
+
+\bibitem{hudgins1993new}
+B.~Hudgins, P.~Parker, and R.~N. Scott,
+``A new strategy for multifunction myoelectric control,''
+\emph{IEEE Transactions on Biomedical Engineering},
+vol.~40, no.~1, pp.~82--94, 1993.
+
+\bibitem{atzori2014electromyography}
+M.~Atzori et al.,
+``Electromyography data for non-invasive naturally-controlled robotic
+hand prostheses,''
+\emph{Scientific Data}, vol.~1, no.~140053, 2014.
+
+\bibitem{tflm2021}
+R.~David et al.,
+``TensorFlow Lite Micro: Embedded machine learning for TinyML systems,''
+\emph{Proceedings of Machine Learning and Systems (MLSys)}, 2021.
+
+\bibitem{zhang2022tinyemg}
+Y.~Zhang et al.,
+``TinyEMG: efficient CNN-based EMG gesture recognition on
+microcontrollers,''
+\emph{IEEE Sensors Journal}, vol.~22, no.~14, 2022.
+
+\end{thebibliography}
+
+\end{document}

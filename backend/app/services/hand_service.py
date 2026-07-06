@@ -12,6 +12,7 @@ from app.core.dynamixel_interface import DynamixelInterface
 from app.services.hand_control_controller import initialize_hand_profile, execute_gesture
 from app.schemas.hand_profiles import HAND_PROFILES, HandProfile
 from app.schemas.hand_gestures import GESTURES
+from app.core.hardware_config import hardware_config
 
 
 class HandService:
@@ -42,10 +43,9 @@ class HandService:
         """Get the Dynamixel interface instance."""
         if self._dx is None and self._initialized:
             # Lazy initialization of hardware interface
-            port = os.getenv(
-                "DYNAMIXEL_PORT",
-                "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0"
-            )
+            port = hardware_config.main_port
+            if not port:
+                raise RuntimeError("Puerto principal no configurado. Por favor, configúrelo en la interfaz.")
             try:
                 self._dx = DynamixelInterface(port_name=port)
             except RuntimeError:
@@ -83,10 +83,9 @@ class HandService:
         
         # Initialize hardware
         if self._dx is None:
-            port = os.getenv(
-                "DYNAMIXEL_PORT",
-                "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0"
-            )
+            port = hardware_config.main_port
+            if not port:
+                raise RuntimeError("Puerto principal no configurado. Por favor, configúrelo en la interfaz.")
             self._dx = DynamixelInterface(port_name=port)
         
         self._dx.initialize()
