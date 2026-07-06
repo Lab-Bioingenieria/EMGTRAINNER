@@ -65,10 +65,10 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const isLoggedIn = typeof localStorage !== 'undefined' && !!localStorage.getItem('emgt_access_token')
-  if (to.name !== 'Login' && !isLoggedIn) {
-    return { name: 'Login' }
-  }
+  // const isLoggedIn = typeof localStorage !== 'undefined' && !!localStorage.getItem('emgt_access_token')
+  // if (to.name !== 'Login' && !isLoggedIn) {
+  //   return { name: 'Login' }
+  // }
 })
 
 export default router
