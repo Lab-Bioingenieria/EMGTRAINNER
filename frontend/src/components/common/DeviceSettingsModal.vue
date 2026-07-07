@@ -8,7 +8,9 @@ const emit = defineEmits(['close']);
 const config = ref<HardwareConfig>({
   main_port: null,
   independent_data_acquisition: false,
-  data_port: null
+  data_port: null,
+  sensor_type: 'umyo',
+  motor_type: 'dynamixels'
 });
 
 const availablePorts = ref<PortInfo[]>([]);
@@ -64,68 +66,83 @@ const refreshPorts = async () => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-    <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+  <div class="modal-backdrop">
+    <div class="card modal-card">
       <!-- Header -->
-      <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center bg-gray-800/50">
-        <h2 class="text-lg font-semibold text-white">Configuración de Hardware</h2>
-        <button @click="$emit('close')" class="text-gray-400 hover:text-white transition-colors">
-          <XIcon class="w-5 h-5" />
+      <div class="card-head">
+        <h3>Configuración de Hardware</h3>
+        <button @click="$emit('close')" class="icon-btn">
+          <XIcon style="width: 20px; height: 20px;" />
         </button>
       </div>
       
       <!-- Body -->
-      <div class="px-6 py-5 flex flex-col gap-5 text-gray-200">
-        <div v-if="isLoading" class="flex justify-center items-center py-8">
-            <RefreshCwIcon class="w-8 h-8 text-blue-500 animate-spin" />
-            <span class="ml-3 text-sm text-gray-400">Cargando dispositivos...</span>
+      <div class="card-body col">
+        <div v-if="isLoading" class="empty" style="padding: 40px 24px;">
+            <RefreshCwIcon style="width: 32px; height: 32px; color: var(--pulse); animation: spin 1s linear infinite;" />
+            <span class="muted" style="margin-top: 8px;">Cargando dispositivos...</span>
         </div>
-        <div v-else class="space-y-5">
+        <div v-else class="col">
             
-            <div class="flex justify-between items-end">
-                <p class="text-sm text-gray-400">Selecciona los puertos seriales correspondientes a los microcontroladores.</p>
-                <button @click="refreshPorts" class="flex items-center gap-2 text-xs bg-gray-800 hover:bg-gray-700 border border-gray-600 px-2 py-1 rounded transition-colors" title="Actualizar puertos">
-                    <RefreshCwIcon class="w-3 h-3" /> Refrescar
+            <div class="grid-2" style="margin-bottom: 8px;">
+                <div class="field">
+                    <label>Tipo de Sensores</label>
+                    <select v-model="config.sensor_type">
+                        <option value="umyo">uMyo</option>
+                        <option value="gravitys">Gravitys</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Tipo de Motores</label>
+                    <select v-model="config.motor_type">
+                        <option value="dynamixels">Dynamixel</option>
+                        <option value="servos">Servomotores</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="between" style="align-items: flex-end;">
+                <p class="muted" style="font-size: 13px;">Selecciona los puertos seriales correspondientes a los microcontroladores.</p>
+                <button @click="refreshPorts" class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;" title="Actualizar puertos">
+                    <RefreshCwIcon style="width: 14px; height: 14px;" /> Refrescar
                 </button>
             </div>
 
             <!-- Main Port -->
-            <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-300">
-                    Puerto Principal (Cerebro de la prótesis)
+            <div class="field">
+                <label>
+                    Puerto Principal <span class="muted" style="font-weight: 400;">(Cerebro de la prótesis)</span>
                 </label>
-                <select v-model="config.main_port" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-white outline-none">
+                <select v-model="config.main_port">
                     <option :value="null">-- Seleccionar Puerto --</option>
                     <option v-for="p in availablePorts" :key="p.port" :value="p.port">
                         {{ p.port }} - {{ p.description }}
                     </option>
                 </select>
-                <p class="text-xs text-gray-500">Normalmente el U2D2 u otro micro que controla los motores Dynamixel.</p>
+                <span class="hint">Normalmente el U2D2 u otro micro que controla los motores Dynamixel.</span>
             </div>
 
             <!-- Independent Data Checkbox -->
-            <div class="flex items-center gap-3 py-2">
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" v-model="config.independent_data_acquisition" class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-                <span class="text-sm font-medium text-gray-300">Toma de datos independiente</span>
+            <div class="field" style="flex-direction: row; align-items: center; gap: 8px; margin-top: 8px;">
+                <div class="toggle">
+                    <button :class="{ active: !config.independent_data_acquisition }" @click="config.independent_data_acquisition = false">No</button>
+                    <button :class="{ active: config.independent_data_acquisition }" @click="config.independent_data_acquisition = true">Sí</button>
+                </div>
+                <label style="margin: 0;">Toma de datos independiente</label>
             </div>
 
             <!-- Data Port (Conditional) -->
-            <div v-if="config.independent_data_acquisition" class="space-y-2 animate-in fade-in slide-in-from-top-4 duration-300">
-                <label class="block text-sm font-medium text-gray-300">
-                    Puerto de Toma de Datos
-                </label>
-                <select v-model="config.data_port" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-white outline-none">
+            <div v-if="config.independent_data_acquisition" class="field" style="margin-top: 8px; animation: fadeIn 0.2s ease;">
+                <label>Puerto de Toma de Datos</label>
+                <select v-model="config.data_port">
                     <option :value="null">-- Seleccionar Puerto --</option>
                     <option v-for="p in availablePorts" :key="p.port" :value="p.port">
                         {{ p.port }} - {{ p.description }}
                     </option>
                 </select>
-                <p class="text-xs text-gray-500">El microcontrolador exclusivo para la lectura de sensores (ej. EMG).</p>
+                <span class="hint">El microcontrolador exclusivo para la lectura de sensores (ej. EMG).</span>
             </div>
-            <div v-else class="text-xs text-gray-500 italic py-1">
+            <div v-else class="muted" style="font-size: 12px; font-style: italic; margin-top: 8px;">
                 La toma de datos se realizará a través del puerto principal.
             </div>
 
@@ -133,23 +150,64 @@ const refreshPorts = async () => {
       </div>
 
       <!-- Footer -->
-      <div class="px-6 py-4 border-t border-gray-700 bg-gray-800/50 flex justify-end gap-3">
+      <div class="modal-foot">
         <button 
           @click="$emit('close')" 
-          class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-transparent border border-gray-600 rounded-lg hover:bg-gray-700 transition-colors"
+          class="btn btn-ghost"
         >
           Cancelar
         </button>
         <button 
           @click="saveConfig" 
           :disabled="isSaving || isLoading"
-          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/20"
+          class="btn btn-primary"
         >
-          <RefreshCwIcon v-if="isSaving" class="w-4 h-4 animate-spin" />
-          <SaveIcon v-else class="w-4 h-4" />
+          <RefreshCwIcon v-if="isSaving" style="width: 16px; height: 16px; animation: spin 1s linear infinite;" />
+          <SaveIcon v-else style="width: 16px; height: 16px;" />
           Guardar Configuración
         </button>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 18, 22, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 520px;
+  box-shadow: var(--shadow-pop);
+}
+
+.modal-foot {
+  padding: 16px 18px;
+  border-top: 1px solid var(--bone-200);
+  background: var(--bone-50);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>

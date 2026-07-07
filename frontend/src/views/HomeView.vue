@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import DeviceSettingsModal from '@/components/common/DeviceSettingsModal.vue'
 
 const router = useRouter()
+const showDeviceSettings = ref(false)
 
 const modules = [
   {
@@ -153,7 +156,7 @@ const iconPaths: Record<string, string> = {
             <div class="muted" style="font-size:12.5px">HIPAA + ISO 13485 · Acceso auditable.</div>
           </div>
         </button>
-        <button class="card sec-card">
+        <button class="card sec-card" @click="showDeviceSettings = true">
           <div class="module-icon tone-pulse"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" v-html="iconPaths.cpu" /></div>
           <div>
             <div class="sec-title">Configurar prótesis</div>
@@ -162,6 +165,7 @@ const iconPaths: Record<string, string> = {
         </button>
       </div>
     </div>
+    <DeviceSettingsModal v-if="showDeviceSettings" @close="showDeviceSettings = false" />
   </div>
 </template>
 

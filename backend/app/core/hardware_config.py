@@ -11,6 +11,8 @@ class HardwareConfigManager:
         self.main_port = None
         self.independent_data_acquisition = False
         self.data_port = None
+        self.sensor_type = "umyo"
+        self.motor_type = "dynamixels"
         self.load_config()
 
     @classmethod
@@ -28,6 +30,8 @@ class HardwareConfigManager:
                     self.main_port = data.get("main_port")
                     self.independent_data_acquisition = data.get("independent_data_acquisition", False)
                     self.data_port = data.get("data_port")
+                    self.sensor_type = data.get("sensor_type", "umyo")
+                    self.motor_type = data.get("motor_type", "dynamixels")
             except Exception as e:
                 print(f"Failed to load hardware config from {CONFIG_FILE_PATH}: {e}")
                 self._load_defaults()
@@ -39,17 +43,23 @@ class HardwareConfigManager:
         self.main_port = os.getenv("DYNAMIXEL_PORT")
         self.independent_data_acquisition = False
         self.data_port = None
+        self.sensor_type = "umyo"
+        self.motor_type = "dynamixels"
 
-    def save_config(self, main_port: str = None, independent_data_acquisition: bool = False, data_port: str = None):
+    def save_config(self, main_port: str = None, independent_data_acquisition: bool = False, data_port: str = None, sensor_type: str = "umyo", motor_type: str = "dynamixels"):
         """Saves configuration to JSON file and updates in memory."""
         self.main_port = main_port
         self.independent_data_acquisition = independent_data_acquisition
         self.data_port = data_port
+        self.sensor_type = sensor_type
+        self.motor_type = motor_type
         
         data = {
             "main_port": self.main_port,
             "independent_data_acquisition": self.independent_data_acquisition,
-            "data_port": self.data_port
+            "data_port": self.data_port,
+            "sensor_type": self.sensor_type,
+            "motor_type": self.motor_type
         }
         
         try:
@@ -62,7 +72,9 @@ class HardwareConfigManager:
         return {
             "main_port": self.main_port,
             "independent_data_acquisition": self.independent_data_acquisition,
-            "data_port": self.data_port
+            "data_port": self.data_port,
+            "sensor_type": self.sensor_type,
+            "motor_type": self.motor_type
         }
 
 hardware_config = HardwareConfigManager.get_instance()

@@ -33,6 +33,8 @@ def update_config(config: HardwareConfigUpdate):
     hardware_config.save_config(
         main_port=config.main_port,
         independent_data_acquisition=config.independent_data_acquisition,
-        data_port=config.data_port
+        data_port=config.data_port,
+        sensor_type=config.sensor_type,
+        motor_type=config.motor_type
     )
     return hardware_config.get_config()
