@@ -1,4 +1,4 @@
-# Prácticas Comunitarias - PAO II
+# Prácticas Comunitarias - PAO 26 II
 
 Sistema de gestión para prácticas comunitarias desarrollado con un stack moderno full-stack.
 
