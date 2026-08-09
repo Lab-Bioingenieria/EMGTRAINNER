@@ -1,15 +1,20 @@
-from pydantic import UUID4, BaseModel, Field
+from pydantic import UUID4, BaseModel, ConfigDict, Field
 
 
 class TaskResponse(BaseModel):
-    title: str = Field(..., description="Task name", example="Task 1")
+    title: str = Field(
+        ..., description="Task name", json_schema_extra={"example": "Task 1"}
+    )
     description: str = Field(
-        ..., description="Task description", example="Task 1 description"
+        ...,
+        description="Task description",
+        json_schema_extra={"example": "Task 1 description"},
     )
     completed: bool = Field(alias="is_completed", description="Task completed status")
     uuid: UUID4 = Field(
-        ..., description="Task UUID", example="a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+        ...,
+        description="Task UUID",
+        json_schema_extra={"example": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"},
     )
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

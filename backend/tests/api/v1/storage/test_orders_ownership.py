@@ -40,7 +40,7 @@ class FakeOrderRepository:
 
     async def update(self, order, order_in):
         self.updated.append(order_in)
-        for field, value in order_in.dict(exclude_unset=True).items():
+        for field, value in order_in.model_dump(exclude_unset=True).items():
             setattr(order, field, value)
         return order
 

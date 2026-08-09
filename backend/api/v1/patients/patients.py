@@ -21,4 +21,4 @@ async def create_patient(
     request: CreatePatientRequest,
     patient_controller: PatientController = Depends(Factory().get_patient_controller),
 ) -> PatientResponse:
-    return await patient_controller.create_patient(**request.dict())
+    return await patient_controller.create_patient(**request.model_dump())

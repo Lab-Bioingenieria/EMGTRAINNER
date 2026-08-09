@@ -115,7 +115,7 @@ async def start_training_session(
     from app.services.hand_session_runner import TrainingSession
     
     try:
-        session = TrainingSession(config.dict())
+        session = TrainingSession(config.model_dump())
         # Run session in background or return session info
         # For now, we'll just return session details
         return SessionResponse(

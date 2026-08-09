@@ -32,7 +32,7 @@ class RecordHeartbeat:
         # Update sensors
         if request.sensors:
              # Convert schema to dict list for repository
-             sensors_data = [s.dict() for s in request.sensors]
+             sensors_data = [s.model_dump() for s in request.sensors]
              # Add timestamps if not present
              for s in sensors_data:
                  if not s.get("last_seen"):
