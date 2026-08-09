@@ -103,4 +103,4 @@ class BaseController(Generic[ModelType]):
         :return: The attributes.
         """
 
-        return await schema.dict(exclude=excludes, exclude_unset=True)
+        return schema.model_dump(exclude=excludes, exclude_unset=True)
