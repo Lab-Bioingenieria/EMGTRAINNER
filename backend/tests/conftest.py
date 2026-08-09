@@ -1,11 +1,27 @@
 import asyncio
 import os
+import warnings
 from typing import Generator
+
+def _ignore_dependency_warnings() -> None:
+    warnings.filterwarnings(
+        "ignore",
+        message="'crypt' is deprecated and slated for removal in Python 3.13",
+        category=DeprecationWarning,
+        module="passlib.utils",
+    )
+
+
+_ignore_dependency_warnings()
 
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+
+
+def pytest_configure(config):
+    _ignore_dependency_warnings()
 
 import core.database.transactional as transactional
 from app.models import Base
