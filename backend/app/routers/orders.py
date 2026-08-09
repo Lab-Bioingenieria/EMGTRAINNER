@@ -10,6 +10,7 @@ from core.use_cases.start_order import StartOrder
 from core.use_cases.finish_order import FinishOrder
 from core.use_cases.upload_csv import UploadCSV
 from core.database.session import get_session
+from core.fastapi.dependencies.authentication import AuthenticationRequired
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(
@@ -83,7 +84,7 @@ async def finish_order(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/{order_id}/upload")
+@router.post("/{order_id}/upload", dependencies=[Depends(AuthenticationRequired)])
 async def upload_csv(
     order_id: str,
     file: UploadFile = File(...),
@@ -97,7 +98,7 @@ async def upload_csv(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/{order_id}/csv")
+@router.get("/{order_id}/csv", dependencies=[Depends(AuthenticationRequired)])
 async def download_csv(
     order_id: str,
     repos: dict = Depends(get_repos)
