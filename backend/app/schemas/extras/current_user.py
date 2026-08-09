@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from starlette.authentication import BaseUser
 
 
@@ -13,5 +13,4 @@ class CurrentUser(BaseModel, BaseUser):
     def display_name(self) -> str:
         return str(self.id or "")
 
-    class Config:
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)

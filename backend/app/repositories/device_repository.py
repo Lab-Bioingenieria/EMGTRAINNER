@@ -11,7 +11,7 @@ class DeviceRepository:
         self.session = session
 
     async def create(self, device_in: DeviceCreate) -> Device:
-        device = Device(**device_in.dict())
+        device = Device(**device_in.model_dump())
         self.session.add(device)
         await self.session.commit()
         await self.session.refresh(device)
@@ -28,7 +28,7 @@ class DeviceRepository:
         return result.scalars().first()
 
     async def update(self, device: Device, device_in: DeviceUpdate) -> Device:
-        update_data = device_in.dict(exclude_unset=True)
+        update_data = device_in.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(device, field, value)
         

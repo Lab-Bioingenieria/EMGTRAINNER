@@ -11,7 +11,7 @@ class OrderRepository:
         self.session = session
 
     async def create(self, order_in: OrderCreate, created_by: str, order_id: str) -> Order:
-        order_data = order_in.dict()
+        order_data = order_in.model_dump()
         order = Order(**order_data, created_by=created_by, id=order_id)
         self.session.add(order)
         await self.session.commit()
@@ -33,7 +33,7 @@ class OrderRepository:
         return result.scalars().first()
 
     async def update(self, order: Order, order_in: OrderUpdate) -> Order:
-        update_data = order_in.dict(exclude_unset=True)
+        update_data = order_in.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(order, field, value)
         

@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import List
 
 from fastapi import Depends, FastAPI, Request
@@ -48,14 +49,17 @@ def init_listeners(app_: FastAPI) -> None:
             content={"error_code": exc.error_code, "message": exc.message},
         )
 
-    @app_.on_event("startup")
-    async def startup():
-        from core.database import Base
-        from core.database.session import engines
-        import app.models  # Ensures all models are loaded
-        
-        async with engines["writer"].begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+
+@asynccontextmanager
+async def lifespan(app_: FastAPI):
+    from core.database import Base
+    from core.database.session import engines
+    import app.models  # Ensures all models are loaded
+
+    async with engines["writer"].begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    yield
 
 
 def make_middleware() -> List[Middleware]:
@@ -92,6 +96,7 @@ def create_app() -> FastAPI:
         redoc_url=None if config.ENVIRONMENT == "production" else "/redoc",
         dependencies=[Depends(Logging)],
         middleware=make_middleware(),
+        lifespan=lifespan,
     )
     init_routers(app_=app_)
     init_listeners(app_=app_)
