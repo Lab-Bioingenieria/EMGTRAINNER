@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import PostgresDsn, RedisDsn
+from pydantic import PostgresDsn, RedisDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,8 +25,23 @@ class Config(BaseConfig):
     SECRET_KEY: str = "super-secret-key"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24
+    CORS_ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ]
     CELERY_BROKER_URL: str = "amqp://rabbit:password@localhost:5672"
     CELERY_BACKEND_URL: str = "redis://localhost:6379/0"
+
+    @model_validator(mode="after")
+    def validate_auth_secrets(self):
+        if (
+            self.ENVIRONMENT not in {EnvironmentType.DEVELOPMENT, EnvironmentType.TEST}
+            and self.SECRET_KEY == "super-secret-key"
+        ):
+            raise ValueError(
+                "SECRET_KEY must be configured outside development/test environments"
+            )
+        return self
 
 
 config: Config = Config()
