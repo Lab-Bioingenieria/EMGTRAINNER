@@ -12,6 +12,10 @@ class WebSocketManager:
     async def connect(self, websocket: WebSocket):
         """Accept connection and add to active list."""
         await websocket.accept()
+        self.register(websocket)
+
+    def register(self, websocket: WebSocket):
+        """Add an already-accepted connection to the active list."""
         self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):

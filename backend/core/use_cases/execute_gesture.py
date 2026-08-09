@@ -4,6 +4,7 @@ Use case for executing a hand gesture.
 from typing import Dict, Any
 
 from app.services.hand_service import HandService
+from core.safety.estop import estop_service
 
 
 class ExecuteGesture:
@@ -28,6 +29,8 @@ class ExecuteGesture:
             
         Raises:
             RuntimeError: If hand is not initialized
+            EmergencyStopEngaged: If the safety interlock is engaged
             ValueError: If gesture is invalid
         """
+        estop_service.assert_movement_allowed()
         return self.hand_service.execute_gesture(gesture_name)

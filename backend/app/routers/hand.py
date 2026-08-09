@@ -11,11 +11,14 @@ from app.schemas.hand import (
 from app.services.hand_service import HandService
 from core.use_cases.initialize_hand import InitializeHand
 from core.use_cases.execute_gesture import ExecuteGesture
+from core.fastapi.dependencies.authentication import AuthenticationRequired
+from core.safety.estop import estop_service
 
 
 router = APIRouter(
     prefix="/hand",
     tags=["Hand Control"],
+    dependencies=[Depends(AuthenticationRequired)],
 )
 
 
@@ -97,6 +100,9 @@ async def start_training_session(
     hand_service: HandService = Depends(get_hand_service)
 ):
     """Start a training session with specified configuration."""
+    # Fail closed: a session can drive the hand, so the interlock must be reset first.
+    estop_service.assert_movement_allowed()
+
     # Initialize hand if not already initialized
     if not hand_service.is_initialized:
         use_case = InitializeHand(hand_service)

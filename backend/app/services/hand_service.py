@@ -13,6 +13,7 @@ from app.services.hand_control_controller import initialize_hand_profile, execut
 from app.schemas.hand_profiles import HAND_PROFILES, HandProfile
 from app.schemas.hand_gestures import GESTURES
 from app.core.hardware_config import hardware_config
+from core.safety.estop import estop_service
 
 
 class HandService:
@@ -116,6 +117,8 @@ class HandService:
             RuntimeError: If the hand is not initialized
             ValueError: If the gesture is invalid
         """
+        estop_service.assert_movement_allowed()
+
         if not self._initialized or self._profile is None:
             raise RuntimeError("La mano no ha sido inicializada")
         
