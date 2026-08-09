@@ -114,11 +114,24 @@ class CSVService:
         return sessions
 
     def get_session_path(self, filename: str) -> Optional[str]:
-        """Get full path for a session file"""
-        filepath = os.path.join(self.storage_dir, filename)
-        if os.path.exists(filepath):
-            return filepath
-        return None
+        """Get full path for a session file, rejecting anything outside the root.
+
+        Absolute paths, `..` segments and symlinks that escape the storage root
+        all resolve outside the canonical root and are refused.
+        """
+        if not filename or os.path.isabs(filename):
+            return None
+
+        root = os.path.realpath(self.storage_dir)
+        candidate = os.path.realpath(os.path.join(root, filename))
+
+        if candidate != root and not candidate.startswith(root + os.sep):
+            return None
+
+        if not os.path.isfile(candidate):
+            return None
+
+        return candidate
 
 # Singleton instance
 csv_service = CSVService()
