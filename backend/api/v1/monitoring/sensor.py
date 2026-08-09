@@ -1,19 +1,26 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from typing import List
 import asyncio
 
 from app.services import emg_service
+from core.fastapi.dependencies.authentication import AuthenticationRequired
+from core.fastapi.dependencies.websocket_auth import authenticate_websocket
+from core.safety.estop import estop_service
 
-sensor_router = APIRouter()
+sensor_router = APIRouter(dependencies=[Depends(AuthenticationRequired)])
+# WebSocket routes cannot use HTTP dependencies; they authenticate explicitly.
+sensor_ws_router = APIRouter()
 
 # Store active WebSocket connections
 active_connections: List[WebSocket] = []
 
 
-@sensor_router.websocket("/ws/emg-stream")
+@sensor_ws_router.websocket("/ws/emg-stream")
 async def websocket_emg_stream(websocket: WebSocket):
     """WebSocket endpoint for real-time EMG data streaming"""
-    await websocket.accept()
+    if await authenticate_websocket(websocket) is None:
+        return
+
     active_connections.append(websocket)
     
     try:
@@ -29,6 +36,7 @@ async def websocket_emg_stream(websocket: WebSocket):
                 # but in strict logic, maybe we should close? Leaving open as per apparent original intent.
         
         # Start streaming data
+        estop_service.assert_movement_allowed()
         emg_service.start_streaming()
         
         while True:
@@ -89,6 +97,9 @@ async def disconnect_emg():
 @sensor_router.post("/emg/start")
 async def start_emg_session(category: str = ""):
     """Send START_SESSION command to ESP32"""
+    # Streaming triggers acquisition on the device; keep it behind the interlock.
+    estop_service.assert_movement_allowed()
+
     # Ensure we are connected first
     status = emg_service.get_connection_status()
     if not status["connected"]:

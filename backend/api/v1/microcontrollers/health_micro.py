@@ -1,10 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from serial.tools import list_ports
 from app.core.hardware_config import hardware_config
 from app.schemas.hardware import HardwareConfigResponse, HardwareConfigUpdate
+from core.fastapi.dependencies.authentication import AuthenticationRequired
 
-health_microcontroller_router = APIRouter()
+health_microcontroller_router = APIRouter(
+    dependencies=[Depends(AuthenticationRequired)]
+)
 
 @health_microcontroller_router.get("/ports")
 def ports():

@@ -1,11 +1,15 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.websocket_manager import websocket_manager
+from core.fastapi.dependencies.websocket_auth import authenticate_websocket
 
 router = APIRouter()
 
 @router.websocket("/ws/emg")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket_manager.connect(websocket)
+    if await authenticate_websocket(websocket) is None:
+        return
+
+    websocket_manager.register(websocket)
     try:
         while True:
             # Keep alive loop. We might receive commands here in the future.
