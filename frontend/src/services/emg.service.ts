@@ -4,8 +4,9 @@ export interface DeviceStatus {
     id: string;
     is_online: boolean;
     last_heartbeat: string;
-    battery_level: number;
-    wifi_signal_strength: number;
+    /** Null until the device firmware reports telemetry. Never fabricate a reading. */
+    battery_level: number | null;
+    wifi_signal_strength: number | null;
 }
 
 export class EmgService {
@@ -19,8 +20,8 @@ export class EmgService {
                 id: deviceId,
                 is_online: data.connected,
                 last_heartbeat: new Date().toISOString(),
-                battery_level: 100, // Mock for now or extract if available
-                wifi_signal_strength: 100
+                battery_level: data.battery_level ?? null,
+                wifi_signal_strength: data.wifi_signal_strength ?? null
             };
         } catch (error) {
             console.error(`Failed to get status for device ${deviceId}`, error);
@@ -29,8 +30,8 @@ export class EmgService {
                 id: deviceId,
                 is_online: false,
                 last_heartbeat: "",
-                battery_level: 0,
-                wifi_signal_strength: 0
+                battery_level: null,
+                wifi_signal_strength: null
             };
         }
     }

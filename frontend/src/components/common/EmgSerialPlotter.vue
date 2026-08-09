@@ -6,6 +6,8 @@ const props = defineProps<{
   isRunning?: boolean
 }>()
 
+const emit = defineEmits<{ 'connection-change': [connected: boolean] }>()
+
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
 const isConnected = ref(false)
@@ -30,6 +32,7 @@ const connectWebSocket = () => {
         
         socket.value.onopen = () => {
             isConnected.value = true
+            emit('connection-change', true)
             console.log("WS Connected")
         }
         
@@ -71,6 +74,7 @@ const connectWebSocket = () => {
         
         socket.value.onclose = () => {
             isConnected.value = false
+            emit('connection-change', false)
             console.log("WS Closed")
         }
         
