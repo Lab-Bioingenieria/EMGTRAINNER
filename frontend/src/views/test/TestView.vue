@@ -10,6 +10,7 @@ import { HealthService } from '../../services/health.service'
 import { EmgService } from '../../services/emg.service'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import EmgSerialPlotter from '../../components/common/EmgSerialPlotter.vue'
+import { buildAuthenticatedWebSocketUrl } from '@/lib/websocket'
 import { Box3, Vector3 } from 'three'
 import type { Group } from 'three'
 
@@ -33,7 +34,7 @@ const calibrationSteps = ref([
 
 const isRunningTest = ref(false)
 const isMonitoring = ref(false)
-const WS_URL = "ws://localhost:8000/v1/monitoring/sensor/ws/emg-stream"
+const WS_URL = buildAuthenticatedWebSocketUrl('/v1/monitoring/sensor/ws/emg-stream')
 
 const isConnected = ref(false)
 const connectionDetails = ref("Buscando dispositivo...")
