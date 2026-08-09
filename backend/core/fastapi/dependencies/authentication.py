@@ -1,4 +1,4 @@
-from fastapi import Depends, status
+from fastapi import Depends, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core.exceptions.base import CustomException
@@ -13,7 +13,9 @@ class AuthenticationRequiredException(CustomException):
 class AuthenticationRequired:
     def __init__(
         self,
+        request: Request,
         token: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
     ):
-        if not token:
+        user = request.user
+        if not token or not getattr(user, "is_authenticated", False):
             raise AuthenticationRequiredException()
