@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { authService } from '@/services/auth.service'
 
 const router = useRouter()
+const route = useRoute()
 
 const mode  = ref(authService.isLoggedIn() ? 'login' : 'register')
 const name  = ref('')
@@ -44,7 +45,8 @@ async function submit() {
     } else {
       await authService.login(email.value, pwd.value)
     }
-    router.push('/')
+    const redirect = route.query.redirect
+    router.push(typeof redirect === 'string' && redirect !== '/login' ? redirect : '/')
   } catch (e: any) {
     error.value = e.message || 'Error al conectar con el servidor.'
   } finally {

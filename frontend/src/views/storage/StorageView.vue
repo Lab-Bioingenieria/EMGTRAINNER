@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { EmgService } from '../../services/emg.service'
 import TopHeader from '../../components/common/TopHeader.vue'
 import { API_BASE_URL } from '../../lib/constants'
+import { downloadProtectedFile } from '../../lib/download'
 
 interface SessionFile {
   filename: string
@@ -28,6 +29,14 @@ const loadSessions = async () => {
     console.error('Error loading sessions', e)
   } finally {
     loading.value = false
+  }
+}
+
+const downloadSession = async (filename: string) => {
+  try {
+    await downloadProtectedFile(`${API_BASE_URL}/storage/sessions/${filename}`, filename)
+  } catch (e) {
+    console.error('Error downloading session', e)
   }
 }
 
@@ -168,11 +177,11 @@ onMounted(loadSessions)
                 <td><span class="pill live">Encriptado</span></td>
                 <td style="text-align:right">
                   <div style="display:inline-flex; gap:4px">
-                    <a :href="`${API_BASE_URL}/storage/sessions/${file.filename}`" download class="icon-btn" title="Descargar">
+                    <button type="button" class="icon-btn" title="Descargar" @click="downloadSession(file.filename)">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>
                       </svg>
-                    </a>
+                    </button>
                   </div>
                 </td>
               </tr>

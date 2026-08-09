@@ -23,5 +23,7 @@ export interface EmgSignal {
 }
 
 export const API_BASE_URL = "/v1";
+// The learning router is mounted at the backend root, outside the /v1 prefix.
+export const LEARNING_BASE_URL = "/learning";
 export const DEFAULT_DEVICE_ID = "esp32-myo-1";
 
