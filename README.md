@@ -1,155 +1,153 @@
-# Prácticas Comunitarias - PAO 26 II
+# EMGTRAINNER
 
-Sistema de gestión para prácticas comunitarias desarrollado con un stack moderno full-stack.
+Plataforma de entrenamiento y monitoreo sEMG: adquiere señales electromiográficas
+desde un dispositivo ESP32, las transmite en tiempo real a una interfaz clínica y
+controla una mano robótica Omnihand.
 
-## 🚀 Stack Tecnológico
+## Stack
 
-### Frontend
-- ⚡ **Vite** - Build tool ultrarrápido
-- ⚛️ **React 19** - Librería UI
-- 📘 **TypeScript** - Tipado estático
-- 🎨 **Tailwind CSS v3** - Framework CSS utility-first
+### Frontend (`frontend/`)
+- **Vue 3** + **TypeScript** con `<script setup>`
+- **Vite** como build tool y dev server
+- **TresJS / three.js** para la visualización 3D de la mano
+- **Pinia** (estado) y **Vue Router** (ruteo con guard de autenticación)
+- **Tailwind CSS v4**
 
-### Backend
-- 🐍 **Python** - Lenguaje de programación
-- 📦 **uv** - Gestor de paquetes ultrarrápido para Python
-- 🔧 **pyenv** - Gestor de versiones de Python
+### Backend (`backend/`)
+- **FastAPI** sobre Python 3.11
+- **SQLAlchemy 2** async + **Alembic**
+- **PostgreSQL** en producción, SQLite (`aiosqlite`) en tests
+- **Celery** + Redis para trabajos en background
+- **JWT** (`python-jose`) para autenticación HTTP y WebSocket
 
-## 📁 Estructura del Proyecto
+### Hardware (`codigo_esp32/`)
+Firmware del ESP32 que digitaliza los tres canales sEMG y publica el stream.
+
+## Estructura
 
 ```
-practicas-comunitarias-PAOII/
-├── frontend/          # Aplicación React + Vite
-│   ├── src/          # Código fuente
-│   ├── public/       # Archivos estáticos
-│   └── ...
-├── backend/          # API Python
-│   ├── .env.example  # Variables de entorno de ejemplo
-│   ├── .python-version  # Versión de Python para pyenv
+EMGTRAINNER/
+├── backend/            # API FastAPI
+│   ├── api/            # Routers versionados (/v1)
+│   ├── app/            # Modelos, esquemas, controladores y servicios de dominio
+│   ├── core/           # Config, seguridad, dependencias, base de datos
+│   ├── tests/          # Suite pytest
 │   ├── requirements.txt
-│   └── ...
-└── README.md
+│   └── requirements-dev.txt
+├── frontend/           # Aplicación Vue 3
+│   └── src/
+│       ├── components/ # Componentes por rol (doctor, patient, common)
+│       ├── lib/        # Cliente HTTP y helper de WebSocket autenticado
+│       ├── router/     # Rutas y guard de autenticación
+│       ├── services/   # Clientes de API por dominio
+│       └── views/      # Vistas por rol
+├── codigo_esp32/       # Firmware del sensor
+├── docs/               # Documentación operativa
+└── .github/workflows/  # CI
 ```
 
-## 🛠️ Instalación
+## Requisitos
 
-### Prerequisitos
-- Node.js v20.19.5 o superior
-- [pyenv](https://github.com/pyenv/pyenv) - Gestor de versiones Python
-- [uv](https://github.com/astral-sh/uv) - Gestor de paquetes Python
-- pnpm
+- Python 3.11 (ver `backend/.python-version`)
+- Node.js 20+ y pnpm
+- Opcional: [uv](https://github.com/astral-sh/uv) para gestionar el entorno de Python
 
-### Frontend
+## Instalación
 
 ```bash
+make install-all      # backend (uv venv + requirements) y frontend (pnpm install)
+```
+
+O por separado:
+
+```bash
+# Backend
+cd backend
+uv venv && uv pip install -r requirements.txt
+# Creá backend/.env con las variables de la tabla de Configuración.
+# Los defaults alcanzan para desarrollo local.
+
+# Frontend
 cd frontend
 pnpm install
-pnpm run dev
 ```
 
-El frontend estará disponible en `http://localhost:5173`
+## Ejecución
 
-### Backend
+```bash
+make -j2 run-all      # backend en :8000 y frontend en :5173
+```
+
+El dev server de Vite proxea `/v1` y `/learning` hacia `http://127.0.0.1:8000`,
+incluidos los WebSockets. Por eso el frontend nunca debe apuntar a un host
+absoluto: usá `buildAuthenticatedWebSocketUrl()` de `frontend/src/lib/websocket.ts`,
+que arma la URL sobre el origen actual y adjunta el JWT.
+
+## Tests
 
 ```bash
 cd backend
-
-# pyenv instalará automáticamente la versión correcta según .python-version
-pyenv install
-
-# Crear entorno virtual con uv
-uv venv
-
-# Activar entorno virtual
-# Windows (PowerShell):
-.venv\Scripts\Activate.ps1
-# Windows (CMD):
-.venv\Scripts\activate.bat
-# Linux/Mac:
-source .venv/bin/activate
-
-# Instalar dependencias con uv
-uv pip install -r requirements.txt
-
-# Copiar y configurar variables de entorno
-# Windows:
-copy .env.example .env
-# Linux/Mac:
-cp .env.example .env
-# Editar .env con tus configuraciones
+ENVIRONMENT=test TEST_POSTGRES_URL="sqlite+aiosqlite:///./test.db" pytest -q
 ```
 
-## 📜 Scripts Disponibles
+`TEST_POSTGRES_URL` es obligatoria: `tests/conftest.py` la usa para levantar y
+destruir el esquema en cada test. Las dependencias de test viven en
+`requirements-dev.txt`, separadas de las de runtime.
 
-### Frontend
+Frontend:
 
-- `pnpm run dev` - Inicia servidor de desarrollo
-- `pnpm run build` - Construye para producción
-- `pnpm run preview` - Preview de la build de producción
-- `pnpm run lint` - Ejecuta ESLint
-
-### Backend
-
-```bash
-# Instalar una nueva dependencia
-uv pip install nombre-paquete
-
-# Actualizar requirements.txt
-uv pip freeze > requirements.txt
-
-# Sincronizar dependencias
-uv pip sync requirements.txt
-```
-
-## 🔧 Configuración
-
-### Variables de Entorno
-
-#### Frontend
-Crea un archivo `.env.local` en `/frontend`:
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-#### Backend
-Copia `.env.example` a `.env` en `/backend` y configura:
-```env
-# Agregar variables según necesites
-DATABASE_URL=
-SECRET_KEY=
-```
-
-## 🚀 Despliegue
-
-### Frontend
 ```bash
 cd frontend
-npm run build
-# Los archivos optimizados estarán en /frontend/dist
+pnpm build     # incluye type-check con vue-tsc
 ```
 
-### Backend
-```bash
-cd backend
-# Configurar según tu plataforma de despliegue
-```
+## CI
 
-## 👥 Contribución
+`.github/workflows/ci.yml` corre en cada push a `main` y en cada pull request:
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+- **backend**: instala `requirements-dev.txt` en Python 3.11 y ejecuta `pytest`
+- **frontend**: instala con `pnpm --frozen-lockfile` y ejecuta `pnpm build`
 
-## 📝 Licencia
+## Configuración
 
-Este proyecto es privado y está desarrollado con fines académicos.
+### Backend (`backend/.env`)
 
-## 👨‍💻 Autor
+| Variable | Descripción | Default |
+| --- | --- | --- |
+| `ENVIRONMENT` | `development`, `test` o `production` | `development` |
+| `SECRET_KEY` | Clave de firma JWT | `super-secret-key` |
+| `POSTGRES_URL` | DSN async de la base | SQLite local |
+| `REDIS_URL` | Conexión a Redis | `redis://localhost:6379/7` |
+| `JWT_ALGORITHM` | Algoritmo de firma | `HS256` |
+| `JWT_EXPIRE_MINUTES` | Vigencia del token | `1440` |
+| `CORS_ALLOWED_ORIGINS` | Orígenes permitidos | `localhost:3000`, `localhost:5173` |
+| `CELERY_BROKER_URL` / `CELERY_BACKEND_URL` | Cola de tareas | RabbitMQ / Redis |
 
-- Kevin Fernández - [Tu GitHub]
-- Nager Naranja - 
----
+Fuera de `development` y `test`, el arranque **falla** si `SECRET_KEY` sigue
+siendo el valor por defecto. Es intencional: evita desplegar con una clave
+pública. Configurá `CORS_ALLOWED_ORIGINS` con el dominio real al desplegar.
 
-⭐ Si este proyecto te fue útil, considera darle una estrella
+### Frontend
+
+No requiere variables de entorno. La API y los WebSockets se resuelven contra el
+mismo origen, por lo que el despliegue depende del reverse proxy y no de una URL
+compilada en el bundle.
+
+## Seguridad y datos
+
+- Todas las rutas del frontend salvo el login exigen una sesión válida; un token
+  expirado o malformado dispara logout automático.
+- Los WebSockets de sensores y de la mano robótica requieren JWT.
+- Los endpoints respaldados por órdenes verifican propiedad del recurso.
+- Las descargas de storage pasan por `fetch` autenticado, no por enlaces directos.
+- Los datos de pacientes en `backend/storage/` están fuera del control de
+  versiones. Ver [docs/data-governance.md](docs/data-governance.md).
+
+## Licencia
+
+Proyecto privado con fines académicos.
+
+## Autores
+
+- Kevin Fernández
+- Nager Naranja
