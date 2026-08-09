@@ -12,3 +12,7 @@ venv/
 .vscode
 .idea
 *.log
+
+# Private EMG/session storage and derived artifacts
+storage/
+!storage/README.md

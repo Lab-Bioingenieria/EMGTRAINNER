@@ -38,10 +38,9 @@ build/
 target/
 .gradle/
 
-# Storage (keep folder structures but ignore files)
-backend/storage/*
+# Private EMG/session storage
+# Real participant/session exports and derived model artifacts must stay out of Git.
+backend/storage/**
+!backend/storage/
+!backend/storage/README.md
 !backend/storage/.gitkeep
-backend/storage/models/*
-!backend/storage/models/.gitkeep
-backend/storage/csv/*
-!backend/storage/csv/.gitkeep
