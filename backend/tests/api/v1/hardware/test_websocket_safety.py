@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import warnings
 
 import pytest
 from fastapi import FastAPI, WebSocket
@@ -52,22 +53,34 @@ def _token() -> str:
     )
 
 
+def _test_client(app: FastAPI) -> TestClient:
+    """Build Starlette's WebSocket TestClient while ignoring its httpx shim warning."""
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=r"The 'app' shortcut is now deprecated.*",
+            category=DeprecationWarning,
+            module="httpx._client",
+        )
+        return TestClient(app)
+
+
 def test_websocket_without_token_is_rejected(ws_app):
-    client = TestClient(ws_app)
+    client = _test_client(ws_app)
     with pytest.raises(WebSocketDisconnect):
         with client.websocket_connect("/ws/guarded") as ws:
             ws.receive_json()
 
 
 def test_websocket_with_invalid_token_is_rejected(ws_app, jwt_handler_config):
-    client = TestClient(ws_app)
+    client = _test_client(ws_app)
     with pytest.raises(WebSocketDisconnect):
         with client.websocket_connect("/ws/guarded?token=not-a-jwt") as ws:
             ws.receive_json()
 
 
 def test_websocket_with_valid_token_is_accepted(ws_app, jwt_handler_config):
-    client = TestClient(ws_app)
+    client = _test_client(ws_app)
     with client.websocket_connect(f"/ws/guarded?token={_token()}") as ws:
         assert ws.receive_json() == {"user_id": 7}
 
@@ -85,7 +98,7 @@ def hardware_ws_app() -> FastAPI:
 
 @pytest.mark.parametrize("path", ["/ws/emg-stream", "/ws/emg"])
 def test_hardware_websockets_reject_unauthenticated_clients(hardware_ws_app, path):
-    client = TestClient(hardware_ws_app)
+    client = _test_client(hardware_ws_app)
     with pytest.raises(WebSocketDisconnect):
         with client.websocket_connect(path) as ws:
             ws.receive_json()
