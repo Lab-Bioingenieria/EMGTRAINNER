@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import { authService } from '@/services/auth.service'
 
 const routes = [
   {
@@ -64,11 +65,13 @@ const router = createRouter({
   routes,
 })
 
+const PUBLIC_ROUTES = new Set(['Login'])
+
 router.beforeEach((to) => {
-  // const isLoggedIn = typeof localStorage !== 'undefined' && !!localStorage.getItem('emgt_access_token')
-  // if (to.name !== 'Login' && !isLoggedIn) {
-  //   return { name: 'Login' }
-  // }
+  if (PUBLIC_ROUTES.has(to.name as string)) return true
+  if (authService.isLoggedIn()) return true
+  // Preserve the intended destination so Login can return the user to it.
+  return { name: 'Login', query: { redirect: to.fullPath } }
 })
 
 export default router

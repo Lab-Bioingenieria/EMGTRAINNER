@@ -5,7 +5,8 @@ import TopHeader from '../../components/common/TopHeader.vue'
 import GestureProgress from '../../components/patient/GestureProgress.vue'
 import RadialTimer from '../../components/patient/RadialTimer.vue'
 import PatientHandVisualization from '../../components/patient/PatientHandVisualization.vue'
-import { ALL_GESTURES } from '../../lib/constants'
+import { ALL_GESTURES, LEARNING_BASE_URL } from '../../lib/constants'
+import { authService } from '@/services/auth.service'
 import type { Gesture } from '../../lib/constants'
 import { Wifi, ChevronRight, Play, Maximize, CheckCircle2 } from 'lucide-vue-next'
 
@@ -46,10 +47,9 @@ const patientName = ref('Guest') // Should be dynamic, but defaulting context fo
 // API Helper
 const fetchNextGestureSuggestion = async (): Promise<string | null> => {
     try {
-        // Need full URL because frontend might be on different port/proxy
-        // Assuming backend is at localhost:8000 based on standard setup. 
-        // Ideally should use env var or config.
-        const response = await fetch(`http://localhost:8000/learning/next-gesture/${patientName.value}`)
+        const response = await authService.authFetch(
+            `${LEARNING_BASE_URL}/next-gesture/${encodeURIComponent(patientName.value)}`,
+        )
         if (response.ok) {
             const data = await response.json()
             return data.next_gesture

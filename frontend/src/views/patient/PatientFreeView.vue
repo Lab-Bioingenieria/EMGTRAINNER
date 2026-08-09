@@ -5,7 +5,9 @@ import GestureProgress from '../../components/patient/GestureProgress.vue'
 import RadialTimer from '../../components/patient/RadialTimer.vue'
 import PatientHandVisualization from '../../components/patient/PatientHandVisualization.vue'
 import PauseButton from '../../components/common/PauseButton.vue'
-import { ALL_GESTURES, DEFAULT_DEVICE_ID, API_BASE_URL } from '../../lib/constants'
+import { ALL_GESTURES, DEFAULT_DEVICE_ID, API_BASE_URL, LEARNING_BASE_URL } from '../../lib/constants'
+import { downloadProtectedFile } from '../../lib/download'
+import { authService } from '@/services/auth.service'
 import type { Gesture } from '../../lib/constants'
 import { ChevronRight, Play, Pause, ArrowLeft, Activity, RefreshCw, Maximize, CheckCircle2, FileText, Download } from 'lucide-vue-next'
 import { EmgService } from '../../services/emg.service'
@@ -73,9 +75,23 @@ const toggleGesture = (g: Gesture) => {
 }
 
 // API Helper for LLC
+const downloadLastSession = async () => {
+    if (!lastSession.value) return
+    try {
+        await downloadProtectedFile(
+            `${API_BASE_URL}/storage/sessions/${lastSession.value.filename}`,
+            lastSession.value.filename,
+        )
+    } catch (e) {
+        console.error("Error downloading session:", e)
+    }
+}
+
 const fetchNextGestureSuggestion = async (): Promise<string | null> => {
     try {
-        const response = await fetch(`http://localhost:8000/learning/next-gesture/${patientName.value || 'Guest'}`)
+        const response = await authService.authFetch(
+            `${LEARNING_BASE_URL}/next-gesture/${encodeURIComponent(patientName.value || 'Guest')}`,
+        )
         if (response.ok) {
             const data = await response.json()
             return data.next_gesture
@@ -714,12 +730,12 @@ onUnmounted(() => {
                          <p class="csv-name">{{ lastSession.filename }}</p>
                          <p class="csv-meta">{{ (lastSession.size_bytes / 1024).toFixed(1) }} KB • {{ new Date(lastSession.created_at).toLocaleTimeString() }}</p>
                      </div>
-                     <a :href="`${API_BASE_URL}/storage/sessions/${lastSession.filename}`" 
-                        download 
+                     <button type="button"
                         class="btn-icon-only"
-                        title="Descargar CSV">
+                        title="Descargar CSV"
+                        @click="downloadLastSession">
                          <Download class="icon-sm" />
-                     </a>
+                     </button>
                  </div>
 
                  <button class="btn btn-outline w-full" @click="resetSession">Nueva Sesión</button>
