@@ -1,0 +1,22 @@
+# Git and local metadata
+.git
+.gitignore
+.atl
+.hermes
+
+# Dependencies and caches
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.mypy_cache
+**/node_modules
+**/.venv
+**/venv
+
+# Environment and local files
+**/.env
+**/.env.*
+**/*.log
+
+# Private EMG/session storage and derived artifacts
+backend/storage
