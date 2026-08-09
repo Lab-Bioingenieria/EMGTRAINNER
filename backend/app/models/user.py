@@ -1,12 +1,13 @@
 from enum import Enum
 from uuid import uuid4
 
-from sqlalchemy import BigInteger, Boolean, Column, Unicode
+from sqlalchemy import Boolean, Column, Unicode
 from sqlalchemy.types import Uuid as UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 from core.database.mixins import TimestampMixin
+from core.database.types import BigIntPk
 from core.security.access_control import Allow, Everyone, RolePrincipal, UserPrincipal
 
 
@@ -20,7 +21,7 @@ class UserPermission(Enum):
 class User(Base, TimestampMixin):
     __tablename__ = "users"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(BigIntPk, primary_key=True, autoincrement=True)
     uuid = Column(UUID(as_uuid=True), default=uuid4, unique=True, nullable=False)
     email = Column(Unicode(255), nullable=False, unique=True)
     password = Column(Unicode(255), nullable=False)
