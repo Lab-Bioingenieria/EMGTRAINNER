@@ -32,6 +32,7 @@ NODE_VERSION="22.23.2"
 PNPM_VERSION="11.17.0"
 UV_VERSION="0.11.32"
 CI_FILE=".github/workflows/ci.yml"
+REPRO_DOC="docs/reproducible-environment.md"
 HW_DOC="docs/hardware-inventory.md"
 
 [ ! -f frontend/package-lock.json ] \
@@ -50,6 +51,13 @@ expect_contains frontend/package.json "\"packageManager\": \"pnpm@${PNPM_VERSION
 expect_contains "$CI_FILE" "python-version: '$PYTHON_VERSION'" "CI pins Python $PYTHON_VERSION"
 expect_contains "$CI_FILE" "node-version: '$NODE_VERSION'" "CI pins Node $NODE_VERSION"
 expect_contains "$CI_FILE" "version: $PNPM_VERSION" "CI pins pnpm $PNPM_VERSION"
+
+for fact in "$PYTHON_VERSION" "$NODE_VERSION" "$PNPM_VERSION" "$UV_VERSION" \
+  "**not** relocatable" 'never `rsync`/copy `backend/.venv`' \
+  "pip download" "--find-links" "pnpm fetch --frozen-lockfile" \
+  "pnpm install --offline --frozen-lockfile"; do
+  expect_contains "$REPRO_DOC" "$fact" "reproducibility guide includes $fact"
+done
 
 expect_contains Makefile "scripts/doctor.sh" "Makefile delegates doctor checks"
 [ -f scripts/doctor.sh ] || bad "scripts/doctor.sh is missing"
