@@ -10,6 +10,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  repo-contract:
+    name: Repository contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check repository contract
+        run: bash scripts/check-repo-contract.sh
+
   backend:
     name: Backend tests
     runs-on: ubuntu-latest
@@ -24,7 +33,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.11.9'
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
 
@@ -45,11 +54,11 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 11
+          version: 11.17.0
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '22.23.2'
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 
