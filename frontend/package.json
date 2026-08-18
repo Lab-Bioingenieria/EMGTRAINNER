@@ -4,6 +4,11 @@
   "version": "0.0.0",
   "private": true,
   "description": "TresJS Vue application",
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=22 <23",
+    "pnpm": ">=11 <12"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
@@ -12,7 +17,7 @@
     "lint:fix": "eslint  --fix"
   },
   "dependencies": {
-    "@tresjs/cientos": "latest",
+    "@tresjs/cientos": "5.8.1",
     "@tresjs/core": "^5.0.0",
     "axios": "^1.13.2",
     "lucide-vue-next": "^0.562.0",
@@ -25,16 +30,16 @@
   "devDependencies": {
     "@tresjs/eslint-config": "^1.1.0",
     "@types/estree": "^1.0.9",
-    "@types/three": "latest",
-    "@vitejs/plugin-vue": "latest",
+    "@types/three": "0.185.0",
+    "@vitejs/plugin-vue": "6.0.7",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.16.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "latest",
+    "typescript": "6.0.3",
     "vite": "^7.1.6",
     "vite-plugin-glsl": "^1.5.1",
-    "vue-tsc": "latest"
+    "vue-tsc": "3.3.6"
   }
 }
