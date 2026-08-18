@@ -61,6 +61,32 @@ def find_u2d2_port() -> Optional[str]:
 
     return None
 
+# Official ROBOTIS model numbers for the XL330 family (control table item
+# "Model Number", read via ping()). Any value not listed here is a variant
+# that has not been catalogued; report it as UNKNOWN rather than guess.
+XL330_MODEL_NAMES: Dict[int, str] = {
+    1190: "XL330-M077-T",
+    1200: "XL330-M288-T",
+}
+
+
+def resolve_model_name(model_number: int) -> str:
+    return XL330_MODEL_NAMES.get(model_number, "UNKNOWN")
+
+
+def inventory_report(dx: "DynamixelInterface", id_range=range(1, 16)) -> Dict:
+    """Read-only bus report: port, protocol, baud, and each responding motor.
+
+    Safe to run without hardware side effects; never enables torque.
+    """
+    return {
+        "port": dx.port_name,
+        "protocol_version": PROTOCOL_VERSION,
+        "baudrate": dx.baudrate,
+        "motors": dx.inventory(id_range=id_range),
+    }
+
+
 def _int32_to_le_bytes(value: int) -> List[int]:
     # 4 bytes little-endian
     return [
@@ -112,6 +138,27 @@ class DynamixelInterface:
                 print(f"[OK] - Motor detectado ID {motor_id}")
         return self.detected_ids
 
+    # INVENTARIO DE SOLO LECTURA
+    def inventory(self, id_range=range(1, 16)) -> List[Dict[str, object]]:
+        """Read-only bus inventory: one ping per ID, no other transaction.
+
+        ping() already returns the model number reported by a responding
+        motor, so this never issues a second register read (which would
+        ignore that motor's own communication/error status) and never
+        enables torque or writes any register. Safe to run before any
+        motion test.
+        """
+        motors: List[Dict[str, object]] = []
+        for motor_id in id_range:
+            model_number, result, _ = self.packet_handler.ping(self.port_handler, motor_id)
+            if result == dxl.COMM_SUCCESS:
+                motors.append({
+                    "id": motor_id,
+                    "model_number": model_number,
+                    "model_name": resolve_model_name(model_number),
+                })
+        return motors
+
     # CONFIGURACION SEGURA
     def set_operating_mode(self, motor_id: int, mode: int):
         self.disable_torque(motor_id)
@@ -139,7 +186,13 @@ class DynamixelInterface:
         return pos
 
     def read_current_units(self, motor_id: int) -> int:
-        raw, _, _ = self.packet_handler.read2ByteTxRx(self.port_handler, motor_id, ADDR_PRESENT_CURRENT)
+        raw, dxl_comm_result, dxl_error = self.packet_handler.read2ByteTxRx(
+            self.port_handler, motor_id, ADDR_PRESENT_CURRENT
+        )
+        if dxl_comm_result != dxl.COMM_SUCCESS:
+            raise RuntimeError(self.packet_handler.getTxRxResult(dxl_comm_result))
+        if dxl_error != 0:
+            raise RuntimeError(self.packet_handler.getRxPacketError(dxl_error))
         if raw > 32767:
             raw -= 65536
         return raw
@@ -166,16 +219,22 @@ class DynamixelInterface:
         start_time = time.time()
         stable_count = 0
         while time.time() - start_time < timeout_s:
-            current_a = self.read_current_amps(motor_id)
+            try:
+                current_a = self.read_current_amps(motor_id)
+            except Exception as exc:
+                self.disable_torque(motor_id)
+                raise RuntimeError(
+                    f"[ERROR] - No se pudo monitorear corriente del motor {motor_id}; torque deshabilitado"
+                ) from exc
             print(f"[DEBUG] - Motor {motor_id} corriente = {current_a:.2f} A")
 
             if current_a > MAX_CURRENT_A:
                 stable_count += 1
                 if stable_count >= 3:
                     self.disable_torque(motor_id)
-                raise RuntimeError(
-                    f"[WARNING] - Sobrecorriente detectada en motor {motor_id}: {current_a:.2f} A"
-                )
+                    raise RuntimeError(
+                        f"[WARNING] - Sobrecorriente detectada en motor {motor_id}: {current_a:.2f} A"
+                    )
             else:
                 stable_count = 0
 
@@ -220,17 +279,20 @@ class DynamixelInterface:
 
                 try:
                     current_a = self.read_current_amps(motor_id)
-                except Exception:
-                    # Si falla la lectura, no parar toda la sesión
-                    continue
+                except Exception as exc:
+                    for target_id in targets:
+                        self.disable_torque(target_id)
+                    raise RuntimeError(
+                        f"[ERROR] - No se pudo monitorear corriente del motor {motor_id}; torque deshabilitado en el grupo"
+                    ) from exc
 
                 if current_a > limit:
                     stable_counts[motor_id] += 1
                     if stable_counts[motor_id] >= 3:
                         self.disable_torque(motor_id)
-                    raise RuntimeError(
-                        f"[WARNING] - Sobrecorriente motor {motor_id}: {current_a:.2f} A (lim {limit:.2f} A)"
-                    )
+                        raise RuntimeError(
+                            f"[WARNING] - Sobrecorriente motor {motor_id}: {current_a:.2f} A (lim {limit:.2f} A)"
+                        )
                 else:
                     stable_counts[motor_id] = 0
 
