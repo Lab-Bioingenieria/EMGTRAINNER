@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@tresjs/cientos':
-        specifier: latest
+        specifier: 5.8.1
         version: 5.8.1(@tresjs/core@5.2.1(three@0.180.0)(vue@3.5.26(typescript@6.0.3)))(three@0.180.0)(vue@3.5.26(typescript@6.0.3))
       '@tresjs/core':
         specifier: ^5.0.0
@@ -43,10 +43,10 @@ importers:
         specifier: ^1.0.9
         version: 1.0.9
       '@types/three':
-        specifier: latest
+        specifier: 0.185.0
         version: 0.185.0
       '@vitejs/plugin-vue':
-        specifier: latest
+        specifier: 6.0.7
         version: 6.0.7(vite@7.3.1(yaml@2.8.2))(vue@3.5.26(typescript@6.0.3))
       autoprefixer:
         specifier: ^10.4.23
@@ -64,7 +64,7 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@4.1.18)
       typescript:
-        specifier: latest
+        specifier: 6.0.3
         version: 6.0.3
       vite:
         specifier: ^7.1.6
@@ -73,7 +73,7 @@ importers:
         specifier: ^1.5.1
         version: 1.5.5(esbuild@0.27.2)(vite@7.3.1(yaml@2.8.2))
       vue-tsc:
-        specifier: latest
+        specifier: 3.3.6
         version: 3.3.6(typescript@6.0.3)
 
 packages:
