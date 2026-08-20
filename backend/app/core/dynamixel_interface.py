@@ -30,36 +30,74 @@ MAX_CURRENT_A = 0.6               # limite seguro
 DEFAULT_PROFILE_VELOCITY = 55
 DEFAULT_PROFILE_ACCELERATION = 10
 
+# Future Technology Devices International. The U2D2 is an FTDI bridge, so the
+# vendor id identifies it on every OS without parsing driver-specific text.
+FTDI_VENDOR_ID = 0x0403
+
+
+def _list_serial_ports() -> List:
+    """Enumerate serial ports. Isolated so tests can substitute a bus."""
+    import serial.tools.list_ports
+
+    return list(serial.tools.list_ports.comports())
+
+
+def _is_ftdi(port_info) -> bool:
+    if getattr(port_info, "vid", None) == FTDI_VENDOR_ID:
+        return True
+
+    # Some drivers report no vid; fall back to the text they do report.
+    text = " ".join(
+        value for value in (
+            getattr(port_info, "description", None),
+            getattr(port_info, "manufacturer", None),
+        ) if value
+    ).upper()
+    return "FTDI" in text
+
+
+def _port_exists(port: str) -> bool:
+    """Windows COM names are not filesystem paths, so they need enumeration."""
+    if os.name == "nt":
+        return any(p.device.upper() == port.upper() for p in _list_serial_ports())
+    return os.path.exists(port)
+
+
+def autodetect_u2d2_port() -> Optional[str]:
+    """Locate an FTDI adapter on Windows, Linux/arm64 and Linux/amd64.
+
+    Never falls back to "whatever port exists": the ESP32 sensor shares the
+    machine, and handing the Dynamixel bus an ESP32 (or a Bluetooth COM port)
+    breaks both devices in ways that look like a hardware fault.
+    """
+    if os.name != "nt":
+        # by-id survives re-enumeration; /dev/ttyUSBn does not.
+        by_id = sorted(glob.glob("/dev/serial/by-id/*FTDI*"))
+        if by_id:
+            return by_id[0]
+
+    adapters = sorted(p.device for p in _list_serial_ports() if _is_ftdi(p))
+    return adapters[0] if adapters else None
+
+
 def find_u2d2_port() -> Optional[str]:
-    port = hardware_config.main_port
-    if port:
-        return port
-        
-    env_port = os.getenv("DYNAMIXEL_PORT")
-    if env_port:
-        return env_port
-        
-    if os.name == 'nt':
-        import serial.tools.list_ports
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            if "FTDI" in p.description or "USB Serial Port" in p.description:
-                 return p.device
-        if ports:
-            return ports[0].device
-        return None
+    """Resolve the U2D2 port, preferring explicit configuration that is real.
 
-    candidates = glob.glob("/dev/serial/by-id/*FTDI*")
-    if candidates:
-        candidates.sort()
-        return candidates[0]
+    A configured port is honoured only when it still exists. A stale
+    hardware_config.json or DYNAMIXEL_PORT used to be returned unchecked,
+    which left the hand dead with nothing but a confusing open() error.
+    """
+    for source, port in (
+        ("hardware_config.main_port", hardware_config.main_port),
+        ("DYNAMIXEL_PORT", os.getenv("DYNAMIXEL_PORT")),
+    ):
+        if not port:
+            continue
+        if _port_exists(port):
+            return port
+        print(f"[WARN] - {source}={port} no existe; autodetectando el adaptador")
 
-    usb = glob.glob("/dev/ttyUSB*")
-    if usb:
-        usb.sort()
-        return usb[0]
-
-    return None
+    return autodetect_u2d2_port()
 
 # Official ROBOTIS model numbers for the XL330 family (control table item
 # "Model Number", read via ping()). Any value not listed here is a variant
