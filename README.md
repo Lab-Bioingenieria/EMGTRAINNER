@@ -108,8 +108,8 @@ Las dependencias de test viven en `requirements-dev.txt`.
 ## Hardware Dynamixel
 
 El contrato de software usa U2D2, Dynamixel Protocol 2.0, 1.000.000 bps e IDs
-1–15. La familia es **XL330**, pero el SKU instalado (`XL330-M077-T` o
-`XL330-M288-T`) sigue **sin verificarse físicamente**.
+1–15. El inventario sobre la mano ensamblada devolvió `model_number=1200` en los
+once motores, es decir **XL330-M288-T**, leído del propio firmware.
 
 Antes de cualquier movimiento, verificá alimentación, cableado TTL, tierra común
 y conectores; después ejecutá el inventario read-only:
@@ -118,9 +118,45 @@ y conectores; después ejecutá el inventario read-only:
 make hand-inventory
 ```
 
-El comando nunca habilita torque ni escribe registros. La guía completa, el mapa
-ID→articulación, permisos seriales, modelos oficiales y límites de seguridad están
-en [docs/hardware-inventory.md](docs/hardware-inventory.md).
+El comando nunca habilita torque ni escribe registros.
+
+### Tabla de movimientos
+
+Mapeo verificado moviendo **un motor a la vez** sobre la mano ensamblada. La
+cadena daisy está cableada del meñique hacia adentro, al revés del orden
+anatómico: el perfil original asumía `4,5=index` y estaba equivocado.
+
+| ID | Dedo | Articulación | Recorrido medido | Estado |
+| ---: | --- | --- | ---: | --- |
+| 1 | thumb | `MCP_FE` | 34.5° | OK |
+| 2 | thumb | `CMC_AA` | 32.1° | OK |
+| 3 | thumb | `CMC_FE` | **1.7°** | **trabado** |
+| 4 | pinky | `PIP` | 69.3° | OK |
+| 5 | pinky | `MCP` | 69.0° | OK |
+| 6 | ring | `PIP` | 68.9° | OK |
+| 7 | ring | `MCP` | 68.7° | OK |
+| 8 | middle | `PIP` | 69.7° | OK |
+| 9 | middle | `MCP` | sin medir | pendiente |
+| 10 | index | `PIP` | 68.6° | OK |
+| 11 | index | `MCP` | sin medir | pendiente |
+
+El *recorrido medido* es la excursión real de punta a punta, no el rango
+declarado en el perfil. Para reproducir la tabla, el bus tiene que estar
+**exclusivo**: con el backend corriendo y el puerto tomado, un escaneo devolvió
+solo 5 de 11 motores.
+
+```bash
+cd backend
+PYTHONPATH=. .venv/bin/python -m tests.hand.identify_motors 4
+```
+
+El motor 3 (trapecio del pulgar) tiene 1.7° de recorrido útil y descansa en
+-14.7°, fuera del rango 0–45° que declara el perfil. Los detalles, el riesgo
+térmico de bloquearlo y qué está confirmado visualmente frente a qué está
+inferido, en [docs/motion-table.md](docs/motion-table.md).
+
+La guía completa de hardware, permisos seriales, modelos oficiales y límites de
+seguridad está en [docs/hardware-inventory.md](docs/hardware-inventory.md).
 
 ## CI
 
@@ -167,6 +203,7 @@ origen, por lo que el despliegue depende del reverse proxy.
 
 - [Entornos reproducibles y reciclables](docs/reproducible-environment.md)
 - [Inventario y seguridad del hardware](docs/hardware-inventory.md)
+- [Tabla de movimientos de la mano](docs/motion-table.md)
 - [Gobernanza de datos](docs/data-governance.md)
 
 ## Licencia
