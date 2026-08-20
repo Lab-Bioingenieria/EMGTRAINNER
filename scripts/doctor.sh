@@ -65,6 +65,22 @@ fi
 ls /dev/serial/by-id/*FTDI* >/dev/null 2>&1 \
   && printf '[OK]   FTDI (U2D2) serial device detected\n' \
   || printf '[INFO] no FTDI serial device detected\n'
+
+# The ftdi_sio driver defaults latency_timer to 16 ms, which serializes every
+# Dynamixel TxRx behind that timer instead of the ~0.2 ms the packet needs at
+# 1 Mbps. Report it as a warning, never a hard failure: the bus still works,
+# it just runs an order of magnitude slower. Fix with: make install-udev
+for latency_file in /sys/bus/usb-serial/devices/*/latency_timer; do
+  [ -r "$latency_file" ] || continue
+  latency_value="$(cat "$latency_file" 2>/dev/null)"
+  latency_port="$(basename "$(dirname "$latency_file")")"
+  if [ "$latency_value" = "1" ]; then
+    printf '[OK]   %s latency_timer = 1 ms\n' "$latency_port"
+  else
+    printf '[WARN] %s latency_timer = %s ms (expected 1; run: make install-udev)\n' \
+      "$latency_port" "$latency_value"
+  fi
+done
 groups 2>/dev/null | grep -q dialout \
   && printf "[OK]   current user belongs to 'dialout'\n" \
   || printf "[WARN] current user is not in 'dialout'\n"

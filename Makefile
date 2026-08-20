@@ -8,7 +8,7 @@
 .PHONY: env-backend install-backend install-frontend install-all \
 	run-backend run-frontend run-all run-help build-frontend update \
 	infra init-local doctor check-contract test-backend \
-	verify hand-inventory
+	verify hand-inventory install-udev
 
 TEST_ENV := ENVIRONMENT=test TEST_POSTGRES_URL="sqlite+aiosqlite:///./test.db"
 
@@ -83,6 +83,16 @@ infra:
 # Docker.
 init-local:
 	test -f backend/.env || cp backend/.env.example backend/.env
+
+# Instala la regla udev del U2D2. Sin esto el driver ftdi_sio deja
+# latency_timer en 16 ms y cada transacción Dynamixel espera ese timer en
+# vez de los ~0.2 ms que tarda el paquete a 1 Mbps. Requiere sudo una sola
+# vez; después la regla se aplica sola en cada conexión del adaptador.
+install-udev:
+	sudo install -m 0644 scripts/99-emgtrainner-u2d2.rules /etc/udev/rules.d/99-emgtrainner-u2d2.rules
+	sudo udevadm control --reload-rules
+	sudo udevadm trigger --subsystem-match=usb-serial --action=add
+	@echo "[OK] regla udev instalada; reconecta el U2D2 si ya estaba enchufado"
 
 # Diagnóstico del entorno: toolchain, configuración y (si está conectado)
 # el adaptador U2D2. De sólo lectura: nunca abre el bus ni mueve motores.
