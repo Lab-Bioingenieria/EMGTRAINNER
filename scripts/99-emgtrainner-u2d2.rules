@@ -1,0 +1,14 @@
+# EMGTRAINNER - U2D2 (FTDI) tuning for Dynamixel Protocol 2.0.
+#
+# The ftdi_sio driver defaults latency_timer to 16 ms. Every Dynamixel
+# TxRx transaction then waits for that timer instead of the ~0.2 ms the
+# packet actually needs at 1 Mbps, capping a full 11-motor read sweep at
+# roughly 6 Hz. ROBOTIS documents 1 ms as the required value; on Windows
+# it is set through the FTDI driver properties, which is why the same
+# hardware feels responsive there and sluggish on Linux/Jetson.
+#
+# Install with: make install-udev
+SUBSYSTEM=="usb-serial", DRIVER=="ftdi_sio", ATTR{latency_timer}="1"
+
+# Keep the adapter reachable for the 'dialout' group without extra setup.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", MODE="0660", GROUP="dialout"

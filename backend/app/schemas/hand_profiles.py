@@ -41,6 +41,12 @@ def apply_hand_orientation(angle: float, motor: MotorConfig, side: HandSide):
 
 # Perfiles de Protesis
 
+# NOTA DE CABLEADO (verificado moviendo un motor a la vez sobre la mano
+# ensamblada): en la mano derecha la cadena esta invertida respecto del
+# orden anatomico y corre del menique hacia adentro:
+#   4/5 -> pinky, 6/7 -> ring, 8/9 -> middle, 10/11 -> index
+# Al corregirlo se intercambian solo los motor_id; los rangos y angulos
+# por defecto pertenecen al dedo, no al motor.
 ELEVEN_DOF_RIGHT = HandProfile(
     name="Eleven_DOF_Right",
     side="RIGHT",
@@ -59,29 +65,29 @@ ELEVEN_DOF_RIGHT = HandProfile(
         "index": FingerProfile(
             "index",
             motors={
-                "PIP": MotorConfig(4, 0, 90, 0, 0.8),
-                "MCP": MotorConfig(5, 0, 90, 0, 0.8),
+                "PIP": MotorConfig(10, 0, 90, 0, 0.8),
+                "MCP": MotorConfig(11, 0, 90, 0, 0.8),
             },
         ),
         "middle": FingerProfile(
             "middle",
             motors={
-                "PIP": MotorConfig(6, 0, 90, 0, 0.8),
-                "MCP": MotorConfig(7, 0, 90, 0, 0.8),
+                "PIP": MotorConfig(8, 0, 90, 0, 0.8),
+                "MCP": MotorConfig(9, 0, 90, 0, 0.8),
             },
         ),
         "ring": FingerProfile(
             "ring",
             motors={
-                "PIP": MotorConfig(8, 0, 90, 0, 0.8),
-                "MCP": MotorConfig(9, 0, 90, 0, 0.8),
+                "PIP": MotorConfig(6, 0, 90, 0, 0.8),
+                "MCP": MotorConfig(7, 0, 90, 0, 0.8),
             },
         ),
         "pinky": FingerProfile(
             "pinky",
             motors={
-                "PIP": MotorConfig(10, 0, 90, 0, 0.8),
-                "MCP": MotorConfig(11, 0, 90, 0, 0.8),
+                "PIP": MotorConfig(4, 0, 90, 0, 0.8),
+                "MCP": MotorConfig(5, 0, 90, 0, 0.8),
             },
         ),
     },
@@ -106,29 +112,29 @@ SIX_DOF_RIGHT = HandProfile(
         "index": FingerProfile(
             "index",
             motors={
-                "PIP": MotorConfig(4, 0, 90, 45, 0.8),
-                "MCP": MotorConfig(5, 0, 90, 30, 0.8),
+                "PIP": MotorConfig(10, 0, 90, 45, 0.8),
+                "MCP": MotorConfig(11, 0, 90, 30, 0.8),
             },
         ),
         "middle": FingerProfile(
             "middle",
             motors={
-                "PIP": MotorConfig(6, 0, 90, 55, 0.8),
-                "MCP": MotorConfig(7, 0, 90, 35, 0.8),
+                "PIP": MotorConfig(8, 0, 90, 55, 0.8),
+                "MCP": MotorConfig(9, 0, 90, 35, 0.8),
             },
         ),
         "ring": FingerProfile(
             "ring",
             motors={
-                "PIP": MotorConfig(8, 0, 90, 45, 0.8),
-                "MCP": MotorConfig(9, 0, 90, 40, 0.8),
+                "PIP": MotorConfig(6, 0, 90, 45, 0.8),
+                "MCP": MotorConfig(7, 0, 90, 40, 0.8),
             },
         ),
         "pinky": FingerProfile(
             "pinky",
             motors={
-                "PIP": MotorConfig(10, 0, 90, 35, 0.8),
-                "MCP": MotorConfig(11, 0, 90, 45, 0.8),
+                "PIP": MotorConfig(4, 0, 90, 35, 0.8),
+                "MCP": MotorConfig(5, 0, 90, 45, 0.8),
             },
         ),
     },

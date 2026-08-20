@@ -12,10 +12,21 @@ connecting the bus or moving any joint.
 - scanned IDs **1–15**, covering every ID declared by supported profiles;
 - XL330 model resolution and read-only inventory behavior.
 
-**Physical hardware unverified:** the installed servo SKU. Tests use a mocked
-bus; they do not prove whether the hand contains `XL330-M077-T`,
-`XL330-M288-T`, a mixture, or another model. Only a scan of the real hand can
-resolve this. The Jetson was offline during this audit.
+**Physical hardware verified (2026-08-20).** A read-only inventory over the
+real bus answered on IDs **1-11**, every one reporting raw model number
+`1200`, which resolves to **`XL330-M288-T`**. No mixture, no `XL330-M077-T`,
+no unexpected or duplicate IDs. IDs 12-15 did not answer, matching the
+supported profiles that lock or reserve them.
+
+Adapter used, as a stable path without credentials:
+
+```
+/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO520W-if00-port0
+```
+
+Per-joint travel measured after that scan is recorded in
+[motion-table.md](motion-table.md), including the ID-to-finger correction the
+scan exposed.
 
 ## Electrical safety before scanning
 
@@ -87,16 +98,23 @@ map or lock IDs differently.
 | 1 | thumb | `MCP_FE` |
 | 2 | thumb | `CMC_AA` |
 | 3 | thumb | `CMC_FE` |
-| 4 | index | `PIP` |
-| 5 | index | `MCP` |
-| 6 | middle | `PIP` |
-| 7 | middle | `MCP` |
-| 8 | ring | `PIP` |
-| 9 | ring | `MCP` |
-| 10 | pinky | `PIP` |
-| 11 | pinky | `MCP` |
+| 4 | pinky | `PIP` |
+| 5 | pinky | `MCP` |
+| 6 | ring | `PIP` |
+| 7 | ring | `MCP` |
+| 8 | middle | `PIP` |
+| 9 | middle | `MCP` |
+| 10 | index | `PIP` |
+| 11 | index | `MCP` |
 | 12–13 | profile-dependent | locked/reserved in supported profiles |
 | 14–15 | `Two_Motors` | independently controlled phalanx motors |
+
+The four-finger block was fully reversed relative to the original profile:
+the daisy chain runs from the pinky inward, so 4/5 drive the pinky, 6/7 the
+ring, 8/9 the middle and 10/11 the index. Every one of those ids was
+confirmed on the assembled hand, one motor at a time, with
+`python -m tests.hand.identify_motors <id>`. Verify this mapping again on
+any rebuilt hand: it reflects the physical daisy chain, not a convention.
 
 ## Motion safety contract
 

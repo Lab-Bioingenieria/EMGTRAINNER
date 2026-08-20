@@ -44,3 +44,9 @@ backend/storage/**
 !backend/storage/
 !backend/storage/README.md
 !backend/storage/.gitkeep
+# Local Pi runtime state
+.atl/
+
+# Local runtime state (machine-specific, never committed)
+backend/fastapi.db
+backend/hardware_config.json

@@ -9,6 +9,7 @@ import {
   Play, Pause, Square, Plus
 } from 'lucide-vue-next'
 import { useSessionStore } from '../../stores/session'
+import { EmgService } from '../../services/emg.service'
 import { ALL_GESTURES } from '../../lib/constants'
 import type { TrainingMode, Gesture } from '../../lib/constants'
 
@@ -22,6 +23,13 @@ const protocolName = ref("")
 const repetitions = ref(3)
 const restTime = ref(5)
 const generateCode = ref(true)
+
+// The doctor session used to live entirely in the Pinia store, so the
+// control bar only flipped a string and the backend kept recording. These
+// track the real recording so start/stop stay in sync with it.
+const isBusy = ref(false)
+const sessionError = ref<string | null>(null)
+const backendSessionActive = ref(false)
 
 // Computed Helpers
 const formattedTime = computed(() => {
@@ -72,6 +80,59 @@ const handleStartWaiting = () => {
     store.setPhase('waiting')
 }
 
+const handleStart = async () => {
+    if (isBusy.value) return
+    isBusy.value = true
+    sessionError.value = null
+    try {
+        // Resuming from 'paused' must not open a second recording.
+        if (!backendSessionActive.value) {
+            await EmgService.startSession(store.trainingMode ?? '')
+            backendSessionActive.value = true
+        }
+        store.setPhase('running')
+    } catch (error) {
+        console.error('Failed to start the backend session', error)
+        sessionError.value = 'No se pudo iniciar la grabación en el backend.'
+    } finally {
+        isBusy.value = false
+    }
+}
+
+const handlePause = () => {
+    // The backend exposes no pause endpoint; the recording keeps running and
+    // only the UI timer stops. Stop the session to close the CSV.
+    store.setPhase('paused')
+}
+
+const handleFinish = async () => {
+    if (isBusy.value) return
+    isBusy.value = true
+    sessionError.value = null
+    try {
+        if (backendSessionActive.value) {
+            await EmgService.stopSession()
+            backendSessionActive.value = false
+        }
+    } catch (error) {
+        // Keep the flag set so 'Nueva Sesión' can retry the stop, but never
+        // trap the operator in 'running' because one request failed.
+        console.error('Failed to stop the backend session', error)
+        sessionError.value = 'La grabación pudo no haberse cerrado en el backend.'
+    } finally {
+        store.setPhase('finished')
+        isBusy.value = false
+    }
+}
+
+const handleNewSession = async () => {
+    if (backendSessionActive.value) {
+        await handleFinish()
+    }
+    sessionError.value = null
+    store.resetSession()
+}
+
 // Timer Logic
 let interval: number | null = null
 
@@ -96,6 +157,13 @@ watch(phase, (newPhase) => {
 
 onUnmounted(() => {
     if (interval) clearInterval(interval)
+    // Leaving the view must not keep the backend recording forever.
+    if (backendSessionActive.value) {
+        backendSessionActive.value = false
+        EmgService.stopSession().catch((error) => {
+            console.error('Failed to stop the backend session on unmount', error)
+        })
+    }
 })
 </script>
 
@@ -273,22 +341,23 @@ onUnmounted(() => {
                            <span class="timer-display">{{ formattedTime }}</span>
                        </div>
                        <div class="controls-group">
-                           <button v-if="phase === 'connected'" class="btn btn-success" @click="store.setPhase('running')">
+                           <button v-if="phase === 'connected'" class="btn btn-success" :disabled="isBusy" @click="handleStart">
                                <Play class="icon-sm mr-2" /> Iniciar
                            </button>
                            <template v-if="phase === 'running'">
-                               <button class="btn btn-outline" @click="store.setPhase('paused')"><Pause class="icon-sm mr-2"/> Pausar</button>
-                               <button class="btn btn-destructive" @click="store.setPhase('finished')"><Square class="icon-sm mr-2"/> Finalizar</button>
+                               <button class="btn btn-outline" :disabled="isBusy" @click="handlePause"><Pause class="icon-sm mr-2"/> Pausar</button>
+                               <button class="btn btn-destructive" :disabled="isBusy" @click="handleFinish"><Square class="icon-sm mr-2"/> Finalizar</button>
                            </template>
                            <template v-if="phase === 'paused'">
-                               <button class="btn btn-success" @click="store.setPhase('running')"><Play class="icon-sm mr-2"/> Continuar</button>
-                               <button class="btn btn-destructive" @click="store.setPhase('finished')"><Square class="icon-sm mr-2"/> Finalizar</button>
+                               <button class="btn btn-success" :disabled="isBusy" @click="handleStart"><Play class="icon-sm mr-2"/> Continuar</button>
+                               <button class="btn btn-destructive" :disabled="isBusy" @click="handleFinish"><Square class="icon-sm mr-2"/> Finalizar</button>
                            </template>
-                           <button v-if="phase === 'finished'" class="btn btn-primary" @click="store.resetSession">
+                           <button v-if="phase === 'finished'" class="btn btn-primary" :disabled="isBusy" @click="handleNewSession">
                                <Plus class="icon-sm mr-2" /> Nueva Sesión
                            </button>
                        </div>
                   </div>
+                  <p v-if="sessionError" class="session-error" role="alert">{{ sessionError }}</p>
 
                   <div class="dashboard-grid">
                       <div class="chart-area">
@@ -402,6 +471,8 @@ onUnmounted(() => {
 .status-connected { background-color: #f3e8ff; color: #6b21a8; }
 .timer-display { font-family: monospace; font-size: 1.125rem; font-weight: 600; color: #0f172a; }
 .controls-group { display: flex; gap: 0.5rem; }
+.controls-group .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.session-error { margin: -0.5rem 0 1rem; padding: 0.625rem 1rem; border-radius: 6px; background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.875rem; }
 
 .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
 @media(min-width: 1024px) {
