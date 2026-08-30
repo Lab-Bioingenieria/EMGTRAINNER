@@ -1,23 +1,32 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import TopHeader from '../../components/common/TopHeader.vue'
-import { 
-  Search, Filter, ChevronRight, UserPlus, MoreVertical 
+import {
+  Search, Filter, ChevronRight, UserPlus
 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import { PatientService, type PatientRead } from '../../services/patient.service'
 
 const router = useRouter()
 
-// Mock Data (Shared with Dashboard mostly)
-const patients = ref([
-  { id: "P-2341", name: "María González", age: 45, diagnosis: "Amputación Radial", status: "active", progress: 89, lastSession: "10 Ene 2024" },
-  { id: "P-1892", name: "Carlos Rodríguez", age: 38, diagnosis: "Amputación Transradial", status: "active", progress: 76, lastSession: "10 Ene 2024" },
-  { id: "P-3021", name: "Ana Martínez", age: 52, diagnosis: "Agenesia", status: "completed", progress: 94, lastSession: "09 Ene 2024" },
-  { id: "P-4156", name: "Luis Fernández", age: 41, diagnosis: "Lesión Nerviosa", status: "inactive", progress: 62, lastSession: "05 Ene 2024" },
-  { id: "P-5234", name: "Elena Sánchez", age: 29, diagnosis: "Amputación Radial", status: "active", progress: 45, lastSession: "11 Ene 2024" },
-  { id: "P-6789", name: "Roberto López", age: 55, diagnosis: "Amputación Humeral", status: "active", progress: 82, lastSession: "08 Ene 2024" },
-  { id: "P-7890", name: "Julia Torres", age: 33, diagnosis: "Agenesia", status: "inactive", progress: 30, lastSession: "01 Ene 2024" },
-])
+const patients = ref<PatientRead[]>([])
+const isLoading = ref(true)
+const loadError = ref('')
+
+const loadPatients = async () => {
+    isLoading.value = true
+    loadError.value = ''
+    try {
+        patients.value = await PatientService.getPatients()
+    } catch (e) {
+        console.error('Failed to load patients:', e)
+        loadError.value = 'No se pudo cargar el listado de pacientes.'
+    } finally {
+        isLoading.value = false
+    }
+}
+
+onMounted(loadPatients)
 
 const searchQuery = ref("")
 const statusFilter = ref("all")
@@ -25,8 +34,8 @@ const statusFilter = ref("all")
 // Filter Logic
 const filteredPatients = computed(() => {
     return patients.value.filter(p => {
-        const matchesSearch = p.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                              p.id.toLowerCase().includes(searchQuery.value.toLowerCase())
+        const matchesSearch = p.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+                              p.patient_code.toLowerCase().includes(searchQuery.value.toLowerCase())
         const matchesStatus = statusFilter.value === 'all' || p.status === statusFilter.value
         return matchesSearch && matchesStatus
     })
@@ -34,10 +43,46 @@ const filteredPatients = computed(() => {
 
 const getInitials = (name: string) => name.split(" ").map(n => n[0]).join("")
 
-const goToDetails = (id: string) => {
-    // router.push(`/patients/${id}`)
-    // For now since route might not exist perfectly, just log
-    console.log("Navigating to", id)
+const goToDetails = (id: number) => {
+    router.push(`/patients/${id}`)
+}
+
+// New patient form
+const showCreateForm = ref(false)
+const newPatientCode = ref('')
+const newPatientName = ref('')
+const newPatientAge = ref<number | null>(null)
+const createError = ref('')
+const isCreating = ref(false)
+
+const openCreateForm = () => {
+    newPatientCode.value = ''
+    newPatientName.value = ''
+    newPatientAge.value = null
+    createError.value = ''
+    showCreateForm.value = true
+}
+
+const submitNewPatient = async () => {
+    if (!newPatientCode.value || !newPatientName.value || !newPatientAge.value) {
+        createError.value = 'Completá código, nombre y edad.'
+        return
+    }
+    isCreating.value = true
+    createError.value = ''
+    try {
+        await PatientService.createPatient({
+            patient_code: newPatientCode.value,
+            name: newPatientName.value,
+            age: newPatientAge.value,
+        })
+        showCreateForm.value = false
+        await loadPatients()
+    } catch (e: any) {
+        createError.value = e?.response?.data?.detail || 'No se pudo crear el paciente.'
+    } finally {
+        isCreating.value = false
+    }
 }
 </script>
 
@@ -66,11 +111,13 @@ const goToDetails = (id: string) => {
                         </div>
                     </div>
                     
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary" @click="openCreateForm">
                         <UserPlus class="icon-sm mr-2" /> Nuevo Paciente
                     </button>
                 </div>
             </div>
+
+            <p v-if="loadError" class="load-error">{{ loadError }}</p>
 
             <!-- Patient List -->
             <div class="card p-0 overflow-hidden">
@@ -79,7 +126,6 @@ const goToDetails = (id: string) => {
                         <thead>
                             <tr>
                                 <th>Paciente</th>
-                                <th>Diagnóstico</th>
                                 <th>Estado</th>
                                 <th>Progreso General</th>
                                 <th>Última Sesión</th>
@@ -87,17 +133,22 @@ const goToDetails = (id: string) => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="patient in filteredPatients" :key="patient.id" class="hover-row" @click="goToDetails(patient.id)">
+                            <tr v-if="isLoading">
+                                <td colspan="5" class="text-center text-muted p-4">Cargando pacientes…</td>
+                            </tr>
+                            <tr v-else-if="filteredPatients.length === 0">
+                                <td colspan="5" class="text-center text-muted p-4">No hay pacientes registrados todavía.</td>
+                            </tr>
+                            <tr v-for="patient in filteredPatients" v-else :key="patient.id" class="hover-row" @click="goToDetails(patient.id)">
                                 <td>
                                     <div class="flex items-center gap-3">
                                         <div class="avatar">{{ getInitials(patient.name) }}</div>
                                         <div>
                                             <div class="font-medium text-slate-900">{{ patient.name }}</div>
-                                            <div class="text-xs text-muted">{{ patient.id }} • {{ patient.age }} años</div>
+                                            <div class="text-xs text-muted">{{ patient.patient_code }} • {{ patient.age }} años</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td>{{ patient.diagnosis }}</td>
                                 <td>
                                     <span class="badge" :class="'badge-' + patient.status">
                                         {{ patient.status === 'active' ? 'Activo' : patient.status === 'completed' ? 'Alta' : 'Inactivo' }}
@@ -111,7 +162,7 @@ const goToDetails = (id: string) => {
                                         <span class="text-xs font-medium">{{ patient.progress }}%</span>
                                     </div>
                                 </td>
-                                <td class="text-slate-500">{{ patient.lastSession }}</td>
+                                <td class="text-slate-500">{{ patient.last_session || '—' }}</td>
                                 <td>
                                     <button class="btn-icon-ghost">
                                         <ChevronRight class="icon-sm text-slate-400" />
@@ -123,6 +174,32 @@ const goToDetails = (id: string) => {
                 </div>
                 <div class="p-4 border-t border-slate-100 flex-center text-sm text-muted">
                     Mostrando {{ filteredPatients.length }} pacientes
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Patient Modal -->
+        <div v-if="showCreateForm" class="modal-backdrop" @click.self="showCreateForm = false">
+            <div class="modal-card">
+                <h3 class="modal-title">Nuevo Paciente</h3>
+                <div class="modal-field">
+                    <label>Código de paciente</label>
+                    <input v-model="newPatientCode" placeholder="P-1234" />
+                </div>
+                <div class="modal-field">
+                    <label>Nombre completo</label>
+                    <input v-model="newPatientName" placeholder="Nombre y apellido" />
+                </div>
+                <div class="modal-field">
+                    <label>Edad</label>
+                    <input v-model.number="newPatientAge" type="number" min="0" />
+                </div>
+                <p v-if="createError" class="load-error">{{ createError }}</p>
+                <div class="actions-row">
+                    <button class="btn btn-outline" @click="showCreateForm = false">Cancelar</button>
+                    <button class="btn btn-primary" :disabled="isCreating" @click="submitNewPatient">
+                        {{ isCreating ? 'Creando…' : 'Crear paciente' }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -193,4 +270,20 @@ const goToDetails = (id: string) => {
 /* Icons */
 .icon-sm { width: 1.1rem; height: 1.1rem; }
 .icon-xs { width: 0.875rem; height: 0.875rem; }
+
+/* Load / form error */
+.load-error { color: #dc2626; font-size: 0.875rem; margin-bottom: 1rem; }
+
+/* Create Patient Modal */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal-card { background: white; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+.modal-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0 0 1.25rem; }
+.modal-field { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.modal-field label { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+.modal-field input { padding: 0.6rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; outline: none; }
+.modal-field input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+.actions-row { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
+.btn-outline { background: white; border: 1px solid #e2e8f0; color: #0f172a; }
+.btn-outline:hover { background-color: #f8fafc; }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

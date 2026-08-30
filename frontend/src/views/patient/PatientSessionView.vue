@@ -13,7 +13,7 @@ import { Wifi, ChevronRight, Play, Maximize, CheckCircle2 } from 'lucide-vue-nex
 const router = useRouter()
 
 // --- State ---
-const step = ref<'selection' | 'code' | 'protocols' | 'training' | 'completed'>('selection')
+const step = ref<'selection' | 'code' | 'mode' | 'protocols' | 'training' | 'completed'>('selection')
 const sessionCode = ref('')
 const emgSignals = ref([
     { id: 1, status: 'active' }, { id: 2, status: 'active' }, { id: 3, status: 'active' }
@@ -42,7 +42,7 @@ const selectMode = (mode: 'supervised' | 'free') => {
 }
 
 // Supervised Logic
-const patientName = ref('Guest') // Should be dynamic, but defaulting context for now
+const patientName = ref('')
 
 // API Helper
 const fetchNextGestureSuggestion = async (): Promise<string | null> => {
@@ -82,21 +82,23 @@ const getNextGesture = async (): Promise<Gesture> => {
 }
 
 // Supervised Logic
-const connectSession = async () => {
-    // Mock simulation
-    const mode = Math.random() > 0.5 ? 'TLC' : 'LLC'
+const connectSession = () => {
+    step.value = 'mode'
+}
+
+const chooseMode = async (mode: 'TLC' | 'LLC') => {
     trainingMode.value = mode
-    
+
     gestures.value = [] // Reset
-    
+
     if (mode === 'TLC') {
         gestures.value = ALL_GESTURES.slice(0, 4)
     } else {
-        // Initialize with 2 random gestures for LLC to start buffer
+        // Initialize with 2 gestures suggested by the LLC service to start the buffer
         gestures.value.push(await getNextGesture())
         gestures.value.push(await getNextGesture())
     }
-    
+
     step.value = 'protocols'
     currentStep.value = 0
     completedSteps.value = []
@@ -193,6 +195,8 @@ const endRest = () => {
 const reset = () => {
     step.value = 'selection'
     sessionCode.value = ''
+    patientName.value = ''
+    trainingMode.value = null
     completedSteps.value = []
     gestures.value = []
     isResting.value = false
@@ -257,7 +261,11 @@ onUnmounted(() => clearInterval(intervalId))
                    <h2 class="title-section">Código de Sesión</h2>
                    <p class="subtitle-text">Ingrese el código de 7 dígitos proporcionado</p>
                </div>
-               
+
+               <div class="mb-6">
+                   <input v-model="patientName" placeholder="Nombre del paciente" class="input-name" />
+               </div>
+
                <div class="mb-8">
                    <input v-model="sessionCode" maxlength="7" placeholder="XXX-XXX" class="input-code" />
                </div>
@@ -279,11 +287,49 @@ onUnmounted(() => clearInterval(intervalId))
 
                <div class="actions-row">
                    <button class="btn btn-outline flex-1" @click="step='selection'">Cancelar</button>
-                   <button class="btn btn-primary flex-1" 
-                           :disabled="sessionCode.length < 4 || activeSignals < 3"
+                   <button class="btn btn-primary flex-1"
+                           :disabled="!patientName.trim() || sessionCode.length < 4 || activeSignals < 3"
                            @click="connectSession">
                            Conectar
                    </button>
+               </div>
+           </div>
+       </div>
+
+       <!-- MODE SELECTION PHASE -->
+       <div v-else-if="step === 'mode'" class="container-sm">
+           <div class="header-center">
+               <h1 class="title-main">Modo de Entrenamiento</h1>
+               <p class="subtitle-main">Seleccione el protocolo para {{ patientName }}</p>
+           </div>
+
+           <div class="grid-2 gap-cards">
+               <div class="card hoverable-card p-card" @click="chooseMode('TLC')">
+                   <div class="card-header-row">
+                       <div class="icon-circle bg-blue-light text-blue">
+                           <span class="emoji-md">📋</span>
+                       </div>
+                       <div>
+                           <h3 class="card-title-lg">TLC</h3>
+                           <p class="text-xs text-muted">Protocolo fijo</p>
+                       </div>
+                   </div>
+                   <p class="text-desc">Circuito fijo de gestos predefinidos.</p>
+                   <div class="text-right"><ChevronRight class="icon-md text-slate-300" /></div>
+               </div>
+
+               <div class="card hoverable-card p-card" @click="chooseMode('LLC')">
+                   <div class="card-header-row">
+                       <div class="icon-circle bg-indigo-light text-indigo">
+                           <span class="emoji-md">🎯</span>
+                       </div>
+                       <div>
+                           <h3 class="card-title-lg">LLC</h3>
+                           <p class="text-xs text-muted">Curriculum adaptativo</p>
+                       </div>
+                   </div>
+                   <p class="text-desc">Gestos sugeridos dinámicamente según el desempeño.</p>
+                   <div class="text-right"><ChevronRight class="icon-md text-slate-300" /></div>
                </div>
            </div>
        </div>
@@ -481,6 +527,12 @@ onUnmounted(() => clearInterval(intervalId))
     transition: all 0.2s; box-sizing: border-box;
 }
 .input-code:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+
+.input-name {
+    width: 100%; padding: 0.75rem 1rem; font-size: 1rem; box-sizing: border-box;
+    border: 2px solid #e2e8f0; border-radius: 12px; color: #0f172a; transition: all 0.2s;
+}
+.input-name:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 
 /* Sensor Status Box */
 .sensor-status-box { background-color: #f8fafc; border-radius: 0.5rem; padding: 1rem; border: 1px solid #f1f5f9; }
