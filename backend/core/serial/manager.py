@@ -6,6 +6,32 @@ import serial
 import serial.tools.list_ports
 from typing import Optional
 
+# The U2D2 that drives the Dynamixel hand is an FTDI device. pyserial builds
+# `description` from the USB product string ("USB <-> Serial Converter") and
+# `hwid` from "USB VID:PID=0403:6014 ...", so neither one contains the text
+# "FTDI"; only `manufacturer` and the vendor id identify it. Matching on the
+# vendor id is what keeps the sensor off the robotic hand's bus.
+FTDI_VENDOR_ID = 0x0403
+
+
+def _list_serial_ports() -> list:
+    """Enumerate serial ports. Isolated so tests can substitute a bus."""
+    return list(serial.tools.list_ports.comports())
+
+
+def _is_ftdi(port_info) -> bool:
+    """True when the port is an FTDI adapter, i.e. the Dynamixel bus."""
+    if getattr(port_info, "vid", None) == FTDI_VENDOR_ID:
+        return True
+    text = " ".join(
+        value for value in (
+            getattr(port_info, "description", None),
+            getattr(port_info, "manufacturer", None),
+            getattr(port_info, "hwid", None),
+        ) if value
+    ).upper()
+    return "FTDI" in text
+
 
 class SerialManager:
     """Low-level serial port manager"""
@@ -15,13 +41,19 @@ class SerialManager:
         self.connection: Optional[serial.Serial] = None
         self.port: Optional[str] = None
     
-    def find_device_port(self, identifier: str = "USB", excluded_identifiers: list = None) -> Optional[str]:
+    def find_device_port(
+        self,
+        identifier: str = "USB",
+        excluded_identifiers: list = None,
+        exclude_ftdi: bool = True,
+    ) -> Optional[str]:
         """
         Find serial port by identifier
         
         Args:
             identifier: String to search in port description
             excluded_identifiers: List of strings to exclude (e.g. ['FTDI'])
+            exclude_ftdi: Skip FTDI adapters, which belong to the hand
             
         Returns:
             Port device name or None
@@ -29,8 +61,12 @@ class SerialManager:
         if excluded_identifiers is None:
             excluded_identifiers = []
 
-        ports = serial.tools.list_ports.comports()
+        ports = _list_serial_ports()
         for port in ports:
+            # The hand's bus is never a sensor candidate, whatever it is called.
+            if exclude_ftdi and _is_ftdi(port):
+                continue
+
             # Check exclusions first
             is_excluded = False
             for exclude in excluded_identifiers:
@@ -45,6 +81,17 @@ class SerialManager:
             if identifier in port.description or identifier in str(port.hwid):
                 return port.device
         return None
+
+    def autodetect_sensor_port(self) -> Optional[str]:
+        """
+        Find the ESP32 sensor, preferring its known USB-to-UART bridges before
+        falling back to any non-FTDI serial device.
+        """
+        for identifier in ("Silicon", "CH340", "USB"):
+            port = self.find_device_port(identifier=identifier)
+            if port is not None:
+                return port
+        return None
     
     def connect(self, port: Optional[str] = None) -> bool:
         """
@@ -58,14 +105,7 @@ class SerialManager:
         """
         try:
             if port is None:
-                # Try to avoid FTDI (used by Dynamixel)
-                # Also prefer typical ESP32 drivers
-                port = self.find_device_port(identifier="Silicon", excluded_identifiers=["FTDI"])
-                if port is None:
-                     port = self.find_device_port(identifier="CH340", excluded_identifiers=["FTDI"])
-                if port is None:
-                     # Fallback to generic USB but exclude FTDI
-                     port = self.find_device_port(identifier="USB", excluded_identifiers=["FTDI"])
+                port = self.autodetect_sensor_port()
             
             if port is None:
                 raise Exception("No device port found")

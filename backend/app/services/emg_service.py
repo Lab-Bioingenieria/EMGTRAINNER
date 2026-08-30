@@ -119,7 +119,12 @@ class EMGDataService:
             print(f"[HAND] Executing gesture: {gesture_name}")
             execute_gesture(self.hand_interface, self.hand_profile, gesture_name)
         except Exception as e:
-            print(f"[HAND] Error executing {gesture_name}: {e}")
+            # The safety layer names the motor it gave up on but chains the
+            # transport error as __cause__. Without it a stolen serial reply
+            # is indistinguishable from a jammed joint.
+            cause = e.__cause__
+            detail = f"{e} <- {type(cause).__name__}: {cause}" if cause else str(e)
+            print(f"[HAND] Error executing {gesture_name}: {detail}")
 
     # ... (connect, disconnect, get_connection_status methods remain same) ...
     def connect_to_device(self, port: Optional[str] = None) -> Dict[str, Any]:
