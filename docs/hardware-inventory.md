@@ -83,6 +83,15 @@ A stale configured port logs
 through, instead of failing with a bare `could not open port` and no hint
 that autodetection existed.
 
+**Runtime reconnection**: port resolution is not a one-shot at boot.
+`EMGDataService` retries `connect_hand()` lazily on the next gesture whenever
+the interface is missing, drops the handle after any transport-level failure
+(a replugged adapter comes back as a different `/dev/ttyUSBn`), and a save
+from the frontend's hardware-config module (`POST
+/v1/microcontrollers/health_micro/config`) forces both hand services to
+release the old port. So unplug/replug or a port change from the web UI
+recovers without restarting the backend.
+
 **Why fail-closed matters**: this machine can also have an ESP32 EMG sensor
 plugged in, and the two used to collide. Two symmetric bugs existed before
 the rewrite (commit `1f03913`, PR #43):

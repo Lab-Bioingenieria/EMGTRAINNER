@@ -202,6 +202,21 @@ class HandService:
         self._initialized_at = None
         # Note: We don't close the hardware interface here to allow re-initialization
 
+    def release_hardware(self) -> None:
+        """Close and forget the hardware interface.
+
+        Called when the hardware config changes from the web UI: the next
+        initialize/gesture must re-resolve the port instead of writing to a
+        handle that may point at a replugged adapter.
+        """
+        if HandService._dx is not None:
+            try:
+                HandService._dx.close()
+            except Exception:
+                pass
+            HandService._dx = None
+        self.reset()
+
 
 # Singleton instance for dependency injection
 hand_service = HandService.get_instance()
