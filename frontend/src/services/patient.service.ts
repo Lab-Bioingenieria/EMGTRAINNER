@@ -17,7 +17,37 @@ export interface OrderRead {
     finished_at?: string;
 }
 
+export interface PatientRead {
+    id: number;
+    patient_code: string;
+    name: string;
+    age: number;
+    sessions_count: number;
+    last_session: string | null;
+    progress: number;
+    status: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PatientCreate {
+    patient_code: string;
+    name: string;
+    age: number;
+    status?: string;
+}
+
 export class PatientService {
+    static async getPatients(): Promise<PatientRead[]> {
+        const response = await api.get("/patients/");
+        return response.data;
+    }
+
+    static async createPatient(patient: PatientCreate): Promise<PatientRead> {
+        const response = await api.post("/patients/", patient);
+        return response.data;
+    }
+
     static async createOrder(order: OrderCreate): Promise<OrderRead> {
         const response = await api.post("/orders", order);
         return response.data;

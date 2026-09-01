@@ -1,6 +1,7 @@
 from app.models.patient import Patient
 from app.repositories.patient import PatientRepository
 from core.controller.base import BaseController
+from core.database.transactional import Propagation, Transactional
 from core.exceptions import BadRequestException
 
 class PatientController(BaseController[Patient]):
@@ -11,6 +12,7 @@ class PatientController(BaseController[Patient]):
     async def get_all_patients(self):
         return await self.patient_repository.get_all()
 
+    @Transactional(propagation=Propagation.REQUIRED)
     async def create_patient(self, **kwargs):
         existing = await self.patient_repository.get_by_code(kwargs.get("patient_code"))
         if existing:
