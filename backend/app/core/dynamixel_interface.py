@@ -176,6 +176,14 @@ class DynamixelInterface:
                 print(f"[OK] - Motor detectado ID {motor_id}")
         return self.detected_ids
 
+    def close(self):
+        """Release the serial port so a replugged or reconfigured adapter
+        can be opened again by a fresh interface."""
+        try:
+            self.port_handler.closePort()
+        except Exception:
+            pass
+
     # INVENTARIO DE SOLO LECTURA
     def inventory(self, id_range=range(1, 16)) -> List[Dict[str, object]]:
         """Read-only bus inventory: one ping per ID, no other transaction.
