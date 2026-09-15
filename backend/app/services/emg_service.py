@@ -47,24 +47,47 @@ class EMGDataService:
         # Hand Interface
         self.hand_interface = None
         self.hand_profile = ELEVEN_DOF_RIGHT
-        
+        self._hand_lock = threading.Lock()
+
         # Try to connect hand on startup (non-blocking if possible, but U2D2 init is fast)
         self.connect_hand()
 
     def connect_hand(self):
-        """Initialize Dynamixel Hand connection"""
-        try:
-            port = find_u2d2_port()
-            if port:
-                self.hand_interface = DynamixelInterface(port_name=port)
-                self.hand_interface.initialize()
-                ids = self.hand_interface.scan_motors()
-                print(f"[INFO] - Hand connected on {port}. Motors: {ids}")
-            else:
-                print("[WARN] - Hand not found (U2D2)")
-        except Exception as e:
-            print(f"[ERROR] - Hand connection failed: {e}")
-            self.hand_interface = None
+        """(Re)connect the Dynamixel hand. Safe to call repeatedly.
+
+        Runs at startup and then lazily from set_current_label() whenever the
+        interface is missing (adapter replugged, or plugged in after boot).
+        """
+        with self._hand_lock:
+            if self.hand_interface is not None:
+                return
+            try:
+                port = find_u2d2_port()
+                if port:
+                    self.hand_interface = DynamixelInterface(port_name=port)
+                    self.hand_interface.initialize()
+                    ids = self.hand_interface.scan_motors()
+                    print(f"[INFO] - Hand connected on {port}. Motors: {ids}")
+                else:
+                    print("[WARN] - Hand not found (U2D2)")
+            except Exception as e:
+                print(f"[ERROR] - Hand connection failed: {e}")
+                self.hand_interface = None
+
+    def disconnect_hand(self):
+        """Drop the current hand interface, releasing the serial port.
+
+        Called when the hardware config changes from the web UI and after a
+        transport-level failure, so the next gesture re-resolves the port
+        through find_u2d2_port() instead of writing to a dead handle.
+        """
+        with self._hand_lock:
+            if self.hand_interface is not None:
+                try:
+                    self.hand_interface.close()
+                except Exception:
+                    pass
+                self.hand_interface = None
 
     def set_session_info(self, name: str, age: Optional[str] = None):
         """Update session metadata"""
@@ -78,7 +101,12 @@ class EMGDataService:
             return
 
         self.current_label = label
-        
+
+        # If the hand is not connected (adapter unplugged at boot, replugged,
+        # or dropped after a transport error), try to attach it now.
+        if self.hand_interface is None:
+            self.connect_hand()
+
         # Trigger Hand Movement if connected
         if self.hand_interface:
             # Map frontend labels to backend gestures if needed
@@ -118,6 +146,10 @@ class EMGDataService:
         try:
             print(f"[HAND] Executing gesture: {gesture_name}")
             execute_gesture(self.hand_interface, self.hand_profile, gesture_name)
+        except ValueError as e:
+            # Bad gesture name: a caller bug, not a hardware problem. Keep the
+            # connection alive.
+            print(f"[HAND] Error executing {gesture_name}: {e}")
         except Exception as e:
             # The safety layer names the motor it gave up on but chains the
             # transport error as __cause__. Without it a stolen serial reply
@@ -125,6 +157,10 @@ class EMGDataService:
             cause = e.__cause__
             detail = f"{e} <- {type(cause).__name__}: {cause}" if cause else str(e)
             print(f"[HAND] Error executing {gesture_name}: {detail}")
+            # Transport-level failure: the adapter may have been unplugged and
+            # replugged to a different port. Drop the stale interface so the
+            # next gesture reconnects through find_u2d2_port().
+            self.disconnect_hand()
 
     # ... (connect, disconnect, get_connection_status methods remain same) ...
     def connect_to_device(self, port: Optional[str] = None) -> Dict[str, Any]:

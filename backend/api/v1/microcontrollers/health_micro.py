@@ -40,4 +40,13 @@ def update_config(config: HardwareConfigUpdate):
         sensor_type=config.sensor_type,
         motor_type=config.motor_type
     )
+    # The hand may be holding the previous port (or a dead handle from a
+    # replugged adapter). Drop it so the next gesture reconnects using the
+    # configuration just saved. Imported lazily: emg_service pulls in the
+    # serial/websocket stack, which this router does not otherwise need.
+    from app.services.emg_service import emg_service
+    from app.services.hand_service import HandService
+
+    emg_service.disconnect_hand()
+    HandService.get_instance().release_hardware()
     return hardware_config.get_config()
