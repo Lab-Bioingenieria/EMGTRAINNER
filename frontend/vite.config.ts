@@ -25,6 +25,22 @@ export default defineConfig({
       }
     }
   },
+  // Mismo proxy para `vite preview` (build de producción servido localmente):
+  // el launcher `emgtrainner` usa este modo para instalar el proyecto como
+  // programa sin nginx.
+  preview: {
+    proxy: {
+      '/v1': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        ws: true,
+      },
+      '/learning': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      }
+    }
+  },
   plugins: [
     vue({
       ...templateCompilerOptions,
