@@ -8,6 +8,7 @@ const route  = useRoute()
 const router = useRouter()
 
 const username = ref('Usuario')
+const role = computed(() => authService.getRole())
 
 onMounted(async () => {
   const token = authService.getToken()
@@ -26,17 +27,24 @@ onMounted(async () => {
   }
 })
 
-const main = [
-  { id: 'ai',        path: '/ai-console', label: 'AI Model Console',   sub: 'Análisis del modelo', icon: 'brain' },
-  { id: 'dashboard', path: '/dashboard',  label: 'Panel de Pacientes', sub: 'Gestión y monitoreo', icon: 'users' },
-  { id: 'storage',   path: '/storage',    label: 'Almacenamiento',     sub: 'Historial CSV',       icon: 'db' },
+// Each item is tagged with the role it belongs to; the sidebar only ever
+// shows one account's own interface, matching the router's per-route
+// `meta.role` guard.
+const allMain = [
+  { id: 'ai',        path: '/ai-console', label: 'AI Model Console',   sub: 'Análisis del modelo', icon: 'brain',  roles: ['doctor'] },
+  { id: 'dashboard', path: '/dashboard',  label: 'Panel de Pacientes', sub: 'Gestión y monitoreo', icon: 'users',  roles: ['doctor'] },
+  { id: 'storage',   path: '/storage',    label: 'Almacenamiento',     sub: 'Historial CSV',       icon: 'db',     roles: ['doctor'] },
 ]
 
-const session = [
-  { id: 'doctor',  path: '/doctor',  label: 'Sesión Doctor',   sub: 'Crear protocolos', icon: 'steth' },
-  { id: 'patient', path: '/patient', label: 'Sesión Paciente', sub: 'Entrenamiento',    icon: 'hand' },
-  { id: 'test',    path: '/test',    label: 'Test & Calibrar', sub: 'Evaluación',       icon: 'adjust' },
+const allSession = [
+  { id: 'doctor',      path: '/doctor',       label: 'Sesión Doctor',     sub: 'Crear protocolos',  icon: 'steth', roles: ['doctor'] },
+  { id: 'test',        path: '/test',         label: 'Test & Calibrar',   sub: 'Evaluación',        icon: 'adjust', roles: ['doctor'] },
+  { id: 'patient',     path: '/patient',      label: 'Sesión Paciente',   sub: 'Con tu doctor',     icon: 'hand',  roles: ['patient'] },
+  { id: 'patientfree', path: '/patient/free', label: 'Entrenamiento Libre', sub: 'Modo autónomo',   icon: 'hand',  roles: ['patient'] },
 ]
+
+const main = computed(() => allMain.filter(item => !role.value || item.roles.includes(role.value)))
+const session = computed(() => allSession.filter(item => !role.value || item.roles.includes(role.value)))
 
 const isActive = (path: string) => {
   if (path === '/') return route.path === '/'
@@ -66,7 +74,8 @@ function logout() {
       </router-link>
     </div>
 
-    <!-- Workspace section -->
+    <!-- Workspace section (doctor only) -->
+    <template v-if="main.length">
     <div class="nav-section">Workspace</div>
     <div class="nav">
       <router-link
@@ -85,6 +94,7 @@ function logout() {
         </span>
       </router-link>
     </div>
+    </template>
 
     <!-- Session section -->
     <div class="nav-section">Sesión</div>
