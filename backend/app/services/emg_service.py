@@ -8,6 +8,7 @@ from core.serial.manager import SerialManager
 
 
 from app.services.csv_service import csv_service
+from app.services.emg_cleaning import SignalCleaner
 
 import threading
 import time
@@ -28,6 +29,11 @@ class EMGDataService:
     def __init__(self):
         self.serial_manager = SerialManager(baudrate=921600)
         self.is_streaming = False
+        # False durante el modo "Espejo en Tiempo Real" (hand_mirror_service):
+        # ese modo reutiliza este mismo hilo lector para no tener dos lectores
+        # peleandose por el puerto serie, pero no debe mezclar sus muestras en
+        # el CSV de una sesion de entrenamiento (no sigue ningun protocolo).
+        self.is_recording = True
         self.current_patient_name = "Guest"
         self.current_patient_age = None
         self.current_label = "Rest"
@@ -43,6 +49,28 @@ class EMGDataService:
         self.avg0 = 0
         self.avg1 = 0
         self.avg2 = 0
+
+        # Last sample published by the streaming thread. While streaming, the
+        # thread is the only reader of the serial port; everything else
+        # (e.g. GET /emg/sample) reads this instead of touching the port.
+        self.latest_sample: Optional[Dict[str, Any]] = None
+
+        # Amplitud cruda (ya suavizada, SIN normalizar entre canales) de la
+        # ultima muestra: (ch0, ch1, ch2, n_canales, time.time()). La usa la
+        # calibracion del Espejo (`mirror_calibration`), que necesita el valor
+        # de cada sensor independiente de los otros dos. En el modo texto (lo
+        # que manda el firmware del ESP32) ya viene sin picos y suavizado.
+        self.latest_raw: Optional[tuple] = None
+        # Filtro de picos + suavizado que alimenta `latest_raw` en el modo texto
+        # (ver `emg_cleaning`). Los CSV y el grafico siguen recibiendo el dato crudo.
+        self._cleaner = SignalCleaner()
+
+        # How many EMG channels the most recently parsed line actually
+        # carried, and when. "Serial port open" (is_connected) only means the
+        # ESP32 answers over USB; this is what tells apart a real 3-channel
+        # reading from a device that is only forwarding 1 electrode.
+        self.last_channel_count: int = 0
+        self.last_sample_at: float = 0.0
 
         # Hand Interface
         self.hand_interface = None
@@ -211,19 +239,68 @@ class EMGDataService:
     def get_connection_status(self) -> Dict[str, Any]:
         """
         Get current connection status
-        
+
         Returns:
             Status information
         """
         is_connected = self.serial_manager.is_connected()
-        
+
+        # El puerto abierto solo dice que la ESP32 responde por USB; no dice
+        # cuantos canales realmente estan mandando datos. Si no hay una
+        # sesion en curso, aprovechamos para mirar (sin bloquear) lo que ya
+        # llego al buffer del sistema operativo.
+        if is_connected and not self.is_streaming:
+            self.peek_channel_count()
+
+        channels_live = (
+            self.last_channel_count
+            if is_connected and (time.time() - self.last_sample_at) < 3.0
+            else 0
+        )
+
         return {
             "connected": is_connected,
             "port": self.serial_manager.port if is_connected else None,
             "baudrate": self.serial_manager.baudrate,
             "streaming": self.is_streaming,
-            "current_label": self.current_label
+            "current_label": self.current_label,
+            "channels_live": channels_live,
         }
+
+    def peek_channel_count(self) -> int:
+        """Best-effort, non-blocking look at whatever the ESP32 already sent.
+
+        Only used while NOT streaming: the background thread in
+        ``_streaming_loop`` is the sole reader of the port while a session is
+        active (stealing bytes here as well would garble/duplicate it, same
+        issue the ``/ws/emg-stream`` docstring warns about). This only drains
+        bytes already sitting in the OS serial buffer, so it never waits on
+        the device - if nothing has arrived yet it just returns the last
+        known count, which ages out after a few seconds in
+        ``get_connection_status``.
+        """
+        if self.is_streaming or not self.serial_manager.is_connected():
+            return self.last_channel_count
+
+        try:
+            conn = self.serial_manager.connection
+            waiting = conn.in_waiting
+            if waiting <= 0:
+                return self.last_channel_count
+            raw = conn.read(waiting)
+        except Exception:
+            return self.last_channel_count
+
+        text = raw.decode('utf-8', errors='ignore')
+        for line in reversed(text.split('\n')):
+            line = line.strip()
+            if not line:
+                continue
+            if self.parse_emg_line(line) is not None:
+                # parse_emg_line() already updated last_channel_count/last_sample_at.
+                break
+
+        return self.last_channel_count
 
     def parse_emg_line(self, line: str) -> Optional[Dict[str, Any]]:
         """
@@ -266,6 +343,10 @@ class EMGDataService:
                 # If conversion fails, it might contain text, skip
                 return None
 
+            # Real, live count of channels this line actually carried.
+            self.last_channel_count = len(emg_values)
+            self.last_sample_at = time.time()
+
             # Construct data with Spanish keys as requested for CSV output
             # User request: nombre,edad,emg1,emg2,emg3,labels
             data = {
@@ -285,8 +366,9 @@ class EMGDataService:
             # If the device sends fewer, we might have issues. 
             # Assuming device sends 3. If not, this loop handles what is there.
             
-            # If valid data and streaming, write to CSV
-            if self.is_streaming:
+            # If valid data and streaming, write to CSV (unless this is a
+            # mirror-mode read that must not land in a training session).
+            if self.is_streaming and self.is_recording:
                 # print(f"DEBUG: Writing row: {data}")
                 csv_service.write_row(data)
                 
@@ -307,9 +389,8 @@ class EMGDataService:
         # If streaming, we can't easily read one line without race conditions
         # ideally we should cache the last value from the thread
         if self.is_streaming:
-             # Basic implementation: try to grab one line but risk collision
-             # For better architecture, the thread should update a 'latest_sample' var
-             pass
+            # The streaming thread owns the port: never read it from here.
+            return self.latest_sample
 
         # Try reading up to 10 lines to find valid data
         for _ in range(10):
@@ -334,6 +415,9 @@ class EMGDataService:
         self.avg1 = 0
         self.avg2 = 0
         
+        self.latest_sample = None
+        self.latest_raw = None
+        self._cleaner = SignalCleaner()
         buffer = b""
 
         while self.is_streaming and self.serial_manager.is_connected():
@@ -350,8 +434,10 @@ class EMGDataService:
                     self.parse_unproc_cnt = umyo_parser.umyo_parse_preprocessor(data)
                     umyos = umyo_parser.umyo_get_list()
                     num_sensors = len(umyos)
-                    
+
                     if num_sensors > 0:
+                        self.last_channel_count = min(num_sensors, 3)
+                        self.last_sample_at = time.time()
                         # --- BINARY/uMyo LOGIC ---
                         # Process sensor data (User logic)
                         val0 = (umyos[0].device_spectr[2] + umyos[0].device_spectr[3]) if num_sensors > 0 else 0
@@ -374,20 +460,28 @@ class EMGDataService:
                         dc2 = (self.ch2 / denominator * scale) if num_sensors > 2 else ""
                         
                         # Broadcast
-                        payload = {"dc0": dc0 if dc0 != "" else 0, "dc1": dc1 if dc1 != "" else 0, "dc2": dc2 if dc2 != "" else 0}
+                        payload = {
+                            "dc0": dc0 if dc0 != "" else 0,
+                            "dc1": dc1 if dc1 != "" else 0,
+                            "dc2": dc2 if dc2 != "" else 0,
+                            "t": int(time.time() * 1000),
+                        }
+                        self.latest_sample = payload
+                        self.latest_raw = (self.ch0, self.ch1, self.ch2, min(num_sensors, 3), time.time())
                         if self.loop:
                             asyncio.run_coroutine_threadsafe(websocket_manager.broadcast(payload), self.loop)
 
                         # CSV Write
-                        csv_data = {
-                            "nombre": self.current_patient_name,
-                            "edad": self.current_patient_age if self.current_patient_age else "",
-                            "labels": self.current_label,
-                            "emg1": dc0,
-                            "emg2": dc1,
-                            "emg3": dc2
-                        }
-                        csv_service.write_row(csv_data)
+                        if self.is_recording:
+                            csv_data = {
+                                "nombre": self.current_patient_name,
+                                "edad": self.current_patient_age if self.current_patient_age else "",
+                                "labels": self.current_label,
+                                "emg1": dc0,
+                                "emg2": dc1,
+                                "emg3": dc2
+                            }
+                            csv_service.write_row(csv_data)
                         print(f"EMG (Bin): {dc0}, {dc1}, {dc2} | {self.current_label}", flush=True)
 
                     else:
@@ -415,10 +509,16 @@ class EMGDataService:
                                     v2 = parsed_data.get("emg2", 0)
                                     v3 = parsed_data.get("emg3", 0)
                                     
-                                    payload = {"dc0": v1, "dc1": v2, "dc2": v3}
+                                    payload = {"dc0": v1, "dc1": v2, "dc2": v3, "t": int(time.time() * 1000)}
+                                    self.latest_sample = payload
+                                    try:
+                                        clean = self._cleaner.update((v1, v2, v3))
+                                        self.latest_raw = (*clean, 3, time.time())
+                                    except (TypeError, ValueError):
+                                        self.latest_raw = None
                                     if self.loop:
                                         asyncio.run_coroutine_threadsafe(websocket_manager.broadcast(payload), self.loop)
-                                        
+
                                     print(f"EMG (Txt): {v1}, {v2}, {v3} | {self.current_label}", flush=True)
 
                             except Exception as e:
@@ -432,15 +532,23 @@ class EMGDataService:
                 time.sleep(0.1)
         print("Streaming loop stopped.")
 
-    def start_streaming(self, category: str = ""):
-        """Mark streaming as active"""
+    def start_streaming(self, category: str = "", record: bool = True):
+        """Mark streaming as active.
+
+        ``record=False`` is for the real-time mirror mode: it needs the same
+        serial-reading thread (see the class docstring / `/ws/emg-stream`),
+        but must not create or write to a training CSV, since it doesn't
+        follow any protocol.
+        """
         if self.is_streaming:
             return
 
         self.is_streaming = True
+        self.is_recording = record
         self.serial_manager.write_line("START_SESSION")
-        csv_service.start_new_session(patient_name=self.current_patient_name)
-        
+        if record:
+            csv_service.start_new_session(patient_name=self.current_patient_name)
+
         # Try to get the running loop
         try:
             self.loop = asyncio.get_running_loop()
@@ -455,6 +563,7 @@ class EMGDataService:
     def stop_streaming(self):
         """Mark streaming as inactive"""
         self.is_streaming = False
+        self.is_recording = True  # vuelve al default para la proxima /emg/start
         try:
             self.serial_manager.write_line("STOP_SESSION")
         except:

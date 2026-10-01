@@ -1,242 +1,404 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 
 const props = defineProps<{
-  websocketUrl: string
+  /** URL, or a function returning a fresh one (so reconnects use a new JWT). */
+  websocketUrl: string | (() => string)
   isRunning?: boolean
 }>()
 
+/** true = socket open AND samples are arriving. */
 const emit = defineEmits<{ 'connection-change': [connected: boolean] }>()
 
+// ---- Configuration -------------------------------------------------------
+const CHANNELS = 3
+const WINDOW_MS = 6000        // visible time span
+const CAPACITY = 4096         // ring size (>> samples in WINDOW_MS)
+const STALE_MS = 1500         // no samples for this long => "sin datos"
+const RECONNECT_MIN_MS = 500
+const RECONNECT_MAX_MS = 5000
+const COLORS = ['#e11d48', '#2563eb', '#16a34a']
+const PAD = { l: 48, r: 10, t: 10, b: 22 }
+
+// ---- UI state (reactive, changes rarely) ---------------------------------
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
-const isConnected = ref(false)
-const socket = ref<WebSocket | null>(null)
+const isOpen = ref(false)
+const hasSignal = ref(false)
 
-// Data buffers for 3 sensors
-const bufferLength = 500
-const dataBuffer = ref<{s1: number[], s2: number[], s3: number[]}>({
-    s1: new Array(bufferLength).fill(0),
-    s2: new Array(bufferLength).fill(0),
-    s3: new Array(bufferLength).fill(0)
-})
+// ---- Sample storage: plain typed arrays, deliberately NOT reactive --------
+// Pushing hundreds of samples per second into Vue reactive arrays (with
+// shift()) is what used to make the plot stutter.
+const times = new Float64Array(CAPACITY)
+const values = Array.from({ length: CHANNELS }, () => new Float32Array(CAPACITY))
+let head = 0
+let count = 0
+let lastSampleAt = 0
 
-let animationFrameId: number
-const colors = ['#e11d48', '#2563eb', '#16a34a'] // Red, Blue, Green in hex (Tailwind colors)
+// Auto-scale state
+let yLo = 0
+let yHi = 1
 
-const connectWebSocket = () => {
-    if (socket.value) socket.value.close()
-    
+// Connection state
+let socket: WebSocket | null = null
+let reconnectTimer: ReturnType<typeof setTimeout> | undefined
+let retry = 0
+
+// Canvas state
+let rafId = 0
+let resizeObserver: ResizeObserver | null = null
+let cssW = 0
+let cssH = 0
+let dpr = 1
+
+// ---- Helpers ---------------------------------------------------------------
+function setSignal(v: boolean) {
+  if (hasSignal.value !== v) {
+    hasSignal.value = v
+    emit('connection-change', v)
+  }
+}
+
+function toNumber(x: unknown): number {
+  if (typeof x === 'number') return x
+  if (typeof x === 'string' && x.trim() !== '') return Number(x)
+  return NaN
+}
+
+/** Accepts the payload shapes the backend has used: dc0..2, emg1..3, arrays. */
+function extractSample(data: any): number[] | null {
+  if (data == null || typeof data !== 'object' || data.error) return null
+
+  let raw: unknown[]
+  if (Array.isArray(data)) raw = data
+  else if (Array.isArray(data.sensors)) raw = data.sensors
+  else {
+    raw = [0, 1, 2].map((i) => data[`dc${i}`] ?? data[`s${i + 1}`] ?? data[`emg${i + 1}`] ?? data[`ch${i + 1}`])
+  }
+
+  const nums = raw.slice(0, CHANNELS).map(toNumber)
+  if (!nums.some(Number.isFinite)) return null
+  while (nums.length < CHANNELS) nums.push(NaN)
+  return nums.map((n) => (Number.isFinite(n) ? n : 0))
+}
+
+function pushSample(sample: number[]) {
+  const now = performance.now()
+  times[head] = now
+  for (let c = 0; c < CHANNELS; c++) values[c][head] = sample[c]
+  head = (head + 1) % CAPACITY
+  if (count < CAPACITY) count++
+  lastSampleAt = now
+}
+
+function resetBuffers() {
+  head = 0
+  count = 0
+  yLo = 0
+  yHi = 1
+}
+
+// ---- WebSocket lifecycle ---------------------------------------------------
+function resolveUrl(): string {
+  return typeof props.websocketUrl === 'function' ? props.websocketUrl() : props.websocketUrl
+}
+
+function dropSocket() {
+  const s = socket
+  socket = null // handlers below ignore any socket that is not the current one
+  isOpen.value = false
+  if (s) {
     try {
-        socket.value = new WebSocket(props.websocketUrl)
-        
-        socket.value.onopen = () => {
-            isConnected.value = true
-            emit('connection-change', true)
-            console.log("WS Connected")
-        }
-        
-        socket.value.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data)
-
-                let s1 = 0, s2 = 0, s3 = 0
-
-                if (Array.isArray(data)) {
-                    s1 = data[0] || 0
-                    s2 = data[1] || 0
-                    s3 = data[2] || 0
-                } else if (data.sensors && Array.isArray(data.sensors)) {
-                    s1 = data.sensors[0] || 0
-                    s2 = data.sensors[1] || 0
-                    s3 = data.sensors[2] || 0
-                } else {
-                    // Backend manda dc0/dc1/dc2 (normalizados 0-1)
-                    s1 = data.dc0 ?? data.s1 ?? data.emg1 ?? data.ch1 ?? 0
-                    s2 = data.dc1 ?? data.s2 ?? data.emg2 ?? data.ch2 ?? 0
-                    s3 = data.dc2 ?? data.s3 ?? data.emg3 ?? data.ch3 ?? 0
-                }
-                
-                // Shift and push
-                dataBuffer.value.s1.shift()
-                dataBuffer.value.s1.push(s1)
-                
-                dataBuffer.value.s2.shift()
-                dataBuffer.value.s2.push(s2)
-                
-                dataBuffer.value.s3.shift()
-                dataBuffer.value.s3.push(s3)
-                
-            } catch (e) {
-                console.error("Error parsing WS data", e)
-            }
-        }
-        
-        socket.value.onclose = () => {
-            isConnected.value = false
-            emit('connection-change', false)
-            console.log("WS Closed")
-        }
-        
-    } catch (e) {
-        console.error("WS Connection failed", e)
+      s.close()
+    } catch {
+      /* already closed */
     }
+  }
 }
 
-const draw = () => {
-    const canvas = canvasRef.value
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    
-    const width = canvas.width
-    const height = canvas.height
-    
-    // Clear
-    ctx.clearRect(0, 0, width, height)
-    
-    // Draw Grid (optional, for "Serial Plotter" look)
-    ctx.strokeStyle = '#e2e8f0'
-    ctx.lineWidth = 1
+function scheduleReconnect() {
+  clearTimeout(reconnectTimer)
+  const delay = Math.min(RECONNECT_MIN_MS * 2 ** retry, RECONNECT_MAX_MS)
+  retry++
+  reconnectTimer = setTimeout(() => {
+    if (props.isRunning) connect()
+  }, delay)
+}
+
+function connect() {
+  clearTimeout(reconnectTimer)
+  dropSocket()
+
+  let ws: WebSocket
+  try {
+    ws = new WebSocket(resolveUrl())
+  } catch (e) {
+    console.error('EMG plotter: cannot open WebSocket', e)
+    scheduleReconnect()
+    return
+  }
+  socket = ws
+
+  ws.onopen = () => {
+    if (socket !== ws) return
+    isOpen.value = true
+    retry = 0
+  }
+
+  ws.onmessage = (event) => {
+    if (socket !== ws) return
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(event.data)
+    } catch {
+      return // ignore malformed frame instead of killing the stream
+    }
+    const sample = extractSample(parsed)
+    if (!sample) return
+    pushSample(sample)
+    setSignal(true)
+  }
+
+  ws.onerror = () => {
+    if (socket === ws) ws.close()
+  }
+
+  ws.onclose = () => {
+    if (socket !== ws) return
+    socket = null
+    isOpen.value = false
+    setSignal(false)
+    if (props.isRunning) scheduleReconnect()
+  }
+}
+
+function disconnect() {
+  clearTimeout(reconnectTimer)
+  retry = 0
+  dropSocket()
+  setSignal(false)
+}
+
+// ---- Rendering ----------------------------------------------------------------
+function niceLabel(v: number, span: number): string {
+  if (span >= 100) return v.toFixed(0)
+  if (span >= 10) return v.toFixed(1)
+  if (span >= 1) return v.toFixed(2)
+  return v.toFixed(3)
+}
+
+function draw() {
+  rafId = requestAnimationFrame(draw)
+
+  const canvas = canvasRef.value
+  if (!canvas || !cssW || !cssH) return
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const now = performance.now()
+  if (hasSignal.value && now - lastSampleAt > STALE_MS) setSignal(false)
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.clearRect(0, 0, cssW, cssH)
+
+  const plotW = cssW - PAD.l - PAD.r
+  const plotH = cssH - PAD.t - PAD.b
+  if (plotW <= 0 || plotH <= 0) return
+
+  const t0 = now - WINDOW_MS
+
+  // Newest-first walk to find how many samples fall inside the window.
+  let n = 0
+  while (n < count) {
+    const idx = (head - 1 - n + CAPACITY) % CAPACITY
+    if (times[idx] < t0) break
+    n++
+  }
+  const start = (head - n + CAPACITY) % CAPACITY
+
+  // Auto-scale: expand fast, shrink slowly so the trace does not "breathe".
+  if (n > 0) {
+    let lo = Infinity
+    let hi = -Infinity
+    for (let c = 0; c < CHANNELS; c++) {
+      const arr = values[c]
+      for (let i = 0; i < n; i++) {
+        const v = arr[(start + i) % CAPACITY]
+        if (v < lo) lo = v
+        if (v > hi) hi = v
+      }
+    }
+    if (lo >= 0) lo = 0
+    let span = hi - lo
+    if (span < 1e-6) span = 1e-6
+    const targetHi = hi + span * 0.15
+    const targetLo = lo < 0 ? lo - span * 0.15 : 0
+    yHi += (targetHi - yHi) * (targetHi > yHi ? 0.6 : 0.04)
+    yLo += (targetLo - yLo) * (targetLo < yLo ? 0.6 : 0.04)
+  }
+  const ySpan = Math.max(yHi - yLo, 1e-6)
+
+  // Grid + axis labels
+  ctx.font = '11px system-ui, sans-serif'
+  ctx.fillStyle = '#94a3b8'
+  ctx.strokeStyle = '#e2e8f0'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.textAlign = 'right'
+  ctx.textBaseline = 'middle'
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD.t + plotH - (i / 4) * plotH
+    ctx.moveTo(PAD.l, Math.round(y) + 0.5)
+    ctx.lineTo(PAD.l + plotW, Math.round(y) + 0.5)
+    ctx.fillText(niceLabel(yLo + (i / 4) * ySpan, ySpan), PAD.l - 6, y)
+  }
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  const secs = WINDOW_MS / 1000
+  for (let s = 0; s <= secs; s++) {
+    const x = PAD.l + (s / secs) * plotW
+    ctx.moveTo(Math.round(x) + 0.5, PAD.t)
+    ctx.lineTo(Math.round(x) + 0.5, PAD.t + plotH)
+    ctx.fillText(s === secs ? '0 s' : `-${secs - s}`, x, PAD.t + plotH + 5)
+  }
+  ctx.stroke()
+
+  // Traces
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(PAD.l, PAD.t, plotW, plotH)
+  ctx.clip()
+  ctx.lineWidth = 1.75
+  ctx.lineJoin = 'round'
+  for (let c = 0; c < CHANNELS; c++) {
+    if (n === 0) break
+    const arr = values[c]
     ctx.beginPath()
-    for (let i = 0; i < width; i += 50) { ctx.moveTo(i, 0); ctx.lineTo(i, height); }
-    for (let i = 0; i < height; i += 50) { ctx.moveTo(0, i); ctx.lineTo(width, i); }
+    ctx.strokeStyle = COLORS[c]
+    for (let i = 0; i < n; i++) {
+      const idx = (start + i) % CAPACITY
+      const x = PAD.l + ((times[idx] - t0) / WINDOW_MS) * plotW
+      const y = PAD.t + plotH - ((arr[idx] - yLo) / ySpan) * plotH
+      if (i === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
     ctx.stroke()
-    
-    // Draw Sensors
-    const plotLine = (data: number[], color: string) => {
-        ctx.beginPath()
-        ctx.strokeStyle = color
-        ctx.lineWidth = 2
-        
-        // Normalize roughly? Or just raw logic. 
-        // ESP32 ADC is usually 0-4095. Let's scale to height.
-        // If unknown, we might clip. Let's assume 0-4095 for now and auto-scale if needed?
-        // Let's use a fixed scale 0-4095 mapped to canvas height for stability.
-        
-        const step = width / bufferLength
-        
-        data.forEach((val, index) => {
-            const x = index * step
-            // Valores normalizados 0-1 del backend → escalar al canvas con margen
-            const y = height - val * height * 0.85 - height * 0.05
-
-            if (index === 0) ctx.moveTo(x, y)
-            else ctx.lineTo(x, y)
-        })
-        
-        ctx.stroke()
-    }
-    
-    plotLine(dataBuffer.value.s1, colors[0])
-    plotLine(dataBuffer.value.s2, colors[1])
-    plotLine(dataBuffer.value.s3, colors[2])
-    
-    animationFrameId = requestAnimationFrame(draw)
+  }
+  ctx.restore()
 }
 
-const resizeCanvas = () => {
-    if (containerRef.value && canvasRef.value) {
-        canvasRef.value.width = containerRef.value.clientWidth
-        canvasRef.value.height = containerRef.value.clientHeight
-    }
+function resizeCanvas() {
+  const container = containerRef.value
+  const canvas = canvasRef.value
+  if (!container || !canvas) return
+  cssW = container.clientWidth
+  cssH = container.clientHeight
+  dpr = window.devicePixelRatio || 1
+  canvas.width = Math.max(1, Math.round(cssW * dpr))
+  canvas.height = Math.max(1, Math.round(cssH * dpr))
 }
 
-watch(() => props.isRunning, (newVal) => {
-    if (newVal) {
-      if (!isConnected.value) connectWebSocket()
+// ---- Vue lifecycle ---------------------------------------------------------------
+watch(
+  () => props.isRunning,
+  (running) => {
+    if (running) {
+      resetBuffers()
+      connect()
     } else {
-      if (socket.value) socket.value.close()
+      disconnect()
     }
-})
+  },
+)
 
 onMounted(() => {
-    resizeCanvas()
-    window.addEventListener('resize', resizeCanvas)
-    draw() // Start animation loop
-    
-    // Auto-start if prop is true
-    if (props.isRunning) connectWebSocket()
+  resizeCanvas()
+  resizeObserver = new ResizeObserver(resizeCanvas)
+  if (containerRef.value) resizeObserver.observe(containerRef.value)
+  rafId = requestAnimationFrame(draw)
+  if (props.isRunning) connect()
 })
 
-onUnmounted(() => {
-    cancelAnimationFrame(animationFrameId)
-    window.removeEventListener('resize', resizeCanvas)
-    if (socket.value) socket.value.close()
+onBeforeUnmount(() => {
+  cancelAnimationFrame(rafId)
+  resizeObserver?.disconnect()
+  disconnect()
 })
-
 </script>
 
 <template>
   <div class="plotter-container" ref="containerRef">
     <canvas ref="canvasRef"></canvas>
-    
-    <div class="legend" v-if="isConnected">
-        <div class="legend-item"><span class="dot" :style="{background: colors[0]}"></span> Sensor 1</div>
-        <div class="legend-item"><span class="dot" :style="{background: colors[1]}"></span> Sensor 2</div>
-        <div class="legend-item"><span class="dot" :style="{background: colors[2]}"></span> Sensor 3</div>
+
+    <div class="legend" v-if="isOpen">
+      <div class="legend-item"><span class="dot" :style="{ background: COLORS[0] }"></span> Sensor 1</div>
+      <div class="legend-item"><span class="dot" :style="{ background: COLORS[1] }"></span> Sensor 2</div>
+      <div class="legend-item"><span class="dot" :style="{ background: COLORS[2] }"></span> Sensor 3</div>
     </div>
-    
-    <div class="overlay-msg" v-if="!isConnected">
-        <p>Esperando conexión...</p>
+
+    <div class="overlay-msg" v-if="!isOpen">
+      <p>{{ isRunning ? 'Conectando con el servidor…' : 'La señal se mostrará al iniciar la sesión' }}</p>
+    </div>
+    <div class="overlay-msg" v-else-if="!hasSignal">
+      <p>Conectado, sin datos del sensor. Revisa que el ESP32 esté conectado y la sesión iniciada.</p>
     </div>
   </div>
 </template>
 
 <style scoped>
 .plotter-container {
-    width: 100%;
-    height: 100%;
-    min-height: 300px;
-    background-color: #fff;
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  background-color: #fff;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .legend {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    display: flex;
-    gap: 15px;
-    background: rgba(255, 255, 255, 0.8);
-    padding: 5px 10px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  display: flex;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #475569;
+  border: 1px solid #e2e8f0;
 }
 
 .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
 }
 
 .overlay-msg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(248, 250, 252, 0.5);
-    color: #64748b;
-    font-size: 0.9rem;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 24px;
+  background: rgba(248, 250, 252, 0.6);
+  color: #64748b;
+  font-size: 0.9rem;
+  pointer-events: none;
 }
 </style>
