@@ -1,79 +1,41 @@
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
-from typing import List
-import asyncio
 
 from app.services import emg_service
+from app.services.websocket_manager import websocket_manager
 from core.fastapi.dependencies.authentication import AuthenticationRequired
 from core.fastapi.dependencies.websocket_auth import authenticate_websocket
-from core.safety.estop import estop_service
 
 sensor_router = APIRouter(dependencies=[Depends(AuthenticationRequired)])
 # WebSocket routes cannot use HTTP dependencies; they authenticate explicitly.
 sensor_ws_router = APIRouter()
 
-# Store active WebSocket connections
-active_connections: List[WebSocket] = []
-
-
 @sensor_ws_router.websocket("/ws/emg-stream")
 async def websocket_emg_stream(websocket: WebSocket):
-    """WebSocket endpoint for real-time EMG data streaming"""
+    """Live EMG feed for the browser plotter.
+
+    This endpoint is a pure *subscriber*. The acquisition thread in
+    ``EMGDataService._streaming_loop`` is the only reader of the serial port and
+    publishes every sample through ``websocket_manager``. Reading the port here
+    as well split the byte stream between two consumers (garbled uMyo frames,
+    duplicated CSV rows) and tied the recording session to whether a chart
+    happened to be open. Starting and stopping a session stays with the REST
+    endpoints ``/emg/start`` and ``/emg/stop``.
+    """
     if await authenticate_websocket(websocket) is None:
         return
 
-    active_connections.append(websocket)
-    
+    websocket_manager.register(websocket)
     try:
-        # Connect to ESP32 if not already connected
-        status = emg_service.get_connection_status()
-        if not status["connected"]:
-            result = emg_service.connect_to_device()
-            if not result["success"]:
-                await websocket.send_json({
-                    "error": "Could not connect to ESP32"
-                })
-                # We don't return here to keep connection open for retries or status updates
-                # but in strict logic, maybe we should close? Leaving open as per apparent original intent.
-        
-        # Start streaming data
-        estop_service.assert_movement_allowed()
-        emg_service.start_streaming()
-        
+        # Keep-alive: incoming messages are ignored, we only need to notice
+        # the client going away.
         while True:
-            # We access the serial manager directly for the stream loop to avoid overhead
-            # or add a specific method in service for 'next line'.
-            # Using service method read_line would be cleaner if exposed, 
-            # but we can use the manager via service for now or add a helper in service.
-            
-            # Let's assume we want to use the service's logic.
-            # We need a non-blocking way or small timeout read.
-            # The service's serial_manager.read_line() is synchronous.
-            
-            # To avoid blocking the event loop too much, we sleep.
-            # Ideally serial reading should be threaded, but for MVP this is okay.
-            
-            line = emg_service.serial_manager.read_line()
-            
-            if line:
-                data = emg_service.parse_emg_line(line)
-                if data:
-                    await websocket.send_json(data)
-            
-            await asyncio.sleep(0.001)  # Context switch
-            
+            await websocket.receive_text()
     except WebSocketDisconnect:
-        active_connections.remove(websocket)
-        if len(active_connections) == 0:
-            emg_service.stop_streaming()
-            
+        pass
     except Exception as e:
         print(f"WebSocket error: {e}")
-        try:
-            active_connections.remove(websocket)
-        except ValueError:
-            pass
-        if len(active_connections) == 0:
-            emg_service.stop_streaming()
+    finally:
+        websocket_manager.disconnect(websocket)
 
 
 @sensor_router.get("/emg/status")
@@ -97,8 +59,11 @@ async def disconnect_emg():
 @sensor_router.post("/emg/start")
 async def start_emg_session(category: str = ""):
     """Send START_SESSION command to ESP32"""
-    # Streaming triggers acquisition on the device; keep it behind the interlock.
-    estop_service.assert_movement_allowed()
+    # Esto solo prende la adquisicion/transmision de datos del sensor: no
+    # mueve la mano Dynamixel (eso pasa por /hand/session/start, que si
+    # exige el reset del e-stop). Por eso no depende del interlock de
+    # movimiento: si dependiera, habria que resetear el e-stop cada vez
+    # que se reinicia el backend solo para poder grabar EMG.
 
     # Ensure we are connected first
     status = emg_service.get_connection_status()

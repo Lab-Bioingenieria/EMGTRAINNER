@@ -8,6 +8,16 @@ const EXPIRY_LEEWAY_SECONDS = 5
 
 type TokenState = 'valid' | 'expired' | 'malformed'
 
+/**
+ * Doctor and patient are two separate interfaces (route guards +
+ * per-role navigation), but the role claim in the token is only ever used
+ * here for that: deciding what to show. It is never the source of truth
+ * for what an account is allowed to do — the backend re-checks the real
+ * role from the database on every request (see `RequireRole` there), so a
+ * tampered token just gets 403s instead of a different UI.
+ */
+export type UserRole = 'doctor' | 'patient'
+
 /** Decode a JWT payload without verifying the signature (client-side UX only). */
 function decodePayload(token: string): Record<string, unknown> | null {
   const parts = token.split('.')
@@ -77,6 +87,27 @@ export const authService = {
   },
 
   /**
+   * Role carried by the stored token ('doctor' | 'patient'), or null when
+   * logged out or the claim is missing/unrecognized. UX-only: see the
+   * `UserRole` comment above.
+   */
+  getRole(): UserRole | null {
+    const token = getValidStoredToken()
+    if (!token) return null
+    const payload = decodePayload(token)
+    const role = payload?.role
+    return role === 'doctor' || role === 'patient' ? role : null
+  },
+
+  isDoctor(): boolean {
+    return authService.getRole() === 'doctor'
+  },
+
+  isPatient(): boolean {
+    return authService.getRole() === 'patient'
+  },
+
+  /**
    * Centralized session-expiry handling: drop the token and send the user to
    * login, keeping the current location as the post-login redirect.
    */
@@ -125,11 +156,17 @@ export const authService = {
     authService.setToken(data.access_token)
   },
 
-  async register(email: string, password: string, username: string): Promise<void> {
+  /**
+   * Public self-registration always creates a PATIENT account (see
+   * `RegisterUserRequest` on the backend — there is no role field to send).
+   * `age` is required: it feeds the Patient roster record created
+   * alongside the account, which is how that roster is populated.
+   */
+  async register(email: string, password: string, username: string, age: number): Promise<void> {
     const res = await fetch(`${API_BASE_URL}/users/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, username }),
+      body: JSON.stringify({ email, password, username, age }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))

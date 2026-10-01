@@ -1,21 +1,36 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { authService } from '@/services/auth.service'
+import { authService, type UserRole } from '@/services/auth.service'
 
 const router = useRouter()
 const route = useRoute()
 
+// Doctor and patient are two separate interfaces from this screen on: the
+// role picked here decides whether self-registration is even offered
+// (doctor accounts are provisioned by an administrator, never through this
+// form) and what extra fields the register form asks for. What actually
+// happens after login/registration is still governed by the role the
+// backend assigns the account — this selector only shapes the form.
+const selectedRole = ref<UserRole>('patient')
 const mode  = ref(authService.isLoggedIn() ? 'login' : 'register')
 const name  = ref('')
 const email = ref('')
 const pwd   = ref('')
 const pwd2  = ref('')
+const age   = ref('')
 const show  = ref(false)
 const error = ref('')
 const loading = ref(false)
 
 const isRegister = computed(() => mode.value === 'register')
+
+// Doctor accounts can't self-register, so switching to that tab always
+// falls back to the login form.
+watch(selectedRole, (role) => {
+  if (role === 'doctor') mode.value = 'login'
+  error.value = ''
+})
 
 const strength = computed(() => {
   let s = 0
@@ -37,11 +52,15 @@ async function submit() {
     error.value = 'Las contraseñas no coinciden.'
     return
   }
+  if (isRegister.value && (!age.value || Number(age.value) <= 0)) {
+    error.value = 'Ingresa tu edad para crear el perfil de paciente.'
+    return
+  }
   loading.value = true
   try {
     if (isRegister.value) {
       const username = name.value.trim() || email.value.split('@')[0]
-      await authService.register(email.value, pwd.value, username)
+      await authService.register(email.value, pwd.value, username, Number(age.value))
     } else {
       await authService.login(email.value, pwd.value)
     }
@@ -120,16 +139,52 @@ async function submit() {
           <div class="hero-brand-name">EMGtrainner</div>
         </div>
 
+        <!-- Role selector: decides which interface this login leads to -->
+        <div class="role-toggle" role="tablist" aria-label="Tipo de cuenta">
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="selectedRole === 'patient'"
+            class="role-tab"
+            :class="{ active: selectedRole === 'patient' }"
+            @click="selectedRole = 'patient'"
+          >
+            Soy paciente
+          </button>
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="selectedRole === 'doctor'"
+            class="role-tab"
+            :class="{ active: selectedRole === 'doctor' }"
+            @click="selectedRole = 'doctor'"
+          >
+            Soy doctor
+          </button>
+        </div>
+
         <div class="login-form-header">
-          <div class="kicker">{{ isRegister ? 'Configuración inicial' : 'Acceso al dispositivo' }}</div>
+          <div class="kicker">
+            {{ selectedRole === 'doctor'
+              ? 'Acceso clínico'
+              : (isRegister ? 'Registro de paciente' : 'Acceso paciente') }}
+          </div>
           <h2 class="login-title">
-            {{ isRegister ? 'Registrar dueño del dispositivo' : 'Iniciar sesión' }}
+            {{ isRegister ? 'Crear cuenta de paciente' : 'Iniciar sesión' }}
           </h2>
           <p class="login-desc">
             {{ isRegister
-              ? 'Este dispositivo es de uso personal — solo se registra un usuario.'
-              : 'Bienvenido de nuevo a tu EMGtrainner.' }}
+              ? 'Tu perfil de paciente se genera automáticamente al registrarte.'
+              : (selectedRole === 'doctor'
+                  ? 'Accede a tu panel de doctor.'
+                  : 'Bienvenido de nuevo a tu EMGtrainner.') }}
           </p>
+        </div>
+
+        <!-- Doctor accounts are provisioned by an administrator -->
+        <div v-if="selectedRole === 'doctor'" class="doctor-note">
+          Las cuentas de doctor las crea el administrador del sistema — no
+          hay autoregistro para este rol.
         </div>
 
         <!-- Error notice -->
@@ -151,6 +206,19 @@ async function submit() {
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
               </svg>
               <input v-model="name" placeholder="Tu nombre" class="has-icon" />
+            </div>
+          </div>
+        </transition>
+
+        <!-- Age (register only, feeds the Patient record) -->
+        <transition name="slide-up">
+          <div v-if="isRegister" class="field">
+            <label>Edad <span class="req">*</span></label>
+            <div class="input-wrap">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+              </svg>
+              <input v-model="age" type="number" min="1" max="120" placeholder="Tu edad" class="has-icon" />
             </div>
           </div>
         </transition>
@@ -244,8 +312,8 @@ async function submit() {
           <span class="spinner" v-if="loading"></span>
         </button>
 
-        <!-- Toggle -->
-        <div class="login-toggle">
+        <!-- Toggle: doctors have no self-registration, so no toggle for them -->
+        <div v-if="selectedRole === 'patient'" class="login-toggle">
           <template v-if="isRegister">
             ¿Ya tienes cuenta?
             <button @click="mode = 'login'; error = ''" class="link-btn">Iniciar sesión</button>
@@ -469,10 +537,48 @@ async function submit() {
   box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0,0,0,0.02);
 }
 
-.login-form-header { 
-  display: flex; 
-  flex-direction: column; 
-  gap: 6px; 
+/* Role selector */
+.role-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bone-100);
+  border-radius: 10px;
+}
+.role-tab {
+  flex: 1;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-4);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.role-tab:hover { color: var(--ink-2); }
+.role-tab.active {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.doctor-note {
+  padding: 12px 14px;
+  background: var(--bone-100);
+  border: 1px solid var(--bone-200);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.login-form-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   margin-bottom: 8px;
 }
 

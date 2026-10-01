@@ -18,7 +18,7 @@ from core.fastapi.middlewares import (
     SQLAlchemyMiddleware,
 )
 
-from app.routers import learning, websocket, hand, safety
+from app.routers import learning, websocket, hand, hand_mirror, safety, live_session
 
 def on_auth_error(request: Request, exc: Exception):
     status_code, error_code, message = 401, None, str(exc)
@@ -38,7 +38,9 @@ def init_routers(app_: FastAPI) -> None:
     app_.include_router(learning.router)
     app_.include_router(websocket.router)
     app_.include_router(hand.router)
+    app_.include_router(hand_mirror.router)
     app_.include_router(safety.router)
+    app_.include_router(live_session.router)
 
 
 def init_listeners(app_: FastAPI) -> None:
@@ -50,6 +52,25 @@ def init_listeners(app_: FastAPI) -> None:
         )
 
 
+def _add_column_if_missing(sync_conn, table: str, column: str, ddl: str) -> None:
+    """
+    Best-effort, idempotent "migration" for a codebase with no Alembic
+    migrations (schema is created via `create_all`, see CE-01 review).
+    `create_all` never alters existing tables, so a column added to a model
+    after a database already exists needs this instead. Works for both the
+    sqlite dev database and Postgres.
+    """
+    from sqlalchemy import inspect
+
+    inspector = inspect(sync_conn)
+    if table not in inspector.get_table_names():
+        return  # create_all will create it fresh with the column included
+    existing = {col["name"] for col in inspector.get_columns(table)}
+    if column in existing:
+        return
+    sync_conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+
+
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
     from core.database import Base
@@ -58,6 +79,20 @@ async def lifespan(app_: FastAPI):
 
     async with engines["writer"].begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Backfill legacy rows created before the doctor/patient role split.
+        # They previously had full access to every screen, so they keep
+        # doctor-level access instead of silently losing it as "patient".
+        await conn.run_sync(
+            lambda sync_conn: _add_column_if_missing(
+                sync_conn, "users", "role",
+                "role VARCHAR(20) NOT NULL DEFAULT 'doctor'",
+            )
+        )
+        await conn.run_sync(
+            lambda sync_conn: _add_column_if_missing(
+                sync_conn, "patients", "user_id", "user_id INTEGER"
+            )
+        )
 
     yield
 

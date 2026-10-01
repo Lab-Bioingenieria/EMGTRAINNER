@@ -5,7 +5,8 @@ import { buildAuthenticatedWebSocketUrl } from '@/lib/websocket'
 
 defineProps<{ isRunning: boolean }>()
 
-const wsUrl = buildAuthenticatedWebSocketUrl('/v1/monitoring/sensor/ws/emg-stream')
+// Function, not a string: every (re)connect gets a fresh token.
+const wsUrl = () => buildAuthenticatedWebSocketUrl('/v1/monitoring/sensor/ws/emg-stream')
 const isConnected = ref(false)
 </script>
 

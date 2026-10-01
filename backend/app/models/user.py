@@ -18,6 +18,24 @@ class UserPermission(Enum):
     DELETE = "delete"
 
 
+class UserRole(str, Enum):
+    """
+    Separates the two interfaces of the system.
+
+    DOCTOR accounts are never created through public self-registration: they
+    are provisioned out-of-band (admin endpoint or the `seed_doctors.py`
+    import script) from data entered externally by the team, per the
+    "external database" requirement for doctors.
+
+    PATIENT accounts are the ones created by the public registration
+    endpoint; each one generates its own `Patient` record, so the patient
+    roster is built directly from user sign-up.
+    """
+
+    DOCTOR = "doctor"
+    PATIENT = "patient"
+
+
 class User(Base, TimestampMixin):
     __tablename__ = "users"
 
@@ -27,9 +45,16 @@ class User(Base, TimestampMixin):
     password = Column(Unicode(255), nullable=False)
     username = Column(Unicode(255), nullable=False, unique=True)
     is_admin = Column(Boolean, default=False)
+    role = Column(
+        Unicode(20), nullable=False, default=UserRole.PATIENT.value,
+        server_default=UserRole.PATIENT.value,
+    )
 
     tasks = relationship(
         "Task", back_populates="author", lazy="raise", passive_deletes=True
+    )
+    patient_profile = relationship(
+        "Patient", back_populates="user", uselist=False, lazy="raise"
     )
 
     __mapper_args__ = {"eager_defaults": True}
