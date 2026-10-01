@@ -7,5 +7,6 @@ class UserResponse(BaseModel):
     uuid: UUID4 = Field(
         ..., json_schema_extra={"example": "a3b8f042-1e16-4f0a-a8f0-421e16df0a2f"}
     )
+    role: str = Field(..., json_schema_extra={"example": "doctor"})
 
     model_config = ConfigDict(from_attributes=True)

@@ -11,4 +11,5 @@ def create_fake_user():
         "username": username,
         "password": password,
         "email": email,
+        "age": fake.random_int(min=18, max=80),
     }

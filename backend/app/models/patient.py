@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, ForeignKey, Integer, String, Date
 from sqlalchemy.orm import relationship
 from core.database import Base
 from core.database.mixins import TimestampMixin
@@ -14,5 +14,13 @@ class Patient(Base, TimestampMixin):
     last_session = Column(String(50), nullable=True)
     progress = Column(Integer, default=0)
     status = Column(String(50), default="active")
+    # Set when this roster entry comes from a patient's own account
+    # (self-registration). NULL for legacy/manually entered records that
+    # have no login of their own.
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, unique=True
+    )
+
+    user = relationship("User", back_populates="patient_profile", lazy="raise")
 
     __mapper_args__ = {"eager_defaults": True}
