@@ -345,6 +345,46 @@ class DynamixelInterface:
             time.sleep(0.02)
 
 
+    # MOVIMIENTO CONTINUO (SYNC WRITE LIGERO)
+    def move_motors_sync_fast(self, targets: Dict[int, int]) -> None:
+        """Sync write pensado para un lazo de control continuo (~10 Hz).
+
+        `move_motors_sync_safe` espera hasta `timeout_s` (1 s por defecto)
+        monitoreando corriente en cada llamada; eso sirve para un gesto
+        puntual pero serializaria un lazo de mimetismo en tiempo real a
+        ~1 Hz. Aca se manda el SyncWrite y se hace UNA sola lectura de
+        corriente por motor (no una espera de 1 s): sigue cortando torque
+        ante sobrecorriente, pero es el llamador (`HandMirrorService`) quien
+        sostiene el lazo llamando esto en cada tick.
+        """
+        if not targets:
+            return
+
+        group = dxl.GroupSyncWrite(self.port_handler, self.packet_handler, ADDR_GOAL_POSITION, 4)
+        for motor_id, goal_pos in targets.items():
+            ok = group.addParam(motor_id, _int32_to_le_bytes(goal_pos))
+            if not ok:
+                raise RuntimeError(f"[ERROR] - No se pudo agregar motor {motor_id} al SyncWrite")
+
+        dxl_comm_result = group.txPacket()
+        group.clearParam()
+
+        if dxl_comm_result != dxl.COMM_SUCCESS:
+            raise RuntimeError(f"[ERROR] - SyncWrite fallo: {self.packet_handler.getTxRxResult(dxl_comm_result)}")
+
+        for motor_id in targets:
+            try:
+                current_a = self.read_current_amps(motor_id)
+            except Exception:
+                # Un tick de lectura fallida no es motivo para cortar el lazo
+                # completo; el proximo tick reintenta.
+                continue
+            if current_a > MAX_CURRENT_A:
+                self.disable_torque(motor_id)
+                raise RuntimeError(
+                    f"[WARNING] - Sobrecorriente motor {motor_id}: {current_a:.2f} A (lim {MAX_CURRENT_A:.2f} A)"
+                )
+
     # CONVERSIONES
     @staticmethod
     def degrees_to_ticks_centered(deg: float) -> int:
