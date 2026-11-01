@@ -22,6 +22,17 @@ export default defineConfig({
       '/learning': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
+      },
+      // Interruptor de emergencia (estop) para comandos de movimiento.
+      '/hand': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      // Canal de sincronizacion doctor <-> paciente y stream de EMG.
+      '/ws': {
+        target: 'ws://127.0.0.1:8000',
+        ws: true,
+        changeOrigin: true,
       }
     }
   },

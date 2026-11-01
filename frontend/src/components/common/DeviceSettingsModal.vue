@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { HealthService, type HardwareConfig, type PortInfo } from '@/services/health.service';
-import { XIcon, RefreshCwIcon, SaveIcon } from 'lucide-vue-next';
+import { SafetyService, type SafetyState } from '@/services/safety.service';
+import { XIcon, RefreshCwIcon, SaveIcon, ShieldAlertIcon, ShieldCheckIcon } from 'lucide-vue-next';
 
 const emit = defineEmits(['close']);
 
@@ -17,12 +18,53 @@ const availablePorts = ref<PortInfo[]>([]);
 const isLoading = ref(true);
 const isSaving = ref(false);
 
+// --- Interlock de emergencia: fail-closed, arranca activado en cada reinicio
+// del backend y bloquea todo comando de movimiento (entrenamiento, Espejo en
+// Tiempo Real) hasta que se resetea explícitamente. Accesible acá porque
+// afecta a toda la app, no solo a una pantalla.
+const safety = ref<SafetyState | null>(null);
+const safetyBusy = ref(false);
+const safetyError = ref('');
+
+const loadSafety = async () => {
+  try {
+    safety.value = await SafetyService.status();
+  } catch (error) {
+    console.error('Error loading safety status', error);
+  }
+};
+
+const resetSafety = async () => {
+  safetyBusy.value = true;
+  safetyError.value = '';
+  try {
+    safety.value = await SafetyService.reset();
+  } catch (error: any) {
+    safetyError.value = error.message || 'No se pudo resetear la parada de emergencia';
+  } finally {
+    safetyBusy.value = false;
+  }
+};
+
+const engageSafety = async () => {
+  safetyBusy.value = true;
+  safetyError.value = '';
+  try {
+    safety.value = await SafetyService.engage('manual desde configuración');
+  } catch (error: any) {
+    safetyError.value = error.message || 'No se pudo activar la parada de emergencia';
+  } finally {
+    safetyBusy.value = false;
+  }
+};
+
 const loadData = async () => {
   isLoading.value = true;
   try {
     const [portsResponse, configResponse] = await Promise.all([
       HealthService.checkPorts(),
-      HealthService.getConfig()
+      HealthService.getConfig(),
+      loadSafety(),
     ]);
     availablePorts.value = portsResponse.ports;
     config.value = configResponse;
@@ -146,6 +188,41 @@ const refreshPorts = async () => {
                 La toma de datos se realizará a través del puerto principal.
             </div>
 
+            <!-- Interlock de emergencia -->
+            <div class="field" style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--bone-200);">
+                <label>Seguridad de movimiento</label>
+                <div class="estop-row">
+                    <span class="estop-badge" :class="safety?.engaged ? 'estop-on' : 'estop-off'">
+                        <ShieldAlertIcon v-if="safety?.engaged" style="width: 14px; height: 14px;" />
+                        <ShieldCheckIcon v-else style="width: 14px; height: 14px;" />
+                        {{ safety?.engaged ? 'Parada de emergencia activada' : 'Movimiento permitido' }}
+                    </span>
+                    <button
+                        v-if="safety?.engaged"
+                        class="btn btn-primary"
+                        style="padding: 4px 10px; font-size: 12px;"
+                        :disabled="safetyBusy"
+                        @click="resetSafety"
+                    >
+                        Resetear
+                    </button>
+                    <button
+                        v-else
+                        class="btn btn-ghost"
+                        style="padding: 4px 10px; font-size: 12px; color: var(--danger);"
+                        :disabled="safetyBusy"
+                        @click="engageSafety"
+                    >
+                        Detener todo movimiento
+                    </button>
+                </div>
+                <span class="hint">
+                    Bloquea o permite cualquier comando de movimiento (entrenamiento, Espejo en
+                    Tiempo Real). Se reactiva solo cada vez que se reinicia el backend.
+                </span>
+                <span v-if="safetyError" class="hint" style="color: var(--danger);">{{ safetyError }}</span>
+            </div>
+
         </div>
       </div>
 
@@ -210,4 +287,23 @@ const refreshPorts = async () => {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.estop-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.estop-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.estop-on { background: #fee2e2; color: #b91c1c; }
+.estop-off { background: #dcfce7; color: #15803d; }
 </style>

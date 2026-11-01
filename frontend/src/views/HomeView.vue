@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import DeviceSettingsModal from '@/components/common/DeviceSettingsModal.vue'
+import { authService } from '@/services/auth.service'
 
 const router = useRouter()
 const showDeviceSettings = ref(false)
+const role = computed(() => authService.getRole())
 
-const modules = [
+// This is the "own interface per role" home: each module is tagged with
+// who it's for, and the doctor/patient split from login/router guards
+// carries through here — a patient only ever sees patient modules.
+const allModules = [
   {
     id: 'ai', path: '/ai-console',
     tone: 'tone-data',
@@ -15,6 +20,7 @@ const modules = [
     desc: 'Métricas, confusion matrix, distribución por clase y versionado de los modelos sEMG.',
     stat: 'v2.4.1 · 91.4%',
     icon: 'brain',
+    roles: ['doctor'],
   },
   {
     id: 'doctor', path: '/doctor',
@@ -24,15 +30,7 @@ const modules = [
     desc: 'Panel guiado con señales sEMG en vivo, predicción y fatiga muscular.',
     stat: '18 sesiones hoy',
     icon: 'steth',
-  },
-  {
-    id: 'patient', path: '/patient',
-    tone: 'tone-signal',
-    title: 'Sesión', italic: 'Paciente',
-    audience: 'Pacientes',
-    desc: 'Interfaz simplificada para uso autónomo, telerehabilitación y feedback visual.',
-    stat: '5 conectados ahora',
-    icon: 'hand',
+    roles: ['doctor'],
   },
   {
     id: 'dashboard', path: '/dashboard',
@@ -42,8 +40,43 @@ const modules = [
     desc: 'Vista global del historial, evolución longitudinal y exportación clínica.',
     stat: '124 totales · 89 activos',
     icon: 'users',
+    roles: ['doctor'],
+  },
+  {
+    id: 'patient', path: '/patient',
+    tone: 'tone-signal',
+    title: 'Sesión con', italic: 'Doctor',
+    audience: 'Pacientes',
+    desc: 'Únete con el código de tu doctor para una sesión supervisada en vivo.',
+    stat: 'Requiere código',
+    icon: 'hand',
+    roles: ['patient'],
+  },
+  {
+    id: 'patientfree', path: '/patient/free',
+    tone: 'tone-signal',
+    title: 'Entrenamiento', italic: 'Libre',
+    audience: 'Pacientes',
+    desc: 'Practica gestos por tu cuenta, en modo autónomo, sin un doctor conectado.',
+    stat: 'Modo autónomo',
+    icon: 'hand',
+    roles: ['patient'],
+  },
+  {
+    id: 'patientmirror', path: '/patient/mirror',
+    tone: 'tone-signal',
+    title: 'Espejo en', italic: 'Tiempo Real',
+    audience: 'Pacientes',
+    desc: 'Fuera del protocolo de gestos: la mano imita en vivo la fuerza que marcan tus sensores.',
+    stat: 'Control continuo',
+    icon: 'hand',
+    roles: ['patient'],
   },
 ]
+
+const modules = computed(() =>
+  allModules.filter(m => !role.value || m.roles.includes(role.value))
+)
 
 const iconPaths: Record<string, string> = {
   brain:  '<path d="M9 4a3 3 0 0 0-3 3v.5A2.5 2.5 0 0 0 4 10v.5A2.5 2.5 0 0 0 4 15v.5A2.5 2.5 0 0 0 6 18v.5A2.5 2.5 0 0 0 9 21V4Z"/><path d="M15 4a3 3 0 0 1 3 3v.5A2.5 2.5 0 0 1 20 10v.5A2.5 2.5 0 0 1 20 15v.5A2.5 2.5 0 0 1 18 18v.5A2.5 2.5 0 0 1 15 21V4Z"/>',
@@ -142,7 +175,7 @@ const iconPaths: Record<string, string> = {
 
       <!-- Secondary row -->
       <div class="sec-row" style="margin-top: 18px">
-        <button class="card sec-card" @click="router.push('/storage')">
+        <button v-if="role !== 'patient'" class="card sec-card" @click="router.push('/storage')">
           <div class="module-icon tone-data"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" v-html="iconPaths.db" /></div>
           <div>
             <div class="sec-title">Almacenamiento de sesiones</div>

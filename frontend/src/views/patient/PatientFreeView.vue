@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import TopHeader from '../../components/common/TopHeader.vue'
 import GestureProgress from '../../components/patient/GestureProgress.vue'
 import RadialTimer from '../../components/patient/RadialTimer.vue'
@@ -9,13 +10,20 @@ import { ALL_GESTURES, DEFAULT_DEVICE_ID, API_BASE_URL, LEARNING_BASE_URL } from
 import { downloadProtectedFile } from '../../lib/download'
 import { authService } from '@/services/auth.service'
 import type { Gesture } from '../../lib/constants'
-import { ChevronRight, Play, Pause, ArrowLeft, Activity, RefreshCw, Maximize, CheckCircle2, FileText, Download } from 'lucide-vue-next'
+import { ChevronRight, ArrowLeft, Activity, RefreshCw, CheckCircle2, FileText, Download, Play, Square, AlertTriangle, Home, FlaskConical } from 'lucide-vue-next'
 import { EmgService } from '../../services/emg.service'
 import { PatientService } from '../../services/patient.service'
+import { demoSensors, setDemoSensors } from '../../lib/demo'
+import { useSessionStore } from '../../stores/session'
 
-const emgSignals = ref([
-    { id: 1, status: 'active' }, { id: 2, status: 'active' }, { id: 3, status: 'active' }
-])
+const router = useRouter()
+
+// Misma fuente de verdad que Sesión Doctor y Sesión Paciente: el store
+// consulta el backend canal por canal (channels_live), en vez de la
+// comprobación propia que tenía esta vista (marcar los 3 activos con solo
+// ver el puerto serie abierto, sin mirar si de verdad llegaban datos).
+const store = useSessionStore()
+const emgSignals = computed(() => store.emgSignals)
 const lastSession = ref<any>(null)
 
 type Step = 'mode-selection' | 'setup' | 'protocols' | 'tutorial' | 'training' | 'completed'
@@ -55,7 +63,9 @@ const isCountingDown = ref(false)
 const countdownTimer = ref(3)
 const isResting = ref(false)
 const restTimer = ref(5)
-const activeSignals = computed(() => emgSignals.value.filter(s => s.status === 'active').length)
+const activeSignals = computed(() => store.activeSignals)
+/** Los 3 canales deben estar activos para arrancar o reanudar una sesión. */
+const sensorsReady = computed(() => store.sensorsReady)
 const currentGesture = computed(() => gestures.value[currentStep.value])
 const nextGesture = computed(() => gestures.value[currentStep.value + 1] || null)
 
@@ -236,12 +246,19 @@ const startRest = () => {
 }
 
 const resetSession = () => {
+    clearInterval(intervalId)
     step.value = 'mode-selection'
     selectedGestures.value = []
     patientName.value = ''
     patientAge.value = ''
     isResting.value = false
     isCountingDown.value = false
+    isExecuting.value = false
+    isPaused.value = false
+    showPauseModal.value = false
+    lastSession.value = null
+    currentStep.value = 0
+    completedSteps.value = []
 }
 
 const startTutorial = () => {
@@ -314,17 +331,72 @@ const backToModeSelection = () => {
     step.value = 'mode-selection'
 }
 
-// Controls
+// ---------------------------------------------------------------- Controles
 const isPaused = ref(false)
+// Ventana emergente que se despliega al pausar: terminar o continuar.
+const showPauseModal = ref(false)
+const isFinishing = ref(false)
 
+/**
+ * Botón de pausa. Detiene el temporizador de la fase en curso, silencia la voz
+ * y abre el diálogo de decisión. En modo autónomo (LLC) el ciclo es infinito por
+ * diseño, así que este diálogo es la única salida ordenada de la sesión.
+ */
 const togglePause = () => {
     if (isPaused.value) {
-        isPaused.value = false
-        resumeTimer()
+        // Seguridad: reanudar solo con los sensores habilitados.
+        if (!sensorsReady.value) {
+            showPauseModal.value = true
+            return
+        }
+        resumeSession()
     } else {
-        isPaused.value = true
-        clearInterval(intervalId)
+        pauseSession()
     }
+}
+
+const pauseSession = () => {
+    isPaused.value = true
+    clearInterval(intervalId)
+    window.speechSynthesis?.cancel()
+    showPauseModal.value = true
+}
+
+/** "Continuar con la sesión": exige sensores activos antes de reanudar. */
+const resumeSession = () => {
+    if (!sensorsReady.value) return
+    showPauseModal.value = false
+    isPaused.value = false
+    resumeTimer()
+}
+
+/**
+ * "Terminar sesión": cierra la captura, guarda el CSV de la sesión y lleva a la
+ * pantalla de cierre, desde donde se vuelve al menú principal.
+ */
+const endSessionFromPause = async () => {
+    if (isFinishing.value) return
+    isFinishing.value = true
+    clearInterval(intervalId)
+    window.speechSynthesis?.cancel()
+
+    try {
+        await EmgService.stopSession()
+        lastSession.value = await EmgService.getLatestSession()
+    } catch (e) {
+        console.error('Failed to stop session', e)
+    }
+
+    exitFullscreen()
+    showPauseModal.value = false
+    isPaused.value = false
+    isFinishing.value = false
+    step.value = 'completed'
+}
+
+const goToMainMenu = () => {
+    exitFullscreen()
+    router.push('/')
 }
 
 const resumeTimer = () => {
@@ -339,6 +411,9 @@ const resumeTimer = () => {
 
 const runTimer = (phase: 'countdown' | 'execution' | 'rest') => {
     clearInterval(intervalId)
+    // Nunca reprogramar el ciclo mientras la sesión está pausada: esto es lo que
+    // permitía que el temporizador siguiera corriendo "en bucle" tras la pausa.
+    if (isPaused.value) return
     intervalId = window.setInterval(() => {
         if (phase === 'countdown') {
             countdownTimer.value--
@@ -373,53 +448,29 @@ const enterFullscreen = () => {
     }
 }
 
-let pollingInterval: number
-
-const updateDeviceStatus = async () => {
-    try {
-        const status = await EmgService.getDeviceStatus(DEFAULT_DEVICE_ID)
-        
-        if (status.is_online) {
-            emgSignals.value = emgSignals.value.map(s => ({ ...s, status: 'active' }))
-        } else {
-            emgSignals.value = emgSignals.value.map(s => ({ ...s, status: 'inactive' }))
-            
-            // Try auto-reconnect on each poll if offline
-            // This is "silent" reconnection
-            try {
-                await EmgService.connect()
-            } catch (ignore) {
-                // Ignore errors during silent reconnect attempts
-            }
-        }
-    } catch (e) {
-        console.error("Status check failed", e)
+const exitFullscreen = () => {
+    if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => undefined)
     }
 }
 
-import { onMounted } from 'vue'
+/** Simula los 3 canales cuando no hay hardware conectado. */
+const enableDemoSensors = () => {
+    setDemoSensors(true)
+    store.refreshSensors()
+}
 
-onMounted(async () => {
-    await updateDeviceStatus()
-    
-    // Auto-connect if offline
-    const initialStatus = await EmgService.getDeviceStatus(DEFAULT_DEVICE_ID)
-    if (!initialStatus.is_online) {
-        console.log("Device offline, attempting auto-mount connection...")
-        try {
-            await EmgService.connect()
-            await updateDeviceStatus() // Refresh status after connect attempt
-        } catch (e) {
-            console.error("Auto-connect failed", e)
-        }
-    }
-
-    pollingInterval = window.setInterval(updateDeviceStatus, 1000)
+onMounted(() => {
+    // Misma metodología que Sesión Doctor / Sesión Paciente: sondeo del
+    // store compartido (chequeo por canal vía channels_live, con reconexión
+    // silenciosa incluida), en vez de la implementación propia que tenía
+    // esta vista y que marcaba "3/3 activos" con solo ver el puerto abierto.
+    store.startSensorPolling()
 })
 
 onUnmounted(() => {
     clearInterval(intervalId)
-    clearInterval(pollingInterval)
+    store.stopSensorPolling()
 })
 </script>
 
@@ -536,9 +587,15 @@ onUnmounted(() => {
                          <div v-for="s in emgSignals" :key="s.id" class="signal-dot" :class="s.status === 'active' ? 'bg-green' : 'bg-red'"></div>
                      </div>
                  </div>
-                 <span class="badge" :class="activeSignals >=3 ? 'badge-success' : 'badge-error'">
-                     {{ activeSignals >= 3 ? 'Sensores Conectados' : 'Sensores Desconectados' }}
-                 </span>
+                 <div class="status-right">
+                     <span v-if="demoSensors" class="demo-badge">DEMO</span>
+                     <span class="badge" :class="sensorsReady ? 'badge-success' : 'badge-error'">
+                         {{ sensorsReady ? 'Sensores Conectados' : 'Sensores Desconectados' }}
+                     </span>
+                     <button v-if="!sensorsReady" class="btn-demo-inline" @click="enableDemoSensors">
+                         <FlaskConical class="icon-sm" /> Modo demo
+                     </button>
+                 </div>
              </div>
 
              <button class="btn btn-primary w-full py-action flex-center" 
@@ -657,12 +714,6 @@ onUnmounted(() => {
                          </div>
                     </div>
                     
-                    <div v-if="isPaused" class="paused-overlay">
-                         <div class="paused-badge">
-                             <span class="paused-text">Pausa</span>
-                         </div>
-                    </div>
-
                     <!-- Main Content (Grid) -->
                     <div class="main-visual-content">
                         <!-- Left Side: Gesture Name & Info -->
@@ -705,8 +756,58 @@ onUnmounted(() => {
 
                         <!-- Progress -->
                         <div class="progress-display">
-                            <p class="progress-text">{{ currentStep + 1 }}<span class="progress-total">/{{ gestures.length }}</span></p>
+                            <p class="progress-text">
+                                {{ currentStep + 1 }}
+                                <span v-if="trainingMode === 'TLC'" class="progress-total">/{{ gestures.length }}</span>
+                                <span v-else class="progress-total">/ ∞</span>
+                            </p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- VENTANA EMERGENTE DE PAUSA -->
+                <div v-if="showPauseModal" class="pause-modal-backdrop">
+                    <div class="pause-modal" role="dialog" aria-modal="true">
+                        <h2 class="pause-modal-title">Sesión en pausa</h2>
+                        <p class="pause-modal-subtitle">
+                            El entrenamiento está detenido. ¿Desea terminar la sesión o continuar?
+                        </p>
+
+                        <!-- Estado de sensores: requisito para poder continuar -->
+                        <div class="pause-sensors" :class="sensorsReady ? 'ok' : 'ko'">
+                            <div class="pause-sensor-dots">
+                                <span v-for="s in emgSignals" :key="s.id"
+                                      class="signal-dot"
+                                      :class="s.status === 'active' ? 'bg-green' : 'bg-red'"></span>
+                            </div>
+                            <span class="pause-sensor-text">
+                                {{ sensorsReady ? 'Sensores conectados' : 'Sensores desconectados' }}
+                            </span>
+                        </div>
+
+                        <div v-if="!sensorsReady" class="pause-warning">
+                            <AlertTriangle class="icon-sm" />
+                            <span>Reconecte los sensores sEMG para poder continuar con la sesión.</span>
+                            <button class="btn-demo-inline" @click="enableDemoSensors">
+                                <FlaskConical class="icon-sm" /> Modo demo
+                            </button>
+                        </div>
+
+                        <div class="pause-modal-actions">
+                            <button class="btn btn-danger-outline pause-btn"
+                                    :disabled="isFinishing"
+                                    @click="endSessionFromPause">
+                                <Square class="icon-sm mr-2" />
+                                {{ isFinishing ? 'Guardando...' : 'Terminar sesión' }}
+                            </button>
+                            <button class="btn btn-primary pause-btn"
+                                    :disabled="!sensorsReady || isFinishing"
+                                    :title="!sensorsReady ? 'Se requieren los 3 sensores activos' : ''"
+                                    @click="resumeSession">
+                                <Play class="icon-sm mr-2" /> Continuar sesión
+                            </button>
+                        </div>
+                        <p class="pause-modal-note">Al terminar, los datos de la sesión se guardan automáticamente.</p>
                     </div>
                 </div>
             </div>
@@ -718,8 +819,8 @@ onUnmounted(() => {
                  <div class="success-icon-wrapper">
                      <span class="success-check">✓</span>
                  </div>
-                 <h2 class="title-primary mb-3">Sesión Completada</h2>
-                 <p class="subtitle-text mb-8">Ha completado toda la rutina seleccionada.</p>
+                 <h2 class="title-primary mb-3">Sesión Finalizada</h2>
+                 <p class="subtitle-text mb-8">Los datos de la sesión se guardaron correctamente.</p>
                  
                  <!-- CSV Result Display -->
                  <div v-if="lastSession" class="csv-result-card mb-8">
@@ -738,6 +839,9 @@ onUnmounted(() => {
                      </button>
                  </div>
 
+                 <button class="btn btn-primary w-full flex-center mb-3" @click="goToMainMenu">
+                     <Home class="icon-sm mr-2" /> Volver al Menú Principal
+                 </button>
                  <button class="btn btn-outline w-full" @click="resetSession">Nueva Sesión</button>
             </div>
         </div>
@@ -858,6 +962,16 @@ onUnmounted(() => {
 .badge-neutral { background-color: #f1f5f9; color: #64748b; }
 .badge-success { background-color: #dcfce7; color: #16a34a; }
 .badge-error { background-color: #fee2e2; color: #dc2626; }
+
+/* Modo demo de sensores */
+.status-right { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.demo-badge { background-color: #fef3c7; color: #92400e; font-size: 0.625rem; font-weight: 800; letter-spacing: 0.08em; padding: 0.2rem 0.45rem; border-radius: 4px; }
+.btn-demo-inline {
+    display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;
+    padding: 0.35rem 0.6rem; border-radius: 6px; cursor: pointer;
+    background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 0.75rem; font-weight: 600;
+}
+.btn-demo-inline:hover { background: #fef3c7; }
 
 /* Signal Status */
 .signal-status { display: flex; align-items: center; gap: 0.75rem; }
@@ -981,8 +1095,11 @@ onUnmounted(() => {
 .huge-timer-exec { font-size: 35vw; line-height: 1; font-weight: 900; color: #0f172a; letter-spacing: -0.05em; font-family: monospace; }
 .timer-label { font-size: 4vw; font-weight: 700; color: #ef4444; margin-top: 1rem; letter-spacing: 0.2em; text-transform: uppercase; }
 
-/* Bottom Bar */
-.bottom-control-bar { position: absolute; bottom: 0; width: 100%; padding: 2rem 3rem; background-color: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
+/* Bottom Bar
+   z-index 30: por encima de .main-visual-content (10) y de .rest-overlay (20).
+   Antes quedaba por debajo de ambos y los overlays se comían los clics del
+   botón de pausa, que por eso parecía "no hacer nada". */
+.bottom-control-bar { position: absolute; bottom: 0; width: 100%; padding: 2rem 3rem; background-color: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; z-index: 30; }
 
 .preview-label { font-size: 1rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem; }
 .preview-name { font-size: 2rem; font-weight: 700; color: #cbd5e1; margin: 0; }
@@ -992,10 +1109,41 @@ onUnmounted(() => {
 .progress-total { font-size: 1.5rem; color: #f1f5f9; }
 
 /* Controls */
-.controls-wrapper { position: absolute; left: 50%; transform: translateX(-50%); bottom: 2rem; }
-.paused-overlay { position: absolute; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background-color: rgba(255,255,255,0.5); backdrop-filter: blur(4px); }
-.paused-badge { background-color: black; color: white; padding: 1.5rem 3rem; border-radius: 9999px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-.paused-text { font-size: 2.25rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+.controls-wrapper { position: absolute; left: 50%; transform: translateX(-50%); bottom: 2rem; z-index: 31; }
+
+/* Ventana emergente de pausa */
+.pause-modal-backdrop {
+    position: absolute; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    background-color: rgba(15, 23, 42, 0.45); backdrop-filter: blur(6px);
+    animation: fadeIn 0.2s ease-out forwards;
+}
+.pause-modal {
+    background: white; border-radius: 20px; padding: 2.5rem;
+    width: min(520px, calc(100% - 3rem)); text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    box-sizing: border-box;
+}
+.pause-modal-title { font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem; }
+.pause-modal-subtitle { font-size: 1rem; color: #64748b; margin: 0 0 1.5rem; line-height: 1.5; }
+.pause-sensors {
+    display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+    padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-weight: 600; font-size: 0.875rem;
+}
+.pause-sensors.ok { background-color: #dcfce7; color: #166534; }
+.pause-sensors.ko { background-color: #fee2e2; color: #991b1b; }
+.pause-sensor-dots { display: flex; gap: 0.3rem; }
+.pause-warning {
+    display: flex; align-items: center; gap: 0.5rem; text-align: left;
+    background-color: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+    padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.8125rem; margin-bottom: 1.5rem;
+}
+.pause-modal-actions { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+.pause-btn { flex: 1; padding-top: 0.875rem; padding-bottom: 0.875rem; }
+.btn-danger-outline { background: white; border: 2px solid #ef4444; color: #dc2626; }
+.btn-danger-outline:hover:not(:disabled) { background-color: #fef2f2; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pause-modal-note { font-size: 0.75rem; color: #94a3b8; margin: 0; }
 
 /* Training Header */
 .session-tags { display: flex; gap: 0.5rem; }

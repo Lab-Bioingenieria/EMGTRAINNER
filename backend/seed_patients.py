@@ -1,8 +1,15 @@
 import asyncio
+import uuid
 from core.database import get_session
+from core.database.session import set_session_context
 from app.models.patient import Patient
 
 async def seed():
+    # get_session() uses a scoped session keyed by this context var, which
+    # SQLAlchemyMiddleware normally sets per-request; a standalone script
+    # has to set it itself (see also seed_doctors.py).
+    set_session_context(str(uuid.uuid4()))
+
     async for session in get_session():
         patients = [
             Patient(patient_code="P-2341", name="María González", age=45, sessions_count=12, last_session="2026-05-10", progress=89, status="active"),

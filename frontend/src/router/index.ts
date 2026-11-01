@@ -1,7 +1,11 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import { authService } from '@/services/auth.service'
+import { authGuard, roleGuard } from './guards'
 
+// `meta.role` is what keeps the doctor and patient interfaces separate at
+// the routing level — see router/guards.ts (roleGuard) for how it's
+// enforced, and core/fastapi/dependencies/role.py on the backend for the
+// matching server-side check.
 const routes = [
   {
     path: '/login',
@@ -16,46 +20,61 @@ const routes = [
   {
     path: '/ai-console',
     name: 'AIConsole',
+    meta: { role: 'doctor' },
     component: () => import('../views/ai-console/AiConsoleView.vue')
   },
   {
     path: '/dashboard',
     name: 'Dashboard',
+    meta: { role: 'doctor' },
     component: () => import('../views/dashboard/DashboardView.vue')
   },
   {
     path: '/doctor',
     name: 'DoctorSession',
+    meta: { role: 'doctor' },
     component: () => import('../views/doctor/DoctorSessionView.vue')
   },
   {
     path: '/patient',
     name: 'PatientSession',
+    meta: { role: 'patient' },
     component: () => import('../views/patient/PatientSessionView.vue')
   },
   {
     path: '/patient/free',
     name: 'PatientFree',
+    meta: { role: 'patient' },
     component: () => import('../views/patient/PatientFreeView.vue')
+  },
+  {
+    path: '/patient/mirror',
+    name: 'PatientMirror',
+    meta: { role: 'patient' },
+    component: () => import('../views/patient/PatientMirrorView.vue')
   },
   {
     path: '/patients',
     name: 'PatientsPanel',
+    meta: { role: 'doctor' },
     component: () => import('../views/patients/PatientsPanelView.vue')
   },
   {
     path: '/patients/:id',
     name: 'PatientDetails',
+    meta: { role: 'doctor' },
     component: () => import('../views/patients/PatientsDetailsView.vue')
   },
   {
     path: '/storage',
     name: 'Storage',
+    meta: { role: 'doctor' },
     component: () => import('../views/storage/StorageView.vue')
   },
   {
     path: '/test',
     name: 'Test',
+    meta: { role: 'doctor' },
     component: () => import('../views/test/TestView.vue')
   },
 ]
@@ -65,13 +84,10 @@ const router = createRouter({
   routes,
 })
 
-const PUBLIC_ROUTES = new Set(['Login'])
-
 router.beforeEach((to) => {
-  if (PUBLIC_ROUTES.has(to.name as string)) return true
-  if (authService.isLoggedIn()) return true
-  // Preserve the intended destination so Login can return the user to it.
-  return { name: 'Login', query: { redirect: to.fullPath } }
+  const authResult = authGuard(to)
+  if (authResult !== true) return authResult
+  return roleGuard(to)
 })
 
 export default router

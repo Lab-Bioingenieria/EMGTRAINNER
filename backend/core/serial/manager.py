@@ -93,23 +93,82 @@ class SerialManager:
                 return port
         return None
     
+    # Identificadores USB de los puentes serie mas comunes en placas ESP32.
+    # Se buscan por VID (fiable) en vez de por el texto de la descripcion, que
+    # cambia segun el driver instalado en Windows.
+    ESP32_VIDS = (
+        0x10C4,  # Silicon Labs CP210x
+        0x1A86,  # WCH CH340 / CH341 / CH343
+        0x303A,  # Espressif (USB nativo en ESP32-S2/S3/C3)
+        0x0483,  # STMicroelectronics (algunas placas)
+    )
+
+    # VID de FTDI. El adaptador U2D2 de la mano Dynamixel es FTDI, y NUNCA debe
+    # confundirse con el sensor: en Windows aparece como "USB Serial Port (COMx)",
+    # cuya descripcion contiene "USB" y por eso la busqueda por texto lo elegia
+    # antes que la ESP32.
+    FTDI_VID = 0x0403
+
+    def find_sensor_port(self) -> Optional[str]:
+        """
+        Localiza el puerto de la ESP32 (sensor sEMG), descartando el FTDI de
+        la mano Dynamixel.
+
+        Orden de preferencia:
+          1. Puerto cuyo VID es de un puente serie tipico de ESP32.
+          2. Puerto cuya descripcion menciona un chip conocido (CP210, CH34x).
+          3. Cualquier puerto USB que no sea FTDI ni Bluetooth.
+        """
+        candidates = [p for p in serial.tools.list_ports.comports() if not self._is_excluded(p)]
+
+        # 1. Por VID
+        for port in candidates:
+            if port.vid is not None and port.vid in self.ESP32_VIDS:
+                return port.device
+
+        # 2. Por nombre de chip
+        for port in candidates:
+            text = f"{port.description} {port.hwid}".upper()
+            if any(chip in text for chip in ("CP210", "CH340", "CH341", "CH343", "CH9102", "SILICON")):
+                return port.device
+
+        # 3. Generico
+        for port in candidates:
+            if "USB" in f"{port.description} {port.hwid}".upper():
+                return port.device
+
+        return None
+
+    def _is_excluded(self, port) -> bool:
+        """Descarta el FTDI de la mano y los puertos serie sobre Bluetooth."""
+        if port.vid == self.FTDI_VID:
+            return True
+
+        text = f"{port.description} {port.manufacturer or ''} {port.hwid}".upper()
+        if "FTDI" in text:
+            return True
+        # "Standard Serial over Bluetooth link (COMx)" no es un dispositivo real.
+        if "BLUETOOTH" in text:
+            return True
+        return False
+
     def connect(self, port: Optional[str] = None) -> bool:
         """
         Connect to serial port
-        
+
         Args:
             port: Specific port to connect to, or None to auto-detect
-            
+
         Returns:
             True if connected successfully
         """
         try:
             if port is None:
-                port = self.autodetect_sensor_port()
-            
+                port = self.find_sensor_port()
+
             if port is None:
                 raise Exception("No device port found")
-            
+
             self.connection = serial.Serial(
                 port=port,
                 baudrate=self.baudrate,
@@ -117,11 +176,11 @@ class SerialManager:
             )
             self.port = port
             return True
-            
+
         except Exception as e:
             print(f"Error connecting to serial port: {e}")
             raise e
-    
+
     def disconnect(self) -> None:
         """Close serial connection"""
         if self.connection and self.connection.is_open:

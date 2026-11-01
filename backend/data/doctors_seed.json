@@ -1,0 +1,16 @@
+[
+  {
+    "email": "doctora.rivera@clinica.example",
+    "username": "dra_rivera",
+    "password": "CambiaEsta123",
+    "full_name": "Dra. Camila Rivera",
+    "specialty": "Fisiatría"
+  },
+  {
+    "email": "doctor.paredes@clinica.example",
+    "username": "dr_paredes",
+    "password": "CambiaEsta123",
+    "full_name": "Dr. Andrés Paredes",
+    "specialty": "Terapia ocupacional"
+  }
+]
